@@ -1,0 +1,100 @@
+@import "tailwindcss";
+
+/* ====== FONT LOCAL ====== */
+@font-face {
+  font-family: "Aldrich";
+  src: url("./fonts/Aldrich-Regular.ttf") format("truetype");
+  font-display: swap;
+}
+@font-face {
+  font-family: "Noto Sans";
+  src: url("./fonts/NotoSans-Regular.ttf") format("truetype");
+  font-display: swap;
+}
+
+/* ===== MONO DARK TOKENS ===== */
+:root {
+  --bg:     #0b0d11;   /* kanvas gelap */
+  --panel:  #12151b;   /* panel/tile */
+  --border: #1c2230;   /* garis tipis */
+  --text:   #e7e9ee;   /* teks utama */
+  --dim:    #9aa3b2;   /* teks sekunder */
+  --radius: 16px;      /* radius tile & button */
+  --shadow: 0 10px 30px rgba(0,0,0,.35); /* soft shadow */
+  --border-1_5: 1.5px;
+}
+
+/* ===== BASE ===== */
+html, body, #root { height: 100%; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  /* ==== GLOBAL WALLPAPER ==== */
+  background-image: var(--app-wall-bg, url('./image/Background.png'));
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+
+  font-family: "Noto Sans", system-ui, -apple-system, "Segoe UI", Roboto,
+    Ubuntu, Cantarell, "Helvetica Neue", Arial, sans-serif;
+  line-height: 1.6;
+}
+
+/* Heading pakai Aldrich */
+h1, h2, h3, h4, h5, h6, .heading, .app-title {
+  font-family: "Aldrich", Arial, sans-serif;
+  letter-spacing: 0.2px;
+}
+
+/* ===== APP WALL OVERLAY ===== */
+.app-wall::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  backdrop-filter: blur(8px);
+  background: rgba(0,0,0,0.35);
+  z-index: 0;
+}
+.app-wall > * { position: relative; z-index: 1; }
+
+/* ===== UTILITIES ===== */
+.section {
+  max-width: 80rem;
+  margin-inline: auto;
+  padding-inline: 1.5rem;
+}
+.tile {
+  width: 220px;
+  height: 120px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  transition: background-color .2s ease, transform .15s ease;
+}
+.tile:hover { background: color-mix(in oklab, var(--panel), #ffffff 6%); }
+.tile:active { transform: translateY(1px); }
+.tile:focus-visible {
+  box-shadow: 0 0 0 2px rgba(255,255,255,.1), var(--shadow);
+}
+
+.hr { width: 100%; height: 1px; background: var(--border); }
+.muted { font-size: .875rem; color: var(--dim); }
+
+.btn {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: .5rem 1rem;
+  font-size: .875rem;
+  background: transparent;
+  color: var(--text);
+  transition: background-color .2s ease, border-color .2s ease;
+}
+.btn:hover { background: rgba(255,255,255,.08); }

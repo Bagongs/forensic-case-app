@@ -1,0 +1,80 @@
+// src/renderer/src/components/EditCaseModal.jsx
+/* eslint-disable react/prop-types */
+import { useEffect, useState } from 'react'
+import Modal from './Modal'
+
+export default function EditCaseModal({ open, onClose, initial, onSave }) {
+  const [name, setName] = useState(initial?.name || '')
+  const [description, setDescription] = useState(initial?.description || '')
+  const [investigator, setInvestigator] = useState(initial?.investigator || '')
+
+  useEffect(() => {
+    if (open) {
+      setName(initial?.name || '')
+      setDescription(initial?.description || '')
+      setInvestigator(initial?.investigator || '')
+    }
+  }, [open, initial])
+
+  const canSubmit = name.trim().length > 0
+
+  return (
+    <Modal
+      open={open}
+      title="Edit Case"
+      onCancel={onClose}
+      confirmText="Save changes"
+      disableConfirm={!canSubmit}
+      onConfirm={() => {
+        onSave({
+          name: name.trim(),
+          description: description.trim(),
+          investigator: investigator.trim()
+        })
+      }}
+      size="lg"
+    >
+      <div className="grid gap-4">
+        <div>
+          <div className="text-xs font-semibold mb-1" style={{ color: 'var(--dim)' }}>
+            Case name
+          </div>
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="name"
+            className="w-full px-3 py-2 rounded-lg border bg-transparent"
+            style={{ borderColor: 'var(--border)' }}
+          />
+        </div>
+
+        <div>
+          <div className="text-xs font-semibold mb-1" style={{ color: 'var(--dim)' }}>
+            Case description
+          </div>
+          <textarea
+            rows={4}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Case Description"
+            className="w-full px-3 py-2 rounded-lg border bg-transparent resize-none"
+            style={{ borderColor: 'var(--border)' }}
+          />
+        </div>
+
+        <div>
+          <div className="text-xs font-semibold mb-1" style={{ color: 'var(--dim)' }}>
+            Main Investigator
+          </div>
+          <input
+            value={investigator}
+            onChange={(e) => setInvestigator(e.target.value)}
+            placeholder="input name"
+            className="w-full px-3 py-2 rounded-lg border bg-transparent"
+            style={{ borderColor: 'var(--border)' }}
+          />
+        </div>
+      </div>
+    </Modal>
+  )
+}
