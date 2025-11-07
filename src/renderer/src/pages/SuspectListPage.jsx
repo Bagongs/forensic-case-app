@@ -2,10 +2,15 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import CaseLayout from './CaseLayout'
-import StatsCard from '../../components/StatsCard'
-import MiniButton from '../../components/MiniButton'
-import AddPersonModal from '../../components/AddPersonModal'
-import { useCases } from '../../store/cases'
+import StatsCard from '../components/StatsCard'
+import MiniButton, { MiniButtonContent } from '../components/MiniButton'
+import AddPersonModal from '../components/AddPersonModal'
+import { useCases } from '../store/cases'
+import bgPerson from '../assets/image/stats/person.png'
+import bgEvidance from '../assets/image/stats/evidance.png'
+import iconFilter from '../assets/icons/icon-filter.svg'
+import iconSearch from '../assets/icons/icon-search.svg'
+import bgButton from '../assets/image/bg-button.svg'
 
 export default function SuspectListPage() {
   const nav = useNavigate()
@@ -80,29 +85,45 @@ export default function SuspectListPage() {
   return (
     <CaseLayout title="Suspect Management">
       {/* stats */}
-      <div className="grid grid-cols-2 gap-4 mb-6">
-        <StatsCard value={stats.totalPerson} label="Total person" />
-        <StatsCard value={stats.totalEvidence} label="Total Evidence" />
+      <div className="flex justify-start mb-6 -space-x-28">
+        <StatsCard value={stats.totalPerson} label="Total person" bg={bgPerson} />
+        <StatsCard value={stats.totalEvidence} label="Total Evidence" bg={bgEvidance} />
       </div>
 
       {/* search + actions */}
-      <div className="flex items-center gap-3 mb-3">
-        <input
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder="Search person / case / status / investigator"
-          className="px-3 py-2 rounded-lg border bg-transparent flex-1"
-          style={{ borderColor: 'var(--border)' }}
-        />
-        <MiniButton onClick={() => setQ((s) => s.trim())}>Search</MiniButton>
-        <MiniButton /* onClick={() => ...} */>Filter</MiniButton>
+      <div className="flex justify-between items-center gap-3 mb-3 w-full ">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="relative w-[427px]">
+            <input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Search person / case / status / investigator"
+              className="w-full pl-3 pr-3 py-1 border border-[#C3CFE0] bg-transparent"
+            />
+            <img
+              src={iconSearch}
+              alt="search"
+              className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 opacity-70"
+            />
+          </div>
+          {/* <MiniButton onClick={() => setQ((s) => s.trim())}>Search</MiniButton> */}
+          <MiniButton
+            onClick={() => {
+              /* TODO: open filter drawer */
+            }}
+          >
+            <div className="flex items-center gap-1">
+              <img src={iconFilter} width={15} height={15} /> Filter
+            </div>
+          </MiniButton>
+        </div>
         <MiniButton onClick={() => setModal(true)} className="ml-auto">
-          Add Person
+          <MiniButtonContent bg={bgButton} text="+ Add Person" textColor="text-black" />
         </MiniButton>
       </div>
 
       {/* table */}
-      <div className="overflow-hidden border rounded-xl" style={{ borderColor: 'var(--border)' }}>
+      <div className="overflow-hidden border " style={{ borderColor: 'var(--border)' }}>
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left" style={{ background: 'var(--panel)' }}>
@@ -137,7 +158,7 @@ export default function SuspectListPage() {
                   </div>
                 </td>
                 <td className="px-4 py-3 border-b" style={{ borderColor: 'var(--border)' }}>
-                  <MiniButton onClick={() => nav(`/cases/${row.caseId}`)}>Detail</MiniButton>
+                  <MiniButton onClick={() => nav(`/suspects/${row.caseId}`)}>Detail</MiniButton>
                 </td>
               </tr>
             ))}

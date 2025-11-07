@@ -2,11 +2,14 @@
 /* eslint-disable react/prop-types */
 import { useEffect, useState } from 'react'
 import Modal from './Modal'
+import HorizontalLine from './HorizontalLine'
 
 export default function EditCaseModal({ open, onClose, initial, onSave }) {
   const [name, setName] = useState(initial?.name || '')
   const [description, setDescription] = useState(initial?.description || '')
   const [investigator, setInvestigator] = useState(initial?.investigator || '')
+  const [agency, setAgency] = useState(initial?.agency || '')
+  const [workUnit, setWorkUnit] = useState(initial?.workunit || '')
 
   useEffect(() => {
     if (open) {
@@ -61,7 +64,7 @@ export default function EditCaseModal({ open, onClose, initial, onSave }) {
             style={{ borderColor: 'var(--border)' }}
           />
         </div>
-
+        <HorizontalLine color={'#394F6F'} />
         <div>
           <div className="text-xs font-semibold mb-1" style={{ color: 'var(--dim)' }}>
             Main Investigator
@@ -73,6 +76,32 @@ export default function EditCaseModal({ open, onClose, initial, onSave }) {
             className="w-full px-3 py-2 rounded-lg border bg-transparent"
             style={{ borderColor: 'var(--border)' }}
           />
+        </div>
+        <div className="flex flex-row gap-5">
+          <div className="w-full">
+            <div className="text-xs font-semibold mb-1" style={{ color: 'var(--dim)' }}>
+              Agency
+            </div>
+            <input
+              value={agency}
+              onChange={(e) => setAgency(e.target.value)}
+              placeholder="Agency"
+              className="w-full px-3 py-2 rounded-lg border bg-transparent"
+              style={{ borderColor: 'var(--border)' }}
+            />
+          </div>
+          <div className="w-full">
+            <div className="text-xs font-semibold mb-1" style={{ color: 'var(--dim)' }}>
+              Work Unit
+            </div>
+            <input
+              value={workUnit}
+              onChange={(e) => setWorkUnit(e.target.value)}
+              placeholder="Work Unit"
+              className="w-full px-3 py-2 rounded-lg border bg-transparent"
+              style={{ borderColor: 'var(--border)' }}
+            />
+          </div>
         </div>
       </div>
     </Modal>

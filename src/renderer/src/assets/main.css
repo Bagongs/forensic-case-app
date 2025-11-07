@@ -15,10 +15,10 @@
 /* ===== MONO DARK TOKENS ===== */
 :root {
   --bg:     #0b0d11;   /* kanvas gelap */
-  --panel:  #12151b;   /* panel/tile */
+  --panel:  #395070;   /* panel/tile */
   --border: #1c2230;   /* garis tipis */
   --text:   #e7e9ee;   /* teks utama */
-  --dim:    #9aa3b2;   /* teks sekunder */
+  --dim:    #EDC702;   /* teks sekunder */
   --radius: 16px;      /* radius tile & button */
   --shadow: 0 10px 30px rgba(0,0,0,.35); /* soft shadow */
   --border-1_5: 1.5px;
@@ -98,3 +98,35 @@ h1, h2, h3, h4, h5, h6, .heading, .app-title {
   transition: background-color .2s ease, border-color .2s ease;
 }
 .btn:hover { background: rgba(255,255,255,.08); }
+.tab-link {
+  position: relative;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: all 0.25s ease;
+  background-repeat: no-repeat;
+  background-size: 220%;
+  background-position: center;
+  color: #cfd6e5;
+  clip-path: polygon(10% 0, 100% 0, 90% 100%, 0% 100%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 220px;
+}
+
+.tab-link.tab-active {
+  background-image: url('/src/assets/image/bg-nav-active.svg');
+  color: #ffd84c !important; /* kuning seperti contoh */
+  text-shadow: 0 0 6px rgba(255, 216, 76, 0.6);
+  background-size: 260%; /* lebih besar biar efek miringnya menonjol */
+  filter: brightness(1.1);
+}
+
+.tab-link.tab-normal {
+  background-image: url('/src/assets/image/bg-nav.svg');
+  color: #ffffffcc;
+  opacity: 0.9;
+}

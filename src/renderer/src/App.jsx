@@ -1,11 +1,12 @@
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
 
 import LoginPage from './pages/LoginPage.jsx'
-import CaseListPage from './pages/cases/CaseListPage'
-import EvidenceListPage from './pages/cases/EvidenceListPage'
-import SuspectListPage from './pages/cases/SuspectListPage'
-import CaseDetailPage from './pages/cases/CaseDetailPage.jsx'
-import EvidenceDetailPage from './pages/cases/EvidenceDetailPage.jsx'
+import CaseListPage from './pages/CaseListPage'
+import EvidenceListPage from './pages/EvidenceListPage'
+import SuspectListPage from './pages/SuspectListPage'
+import CaseDetailPage from './pages/CaseDetailPage.jsx'
+import EvidenceDetailPage from './pages/EvidenceDetailPage.jsx'
+import SuspectDetailPage from './pages/SuspectDetailPage.jsx'
 
 export default function App() {
   return (
@@ -15,9 +16,10 @@ export default function App() {
         <Route path="/" element={<Navigate to="/cases" replace />} />
         <Route path="/cases" element={<CaseListPage />} />
         <Route path="/cases/:id" element={<CaseDetailPage />} />
-        <Route path="/cases/evidence" element={<EvidenceListPage />} />
+        <Route path="/evidence" element={<EvidenceListPage />} />
         <Route path="/evidence/:evidenceId" element={<EvidenceDetailPage />} />
-        <Route path="/cases/suspects" element={<SuspectListPage />} />
+        <Route path="/suspects" element={<SuspectListPage />} />
+        <Route path="/suspects/:suspectId" element={<SuspectDetailPage />} />
       </Routes>
     </HashRouter>
   )

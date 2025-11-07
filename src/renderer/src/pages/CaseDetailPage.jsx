@@ -1,11 +1,22 @@
 // src/renderer/src/pages/case/CaseDetailPage.jsx
 import { useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { useCases } from '../../store/cases'
-import AddPersonInlineModal from '../../components/AddPersonInlineModal'
-import ChangeStatusModal from '../../components/ChangeStatusModal'
-import EditCaseModal from '../../components/EditCaseModal'
-import EditPersonModal from '../../components/EditPersonModal'
+import { useCases } from '../store/cases'
+import AddPersonInlineModal from '../components/AddPersonInlineModal'
+import ChangeStatusModal from '../components/ChangeStatusModal'
+import EditCaseModal from '../components/EditCaseModal'
+import EditPersonModal from '../components/EditPersonModal'
+import CaseLayout from './CaseLayout'
+import MiniButton, { MiniButtonContent } from '../components/MiniButton'
+import bgButton from '../assets/image/bg-button.svg'
+import bgButtonTransparent from '../assets/image/bg-button-transparent.svg'
+import iconEdit from '../assets/icons/icon-edit.svg'
+import iconPersonAdd from '../assets/icons/icon-person-add.svg'
+import SummaryBox from '../components/SummaryBox'
+import CaseLogBox from '../components/CaseLogBox'
+import { PersonSectionBox } from '../components/PersonSectionBox'
+import { PersonBox } from '../components/PersonBox'
+import { EvidenceCard } from '../components/EvidanceCard'
 
 const fmtDate = (iso) => {
   if (!iso) return '-'
@@ -19,6 +30,57 @@ const fmtDate = (iso) => {
 export default function CaseDetailPage() {
   const { id } = useParams()
   const nav = useNavigate()
+  const logs = [
+    { status: 'Re-open', date: '16 Mei 2025, 12:00', hasNotes: true },
+    {
+      status: 'Edit',
+      by: 'Wisnu',
+      date: '16 Mei 2025, 12:00',
+      change: 'Adding person Nathalie'
+    },
+    {
+      status: 'Edit',
+      by: 'Wisnu',
+      date: '16 Mei 2025, 09:00',
+      change: 'Adding evidence 3234222'
+    },
+    { status: 'Closed', date: '12 Mei 2025, 14:00', hasNotes: true },
+    { status: 'Open', date: '9 Mei 2025, 10:00' }
+  ]
+
+  const persons = [
+    {
+      name: 'Mandeep Singh',
+      role: 'Suspect',
+      roleColor: '#B44D3E',
+      evidences: [
+        {
+          code: '342344442',
+          image: '/images/cctv1.jpg',
+          summary:
+            'Berdasarkan rekaman CCTV tanggal 10 September 2025 pukul 14.32 WIB, individu yang diduga sebagai target tampak memasuki area check-in internasional.'
+        },
+        {
+          code: '342344443',
+          image: '/images/passport.jpg',
+          summary: 'Tersangka terlihat menggunakan dokumen palsu untuk melintas perbatasan.'
+        }
+      ]
+    },
+    {
+      name: 'Nathalie',
+      role: 'Witness',
+      roleColor: '#2B7ABD',
+      evidences: [
+        {
+          code: '342344444',
+          image: '/images/nathalie.jpg',
+          summary:
+            'Berdasarkan rekaman CCTV tanggal 10 September 2025 pukul 14.32 WIB, individu terlihat oleh Nathalie.'
+        }
+      ]
+    }
+  ]
 
   // selectors dari store
   const getCaseById = useCases((s) => s.getCaseById)
@@ -28,6 +90,7 @@ export default function CaseDetailPage() {
   const [selectedPerson, setSelectedPerson] = useState(null)
 
   const item = getCaseById?.(id)
+  const [summary, setSummary] = useState(item?.summary || '')
 
   // modal states
   const [addPersonOpen, setAddPersonOpen] = useState(false)
@@ -40,7 +103,7 @@ export default function CaseDetailPage() {
     if (!item) return null
     return (
       <span
-        className="px-2 py-0.5 rounded-md border text-xs"
+        className="px-5 py-0.5 rounded-full border text-xs"
         style={{ borderColor: 'var(--border)' }}
       >
         {item.status || 'Open'}
@@ -64,9 +127,8 @@ export default function CaseDetailPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-6 py-8">
-      {/* top bar */}
-      <div className="flex items-center gap-3 mb-2">
+    <CaseLayout title="Case Management" showBack={true}>
+      {/* <div className="flex py-8 items-center gap-3 mb-2">
         <button
           className="px-3 py-1.5 rounded-lg border"
           style={{ borderColor: 'var(--border)' }}
@@ -75,10 +137,10 @@ export default function CaseDetailPage() {
           Back
         </button>
         <div className="text-lg opacity-70">Case Management</div>
-      </div>
+      </div> */}
 
       {/* header */}
-      <div className="flex items-start justify-between">
+      <div className="flex mt-8 items-start justify-between">
         <div>
           <div className="text-xs opacity-70">{item.id}</div>
           <div className="text-3xl font-semibold flex items-center gap-3">
@@ -93,23 +155,22 @@ export default function CaseDetailPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <button
-            className="px-3 py-1.5 rounded-lg border"
-            style={{ borderColor: 'var(--border)' }}
-            onClick={() => setEditOpen(true)}
-          >
-            Edit
-          </button>
-          <button
-            className="px-3 py-1.5 rounded-lg border"
-            style={{ borderColor: 'var(--border)' }}
-          >
-            Export PDF
-          </button>
+          <MiniButton onClick={() => setEditOpen(true)}>
+            <MiniButtonContent
+              bg={bgButtonTransparent}
+              text="Edit"
+              icon={iconEdit}
+              textColor="text-white"
+            />
+          </MiniButton>
+
+          <MiniButton>
+            <MiniButtonContent bg={bgButton} text="+ Export PDF" textColor="text-black" />
+          </MiniButton>
         </div>
       </div>
 
-      <div className="my-5 border-t" style={{ borderColor: 'var(--border)' }} />
+      <div className="my-5 border-t" style={{ borderColor: '#C3CFE0' }} />
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6">
         {/* LEFT */}
@@ -126,7 +187,7 @@ export default function CaseDetailPage() {
           </section>
 
           {/* persons */}
-          <section
+          {/* <section
             className="rounded-xl border p-4"
             style={{ borderColor: 'var(--border)', background: 'var(--panel)' }}
           >
@@ -134,13 +195,14 @@ export default function CaseDetailPage() {
               <div className="text-sm font-semibold" style={{ color: 'var(--dim)' }}>
                 Person of interest ({item.persons.length})
               </div>
-              <button
-                className="px-3 py-1.5 rounded-lg border"
-                style={{ borderColor: 'var(--border)' }}
-                onClick={() => setAddPersonOpen(true)}
-              >
-                Add Person
-              </button>
+              <MiniButton onClick={() => setAddPersonOpen(true)}>
+                <MiniButtonContent
+                  bg={bgButtonTransparent}
+                  text="Add Person"
+                  icon={iconPersonAdd}
+                  textColor="text-white"
+                />
+              </MiniButton>
             </div>
 
             <div className="space-y-6">
@@ -156,7 +218,6 @@ export default function CaseDetailPage() {
                   >
                     <div className="flex items-baseline gap-2 min-w-0">
                       <div className="font-medium truncate">{p.name}</div>
-                      {/* status inline, tipis dan tidak dominan */}
                       <span
                         className="px-2 py-0.5 rounded-md border text-sm opacity-80"
                         style={{ borderColor: 'var(--border)' }}
@@ -177,7 +238,6 @@ export default function CaseDetailPage() {
                     </button>
                   </div>
 
-                  {/* evidence list */}
                   <div className="p-4 space-y-3">
                     {p.evidences.length === 0 && (
                       <div className="opacity-70 text-sm">No evidence yet.</div>
@@ -189,7 +249,6 @@ export default function CaseDetailPage() {
                         className="grid grid-cols-[96px_1fr_auto] gap-3 rounded-lg border p-3"
                         style={{ borderColor: 'var(--border)' }}
                       >
-                        {/* thumbnail */}
                         <div
                           className="h-20 w-24 rounded bg-white/5 grid place-items-center border overflow-hidden"
                           style={{ borderColor: 'var(--border)' }}
@@ -205,13 +264,11 @@ export default function CaseDetailPage() {
                           )}
                         </div>
 
-                        {/* summary */}
                         <div className="text-sm min-w-0">
                           <div className="text-xs opacity-70">Evidence Summary</div>
                           <div className="truncate">{ev.summary || ev.fileName || '—'}</div>
                         </div>
 
-                        {/* action */}
                         <div className="opacity-70 text-sm self-center">Analysis</div>
                       </div>
                     ))}
@@ -228,10 +285,38 @@ export default function CaseDetailPage() {
                 </div>
               ))}
             </div>
-          </section>
+          </section> */}
+          <PersonSectionBox
+            title="Person of Interest"
+            total={persons.length}
+            borderColor='#FFFFFF'
+            actionBgImage={bgButtonTransparent}
+            onAddPerson={() => setAddPersonOpen(true)}
+          >
+            {persons.map((person, i) => (
+              <PersonBox
+                key={i}
+                name={person.name}
+                roleLabel={person.role}
+                roleColor={person.roleColor}
+                actionBgImage={bgButton}
+                onEdit={() => console.log('edit', person.name)}
+                onAddEvidence={() => console.log('add evidence for', person.name)}
+              >
+                {person.evidences.map((ev, j) => (
+                  <EvidenceCard
+                    key={j}
+                    image={ev.image}
+                    code={ev.code}
+                    summary={ev.summary}
+                  />
+                ))}
+              </PersonBox>
+            ))}
+          </PersonSectionBox>
 
           {/* notes */}
-          <section
+          {/* <section
             className="rounded-xl border p-4"
             style={{ borderColor: 'var(--border)', background: 'var(--panel)' }}
           >
@@ -278,11 +363,11 @@ export default function CaseDetailPage() {
                 Save notes
               </button>
             </div>
-          </section>
+          </section> */}
         </div>
 
         {/* RIGHT – case log */}
-        <aside
+        {/* <aside
           className="rounded-xl border p-4 h-max"
           style={{ borderColor: 'var(--border)', background: 'var(--panel)' }}
         >
@@ -311,7 +396,24 @@ export default function CaseDetailPage() {
             ))}
             {!item.logs.length && <div className="opacity-70 text-sm">No log.</div>}
           </div>
+        </aside> */}
+        <aside>
+          <CaseLogBox
+            title="Case Log"
+            logs={logs}
+            actionLabel="Change"
+            onAction={() => console.log('Change clicked')}
+          />
         </aside>
+        {/* <SummaryBox></SummaryBox> */}
+        <SummaryBox
+          title="Case Summary"
+          value={summary}
+          onChange={setSummary}
+          actionLabel="Edit"
+          // actionBgImage={bgButton}
+          onAction={() => console.log('Edit Summary')}
+        />
       </div>
 
       {/* Modals */}
@@ -346,6 +448,6 @@ export default function CaseDetailPage() {
         person={selectedPerson}
         author={item.investigator || ''}
       />
-    </div>
+    </CaseLayout>
   )
 }

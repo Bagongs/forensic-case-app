@@ -141,7 +141,7 @@ export default function AddPersonInlineModal({ caseId, open, onClose }) {
         {/* 🆕 STATUS */}
         <div>
           <div className="text-xs font-semibold mb-1" style={{ color: 'var(--dim)' }}>
-            Status
+            Suspect Status
           </div>
           <select
             className="w-full px-3 py-2 rounded-lg border bg-transparent"

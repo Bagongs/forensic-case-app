@@ -2,10 +2,15 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import CaseLayout from './CaseLayout'
-import StatsCard from '../../components/StatsCard'
-import MiniButton from '../../components/MiniButton'
-import AddEvidenceModal from '../../components/AddEvidenceModal'
-import { useCases } from '../../store/cases'
+import StatsCard from '../components/StatsCard'
+import MiniButton, { MiniButtonContent } from '../components/MiniButton'
+import AddEvidenceModal from '../components/AddEvidenceModal'
+import { useCases } from '../store/cases'
+import bgCase from '../assets/image/stats/case.png'
+import bgEvidance from '../assets/image/stats/evidance.png'
+import iconFilter from '../assets/icons/icon-filter.svg'
+import iconSearch from '../assets/icons/icon-search.svg'
+import bgButton from '../assets/image/bg-button.svg'
 
 export default function EvidenceListPage() {
   const nav = useNavigate()
@@ -96,29 +101,44 @@ export default function EvidenceListPage() {
   return (
     <CaseLayout title="Evidence Management">
       {/* --- Stats --- */}
-      <div className="grid grid-cols-2 gap-4 mb-6">
-        <StatsCard value={stats.totalCase} label="Total Case" />
-        <StatsCard value={stats.totalEvidence} label="Total Evidence" />
+      <div className="flex justify-start mb-6 -space-x-28">
+        <StatsCard value={stats.totalCase} label="Total Case" bg={bgCase} />
+        <StatsCard value={stats.totalEvidence} label="Total Evidence" bg={bgEvidance} />
       </div>
 
       {/* --- Search bar --- */}
-      <div className="flex items-center gap-3 mb-3">
-        <input
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder="Search case / person / id"
-          className="px-3 py-2 rounded-lg border bg-transparent flex-1"
-          style={{ borderColor: 'var(--border)' }}
-        />
-        <MiniButton>Search</MiniButton>
-        <MiniButton>Filter</MiniButton>
+      <div className="flex justify-between items-center gap-3 mb-3 w-full ">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="relative w-[427px]">
+            <input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Search case / person / id"
+              className="w-full pl-3 pr-3 py-1 border border-[#C3CFE0] bg-transparent"
+            />
+            <img
+              src={iconSearch}
+              alt="search"
+              className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 opacity-70"
+            />
+          </div>
+          <MiniButton
+            onClick={() => {
+              /* TODO: open filter drawer */
+            }}
+          >
+            <div className="flex items-center gap-1">
+              <img src={iconFilter} width={15} height={15} /> Filter
+            </div>
+          </MiniButton>
+        </div>
         <MiniButton onClick={() => setModal(true)} className="ml-auto">
-          Add Evidence
+          <MiniButtonContent bg={bgButton} text="+ Add Evidence" textColor="text-black" />
         </MiniButton>
       </div>
 
       {/* --- Table --- */}
-      <div className="overflow-hidden border rounded-xl" style={{ borderColor: 'var(--border)' }}>
+      <div className="overflow-hidden border " style={{ borderColor: 'var(--border)' }}>
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left" style={{ background: 'var(--panel)' }}>
@@ -179,10 +199,10 @@ export default function EvidenceListPage() {
       {/* --- Legend --- */}
       <div className="flex items-center gap-6 text-xs opacity-70 mt-3">
         <div className="flex items-center gap-2">
-          <span className="w-3 h-3 rounded bg-indigo-300 inline-block" /> generated case id
+          <span className="w-1 h-5 rounded bg-indigo-300 inline-block" /> generated case id
         </div>
         <div className="flex items-center gap-2">
-          <span className="w-3 h-3 rounded bg-pink-300 inline-block" /> Manual case id
+          <span className="w-1 h-5 rounded bg-pink-300 inline-block" /> Manual case id
         </div>
       </div>
 

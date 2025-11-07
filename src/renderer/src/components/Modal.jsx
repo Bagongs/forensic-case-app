@@ -92,7 +92,7 @@ export default function Modal({
         {/* Header */}
         <div
           className="flex items-center justify-between px-6 py-4"
-          style={{ background: '#2A3A51', borderBottom: '2px solid var(--gold)' }}
+          style={{ background: '#2A3A51', borderBottom: '2px solid var(--dim)' }}
         >
           {title ? (
             <h2 id={titleId} className="app-title text-[18px]">
@@ -134,7 +134,11 @@ export default function Modal({
                 onClick={onConfirm}
                 disabled={disableConfirm}
                 className="px-5 h-10 text-sm rounded-sm disabled:opacity-60"
-                style={{ background: 'var(--gold)', color: '#101217', border: 'none' }}
+                style={{
+                  background: 'radial-gradient(circle, #EDC702 0%, #B89E02 100%)',
+                  color: '#0C0C0C',
+                  border: '1px solid #EDC702B2'
+                }}
               >
                 {confirmText}
               </button>

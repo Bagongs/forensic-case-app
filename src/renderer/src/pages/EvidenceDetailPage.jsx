@@ -2,9 +2,16 @@
 /* eslint-disable react-hooks/rules-of-hooks */
 import { Fragment, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { useCases } from '../../store/cases'
-import MiniButton from '../../components/MiniButton'
-import StageContentModal from '../../components/StageContentModal'
+import { useCases } from '../store/cases'
+import MiniButton, { MiniButtonContent } from '../components/MiniButton'
+import StageContentModal from '../components/StageContentModal'
+import CaseLayout from './CaseLayout'
+import bgButton from '../assets/image/bg-button.svg'
+import { BoxNone, BoxTopLeftBottomRight, BoxTopRight } from '../components/BaseBox'
+import stageOn from '../assets/image/stage-on.svg'
+import stageOff from '../assets/image/stage-off.svg'
+import iconEdit from '../assets/icons/icon-edit.svg'
+import bgButtonTransparent from '../assets/image/bg-button-transparent.svg'
 
 const STAGES = [
   { key: 'acquisition', label: 'Acquisition' },
@@ -25,13 +32,13 @@ const NODE_DEFAULT = { fill: '#313131', border: '#888888' }
 const fmtDateLong = (iso) =>
   iso
     ? new Date(iso).toLocaleString('id-ID', {
-        day: '2-digit',
-        month: 'long',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false
-      })
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    })
     : ''
 const fmtDateShort = fmtDateLong
 const truncate = (s, n = 256) => (!s ? '' : s.length > n ? s.slice(0, n).trimEnd() + '…' : s)
@@ -59,6 +66,7 @@ export default function EvidenceDetailPage() {
   const { evidence, caseRef, personRef } = ref
   const [active, setActive] = useState(STAGES[0].key)
   const [modal, setModal] = useState(false)
+  const [editOpen, setEditOpen] = useState(false)
 
   const chain = evidence.chain || { acquisition: [], preparation: [], extraction: [], analysis: [] }
   const contents = chain?.[active] ?? []
@@ -117,267 +125,322 @@ export default function EvidenceDetailPage() {
   const headingInvestigator = caseRef?.investigator || latest?.header?.investigator || '-'
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-6">
-      {/* breadcrumb + actions */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2 text-sm">
-          <button className="btn" onClick={() => nav(-1)}>
-            ←
-          </button>
-          <span style={{ color: 'var(--dim)' }}>Evidence Management</span>
-        </div>
-        <MiniButton>Export PDF</MiniButton>
-      </div>
-
-      {/* heading */}
-      <h1 className="text-2xl font-semibold mb-1">{evidence.id}</h1>
-      <div className="text-sm opacity-80 mb-4">
-        {headingInvestigator} • {headerMeta.date}
-      </div>
-
-      {/* meta line */}
-      <div className="text-sm mb-6 flex flex-wrap gap-x-6 gap-y-2">
-        <div>
-          <span className="opacity-60">Person Related:</span> {personRef?.name || '-'}
-        </div>
-        <div>
-          <span className="opacity-60">Case Related:</span> {caseRef?.name || '-'}
-        </div>
-        <div>
-          <span className="opacity-60">Source:</span> {evidence.source || '-'}
-        </div>
-      </div>
-
-      {/* summary */}
-      <div
-        className="border rounded-xl p-4 mb-6"
-        style={{ borderColor: 'var(--border)', background: 'var(--panel)' }}
-      >
-        <div className="flex gap-4">
-          <div
-            className="w-28 h-20 rounded border flex items-center justify-center overflow-hidden"
-            style={{ borderColor: 'var(--border)' }}
-          >
-            {evidence.previewDataUrl || evidence.previewUrl ? (
+    <CaseLayout title="Evidence Management" showBack={true}>
+      <div className="mx-auto py-6">
+        {/* breadcrumb + actions */}
+        {/* <div className="flex items-center justify-between mb-4"> */}
+        {/* <div className="flex items-center gap-2 text-sm">
+            <button className="btn" onClick={() => nav(-1)}>
+              ←
+            </button>
+            <span style={{ color: 'var(--dim)' }}>Evidence Management</span>
+          </div> */}
+        {/* <MiniButton>
+            <div className="relative w-40 h-[59px] flex items-center justify-center text-sm font-medium text-black">
               <img
-                src={evidence.previewDataUrl || evidence.previewUrl}
-                alt="preview"
-                className="w-full h-full object-cover"
+                src={bgButton}
+                alt=""
+                className="absolute inset-0 w-full h-full object-contain z-0 pointer-events-none select-none"
               />
-            ) : (
-              <span className="text-xs opacity-60">No Preview</span>
-            )}
-          </div>
-          <div className="flex-1">
-            <div className="text-xs font-semibold mb-1" style={{ color: 'var(--dim)' }}>
-              Summary
+              <span className="relative z-10">+ Add Evidance</span>
             </div>
-            <div className="text-sm">{evidence.summary || '-'}</div>
+          </MiniButton> */}
+        {/* </div> */}
+
+        {/* heading */}
+        <div className="flex justify-between items-start">
+          <div>
+            <h1 className="text-2xl font-semibold mb-1">{evidence.id}</h1>
+            <div className="text-sm opacity-80 mb-4">
+              {headingInvestigator} • {headerMeta.date}
+            </div>
           </div>
-          <div className="text-xs opacity-60">Chain of Custody A</div>
+          <div className="flex items-center gap-2">
+            <MiniButton onClick={() => setEditOpen(true)}>
+              <MiniButtonContent
+                bg={bgButtonTransparent}
+                text="Edit"
+                icon={iconEdit}
+                textColor="text-white"
+              />
+            </MiniButton>
+
+            <MiniButton>
+              <MiniButtonContent bg={bgButton} text="+ Export PDF" textColor="text-black" />
+            </MiniButton>
+          </div>
         </div>
+
+        {/* meta line */}
+        <div className="text-sm flex flex-wrap gap-x-6 gap-y-2">
+          <div>
+            <span className="opacity-60">Person Related:</span> {personRef?.name || '-'}
+          </div>
+          <div>
+            <span className="opacity-60">Case Related:</span> {caseRef?.name || '-'}
+          </div>
+          <div>
+            <span className="opacity-60">Source:</span> {evidence.source || '-'}
+          </div>
+        </div>
+
+        <div className="mt-5 border-t" style={{ borderColor: '#C3CFE0' }} />
+
+        {/* modal */}
+        <StageContentModal
+          open={modal}
+          stage={active}
+          evidenceId={evidence.id}
+          onClose={() => setModal(false)}
+          onSubmit={(payload) => {
+            setModal(false)
+            handleSubmitStage(payload)
+          }}
+        />
       </div>
-
-      {/* ======= VISUAL PROGRESS ======= */}
-      <div className="border rounded-xl p-5 mb-4" style={{ borderColor: 'var(--border)' }}>
-        <div className="text-2xl font-semibold mb-6">Chain of custody</div>
-
-        {/* Grid 7 kolom: O — O — O — O */}
-        <div className="grid grid-cols-[auto_1fr_auto_1fr_auto_1fr_auto] items-center gap-x-4 mb-4">
-          {stageMeta.map((m, idx) => {
-            const style = STAGE_STYLE[m.key] || NODE_DEFAULT
-            const isActive = active === m.key
-            const filled = m.has
-            return (
-              <Fragment key={m.key}>
-                <button
-                  onClick={() => setActive(m.key)}
-                  className="relative w-5 h-5 rounded-full transition-colors"
-                  style={{
-                    background: isActive
-                      ? style.fill
-                      : filled
-                        ? style.fill + '33'
-                        : NODE_DEFAULT.fill,
-                    border: `${1.5}px solid ${isActive || filled ? style.border : NODE_DEFAULT.border}`
-                  }}
-                  title={m.label}
+      <div className="space-y-8">
+        {/* Atas: cuma kanan atas bengkok */}
+        <BoxTopRight>
+          <div className="flex gap-4">
+            <div
+              className="w-28 h-20 rounded border flex items-center justify-center overflow-hidden"
+              style={{ borderColor: 'var(--border)' }}
+            >
+              {evidence.previewDataUrl || evidence.previewUrl ? (
+                <img
+                  src={evidence.previewDataUrl || evidence.previewUrl}
+                  alt="preview"
+                  className="w-full h-full object-cover"
                 />
-                {idx < stageMeta.length - 1 && (
-                  <div className="relative h-5 w-full">
-                    <div
-                      className="absolute left-0 right-0 border-t-2 border-dashed"
-                      style={{ top: '50%', transform: 'translateY(-50%)', borderColor: '#888888' }}
+              ) : (
+                <span className="text-xs opacity-60">No Preview</span>
+              )}
+            </div>
+            <div className="flex flex-row items-start justify-between w-full">
+              <div>
+                <div className="text-xs font-semibold mb-1" style={{ color: 'var(--dim)' }}>
+                  Summary
+                </div>
+                <div className="text-sm">{evidence.summary || '-'}</div>
+              </div>
+
+              <div
+                className="text-xs px-2 py-1 font-[Aldrich] self-start min-w-28 text-center"
+                style={{
+                  borderBottom: '1px solid #A9CCFD',
+                  backgroundColor: '#142338',
+                  color: '#A9CCFD'
+                }}
+              >
+                {active}
+              </div>
+            </div>
+          </div>
+        </BoxTopRight>
+
+        {/* Tengah: kotak normal */}
+        <BoxNone>
+          <div className="border rounded-xl p-2 mb-4" style={{ borderColor: 'var(--border)' }}>
+            <div className="text-2xl font-semibold mb-10">Chain of custody</div>
+
+            {/* Grid 7 kolom: O — O — O — O */}
+            <div  className="max-w-4xl mx-auto grid place-items-center justify-items-center grid-cols-[auto_1fr_auto_1fr_auto_1fr_auto] items-center gap-x-4 mb-4">
+              {stageMeta.map((m, idx) => {
+                const style = STAGE_STYLE[m.key] || NODE_DEFAULT
+                const isActive = active === m.key
+                const filled = m.has
+                return (
+                  <Fragment key={m.key}>
+                    <button
+                      onClick={() => setActive(m.key)}
+                      className="relative w-5 h-5 rounded-full transition-colors"
+                      style={{
+                        background: isActive
+                          ? style.fill
+                          : filled
+                            ? style.fill + '33'
+                            : NODE_DEFAULT.fill,
+                        border: `${1.5}px solid ${isActive || filled ? style.border : NODE_DEFAULT.border}`
+                      }}
+                      title={m.label}
                     />
+                    {idx < stageMeta.length - 1 && (
+                      <div className="relative h-5 w-full">
+                        <div
+                          className="absolute left-0 right-0 border-t-2 border-dashed"
+                          style={{ top: '50%', transform: 'translateY(-50%)', borderColor: '#888888' }}
+                        />
+                      </div>
+                    )}
+                  </Fragment>
+                )
+              })}
+            </div>
+
+            {/* label + meta di bawah node */}
+            <div className="grid grid-cols-4 gap-6">
+              {stageMeta.map((m) => (
+                <div key={m.key} className="flex flex-col items-center text-center">
+                  <div className="text-lg font-semibold mb-1">{m.label}</div>
+                  {m.date && <div className="text-sm opacity-60">{m.date}</div>}
+                  {m.investigator && <div className="text-sm opacity-60">{m.investigator}</div>}
+                  {m.note && <div className="text-sm opacity-70 mt-1">notes: {m.note}</div>}
+                </div>
+              ))}
+            </div>
+          </div>
+        </BoxNone>
+
+        {/* Bawah: kiri atas + kanan bawah bengkok */}
+        <BoxTopLeftBottomRight>
+          {/* ======= TABS ======= */}
+          <div className="grid grid-cols-4 gap-3 mb-3">
+            {STAGES.map((s) => {
+              const style = STAGE_STYLE[s.key] || NODE_DEFAULT
+              const isActive = active === s.key
+
+              // pilih background sesuai status
+              const bg = isActive ? stageOn : stageOff // pastikan kamu sudah import dua file bg image
+
+              return (
+                <div key={s.key} onClick={() => setActive(s.key)} className="relative w-[300px] h-[80px] flex items-center justify-center text-sm font-medium">
+                  <img
+                    src={bg}
+                    alt=""
+                    className="absolute inset-0 w-full h-full object-contain z-0 pointer-events-none select-none"
+                  />
+                  <span className={`relative z-10 flex items-center gap-2 text-white`}>
+                    {s.label}
+                  </span>
+                </div>
+                // <MiniButton key={s.key} onClick={() => setActive(s.key)} className="font-[Aldrich]">
+                //   <MiniButtonContent
+                //     bg={bg}
+                //     text={s.label}
+                //     textColor={isActive ? 'text-white' : 'text-[#ddd]'}
+                //   />
+                // </MiniButton>
+              )
+            })}
+          </div>
+
+          {/* ===== Panel stage ===== */}
+          <div
+            className=" p-5"
+            // style={{ borderColor: 'var(--border)', background: 'var(--panel)' }}
+          >
+            {/* header lokasi kiri, waktu & investigator kanan */}
+            <div className="flex items-start justify-between">
+              <div className="text-xl font-semibold">{panelLocation || latest?.title || ''}</div>
+              <div className="text-right">
+                {panelDatetime && <div className="text-sm opacity-60">{panelDatetime}</div>}
+                {panelInvestigator && <div className="text-sm opacity-60">{panelInvestigator}</div>}
+              </div>
+            </div>
+
+            <div className="h-px my-4" style={{ background: '#C3CFE0' }} />
+
+            {!latest ? (
+              <div className="text-sm opacity-70 py-8 text-center">State masih kosong</div>
+            ) : (
+              <div className="grid gap-6">
+                {/* Acquisition: langkah + foto besar */}
+                {active === 'acquisition' && (
+                  <div className="grid grid-cols-1 md:grid-cols-[1fr_380px] gap-8">
+                    <div>
+                      <div className="text-lg font-semibold mb-2">
+                        {latest.title || 'Langkah - langkah penyitaan barang bukti:'}
+                      </div>
+                      <ol className="list-decimal pl-6 text-base leading-relaxed space-y-2">
+                        {(latest.steps || []).map((s, i) => (
+                          <li key={i} className="whitespace-pre-wrap">
+                            {s?.desc}
+                          </li>
+                        ))}
+                      </ol>
+                    </div>
+                    <div className="md:justify-self-end">
+                      {acqPreview ? (
+                        <img
+                          src={acqPreview}
+                          alt="acquisition"
+                          className="w-[380px] max-w-full aspect-4/3 object-cover rounded border"
+                          style={{ borderColor: 'var(--border)' }}
+                        />
+                      ) : (
+                        <div
+                          className="w-[380px] max-w-full aspect-4/3 grid place-items-center rounded border text-sm opacity-60"
+                          style={{ borderColor: 'var(--border)' }}
+                        >
+                          Tidak ada foto
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
-              </Fragment>
-            )
-          })}
-        </div>
 
-        {/* label + meta di bawah node */}
-        <div className="grid grid-cols-4 gap-6">
-          {stageMeta.map((m) => (
-            <div key={m.key} className="flex flex-col items-center text-center">
-              <div className="text-lg font-semibold mb-1">{m.label}</div>
-              {m.date && <div className="text-sm opacity-60">{m.date}</div>}
-              {m.investigator && <div className="text-sm opacity-60">{m.investigator}</div>}
-              {m.note && <div className="text-sm opacity-70 mt-1">notes: {m.note}</div>}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* ======= TABS ======= */}
-      <div className="flex gap-3 mb-3">
-        {STAGES.map((s) => {
-          const style = STAGE_STYLE[s.key] || NODE_DEFAULT
-          const isActive = active === s.key
-          return (
-            <button
-              key={s.key}
-              onClick={() => setActive(s.key)}
-              className="px-4 py-2 rounded-lg border transition-colors text-sm font-medium"
-              style={{
-                border: `${1.5}px solid ${isActive ? style.border : NODE_DEFAULT.border}`,
-                background: isActive ? style.fill : NODE_DEFAULT.fill,
-                color: isActive ? 'white' : '#ddd'
-              }}
-            >
-              {s.label}
-            </button>
-          )
-        })}
-      </div>
-
-      {/* ===== Panel stage ===== */}
-      <div
-        className="border rounded-xl p-5"
-        style={{ borderColor: 'var(--border)', background: 'var(--panel)' }}
-      >
-        {/* header lokasi kiri, waktu & investigator kanan */}
-        <div className="flex items-start justify-between">
-          <div className="text-xl font-semibold">{panelLocation || latest?.title || ''}</div>
-          <div className="text-right">
-            {panelDatetime && <div className="text-sm opacity-60">{panelDatetime}</div>}
-            {panelInvestigator && <div className="text-sm opacity-60">{panelInvestigator}</div>}
-          </div>
-        </div>
-
-        <div className="h-px my-4" style={{ background: 'var(--border)' }} />
-
-        {!latest ? (
-          <div className="text-sm opacity-70 py-8 text-center">State masih kosong</div>
-        ) : (
-          <div className="grid gap-6">
-            {/* Acquisition: langkah + foto besar */}
-            {active === 'acquisition' && (
-              <div className="grid grid-cols-1 md:grid-cols-[1fr_380px] gap-8">
-                <div>
-                  <div className="text-lg font-semibold mb-2">
-                    {latest.title || 'Langkah - langkah penyitaan barang bukti:'}
-                  </div>
-                  <ol className="list-decimal pl-6 text-base leading-relaxed space-y-2">
-                    {(latest.steps || []).map((s, i) => (
-                      <li key={i} className="whitespace-pre-wrap">
-                        {s?.desc}
-                      </li>
-                    ))}
-                  </ol>
-                </div>
-                <div className="md:justify-self-end">
-                  {acqPreview ? (
-                    <img
-                      src={acqPreview}
-                      alt="acquisition"
-                      className="w-[380px] max-w-full aspect-4/3 object-cover rounded border"
-                      style={{ borderColor: 'var(--border)' }}
-                    />
-                  ) : (
-                    <div
-                      className="w-[380px] max-w-full aspect-4/3 grid place-items-center rounded border text-sm opacity-60"
-                      style={{ borderColor: 'var(--border)' }}
-                    >
-                      Tidak ada foto
+                {/* Preparation: hipotesis & tools (judul ikut modal bila ada) */}
+                {active === 'preparation' && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                    <div>
+                      <div className="text-lg font-semibold mb-2">
+                        {latest.hypothesisTitle || 'Hipotesis penyelidikan'}
+                      </div>
+                      <ol className="list-decimal pl-6 text-base leading-relaxed">
+                        {(latest.hypothesis || []).map((h, i) => (
+                          <li key={i}>{h}</li>
+                        ))}
+                      </ol>
                     </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Preparation: hipotesis & tools (judul ikut modal bila ada) */}
-            {active === 'preparation' && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                <div>
-                  <div className="text-lg font-semibold mb-2">
-                    {latest.hypothesisTitle || 'Hipotesis penyelidikan'}
+                    <div>
+                      <div className="text-lg font-semibold mb-2">
+                        {latest.toolsTitle || 'Tools yang akan digunakan'}
+                      </div>
+                      <ol className="list-decimal pl-6 text-base leading-relaxed">
+                        {Array.isArray(latest.tools)
+                          ? latest.tools.map((t, i) => <li key={i}>{t}</li>)
+                          : (latest.tools || '')
+                            .split(',')
+                            .map((t) => t.trim())
+                            .filter(Boolean)
+                            .map((t, i) => <li key={i}>{t}</li>)}
+                      </ol>
+                    </div>
                   </div>
-                  <ol className="list-decimal pl-6 text-base leading-relaxed">
-                    {(latest.hypothesis || []).map((h, i) => (
-                      <li key={i}>{h}</li>
+                )}
+
+                {/* Device line */}
+                {deviceLine && <div className="text-xl font-semibold">{deviceLine}</div>}
+
+                {/* Notes box */}
+                {notePreview && (
+                  <div
+                    className="rounded-xl border p-5 bg-white/50"
+                    style={{ borderColor: 'var(--border)' }}
+                  >
+                    <div className="text-lg font-semibold mb-2">Notes</div>
+                    <div className="text-base leading-relaxed">{notePreview}</div>
+                  </div>
+                )}
+
+                {/* (opsional) daftar item-detail di bawah ringkasan */}
+                {contents.length > 0 && (
+                  <div className="grid gap-3">
+                    {contents.map((it) => (
+                      <StageItemCard key={it.id} item={it} />
                     ))}
-                  </ol>
-                </div>
-                <div>
-                  <div className="text-lg font-semibold mb-2">
-                    {latest.toolsTitle || 'Tools yang akan digunakan'}
                   </div>
-                  <ol className="list-decimal pl-6 text-base leading-relaxed">
-                    {Array.isArray(latest.tools)
-                      ? latest.tools.map((t, i) => <li key={i}>{t}</li>)
-                      : (latest.tools || '')
-                          .split(',')
-                          .map((t) => t.trim())
-                          .filter(Boolean)
-                          .map((t, i) => <li key={i}>{t}</li>)}
-                  </ol>
-                </div>
+                )}
               </div>
             )}
 
-            {/* Device line */}
-            {deviceLine && <div className="text-xl font-semibold">{deviceLine}</div>}
-
-            {/* Notes box */}
-            {notePreview && (
-              <div
-                className="rounded-xl border p-5 bg-white/50"
-                style={{ borderColor: 'var(--border)' }}
-              >
-                <div className="text-lg font-semibold mb-2">Notes</div>
-                <div className="text-base leading-relaxed">{notePreview}</div>
-              </div>
-            )}
-
-            {/* (opsional) daftar item-detail di bawah ringkasan */}
-            {contents.length > 0 && (
-              <div className="grid gap-3">
-                {contents.map((it) => (
-                  <StageItemCard key={it.id} item={it} />
-                ))}
-              </div>
-            )}
+            <div className="mt-6 flex justify-center">
+              <MiniButton onClick={() => setModal(true)}>+ Add content</MiniButton>
+            </div>
           </div>
-        )}
-
-        <div className="mt-6 flex justify-center">
-          <MiniButton onClick={() => setModal(true)}>+ Add content</MiniButton>
-        </div>
+        </BoxTopLeftBottomRight>
       </div>
-
-      {/* modal */}
-      <StageContentModal
-        open={modal}
-        stage={active}
-        evidenceId={evidence.id}
-        onClose={() => setModal(false)}
-        onSubmit={(payload) => {
-          setModal(false)
-          handleSubmitStage(payload)
-        }}
-      />
-    </div>
+    </CaseLayout>
   )
 }
 
