@@ -4,8 +4,8 @@ import MiniButton, { MiniButtonContent } from '../components/MiniButton'
 import { useCases } from '../store/cases'
 import bgButton from '../assets/image/bg-button.svg'
 import bgButtonTransparent from '../assets/image/bg-button-transparent.svg'
-import iconEdit from '../assets/icons/icon-edit.svg'
 import { useState } from 'react'
+import { FaEdit } from 'react-icons/fa'
 
 export default function SuspectDetailPage() {
   const { caseId } = useParams()
@@ -62,7 +62,7 @@ export default function SuspectDetailPage() {
             <MiniButtonContent
               bg={bgButtonTransparent}
               text="Edit"
-              icon={iconEdit}
+              icon={<FaEdit />}
               textColor="text-white"
             />
           </MiniButton>

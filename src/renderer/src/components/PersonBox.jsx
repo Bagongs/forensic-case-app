@@ -1,5 +1,5 @@
 /* eslint-disable react/prop-types */
-import iconEdit from '../assets/icons/icon-edit.svg'
+import { FaEdit } from 'react-icons/fa'
 import iconAddEvidance from '../assets/icons/icon-add-evidance.svg'
 // import iconExpand from '../assets/icons/icon-expand.svg' // kalau mau pakai di Add Evidence
 
@@ -44,7 +44,7 @@ export function PersonBox({
                 background: 'transparent'
               }}
             >
-              <img src={iconEdit} alt="" className="w-4 h-4 opacity-90" />
+              <FaEdit />
               Edit
             </button>
           )}

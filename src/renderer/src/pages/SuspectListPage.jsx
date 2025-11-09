@@ -106,7 +106,6 @@ export default function SuspectListPage() {
               className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 opacity-70"
             />
           </div>
-          {/* <MiniButton onClick={() => setQ((s) => s.trim())}>Search</MiniButton> */}
           <MiniButton
             onClick={() => {
               /* TODO: open filter drawer */

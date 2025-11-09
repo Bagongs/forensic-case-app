@@ -1,9 +1,10 @@
 /* eslint-disable react/prop-types */
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import headerImg from '../assets/image/header.svg'
-import iconBack from '../assets/icons/icon-back.svg'
+import ProfileCorner from '../components/common/ProfileCorner'
+import { FaArrowLeft } from 'react-icons/fa'
 
-export default function CaseLayout({ title, showBack = false ,children }) {
+export default function CaseLayout({ title, showBack = false, children }) {
   const { pathname } = useLocation()
   const nav = useNavigate()
   const tab = (to, label) => {
@@ -41,15 +42,18 @@ export default function CaseLayout({ title, showBack = false ,children }) {
         </div>
         <h1 className="text-3xl font-bold mt-20 relative">
           {showBack && (
-            <button 
-            onClick={() => nav(-1)} 
-            className="absolute -left-12 text-sm mb-4 text-[#EDC702]">
-              <img width={35} height={35} src={iconBack} />
+            <button
+              onClick={() => nav(-1)}
+              className="absolute -left-10 mt-2 text-sm mb-4 text-[#EDC702]"
+            >
+              <FaArrowLeft size={20} />
+              {/* <img width={35} height={35} src={iconBack} /> */}
             </button>
           )}
           {title}
         </h1>
         {children}
+        <ProfileCorner label="Admin" active={pathname.includes('/user-management')} />
       </div>
     </div>
   )

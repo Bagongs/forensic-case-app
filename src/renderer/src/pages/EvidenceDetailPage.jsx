@@ -10,8 +10,8 @@ import bgButton from '../assets/image/bg-button.svg'
 import { BoxNone, BoxTopLeftBottomRight, BoxTopRight } from '../components/BaseBox'
 import stageOn from '../assets/image/stage-on.svg'
 import stageOff from '../assets/image/stage-off.svg'
-import iconEdit from '../assets/icons/icon-edit.svg'
 import bgButtonTransparent from '../assets/image/bg-button-transparent.svg'
+import { FaEdit } from 'react-icons/fa'
 
 const STAGES = [
   { key: 'acquisition', label: 'Acquisition' },
@@ -127,27 +127,6 @@ export default function EvidenceDetailPage() {
   return (
     <CaseLayout title="Evidence Management" showBack={true}>
       <div className="mx-auto py-6">
-        {/* breadcrumb + actions */}
-        {/* <div className="flex items-center justify-between mb-4"> */}
-        {/* <div className="flex items-center gap-2 text-sm">
-            <button className="btn" onClick={() => nav(-1)}>
-              ←
-            </button>
-            <span style={{ color: 'var(--dim)' }}>Evidence Management</span>
-          </div> */}
-        {/* <MiniButton>
-            <div className="relative w-40 h-[59px] flex items-center justify-center text-sm font-medium text-black">
-              <img
-                src={bgButton}
-                alt=""
-                className="absolute inset-0 w-full h-full object-contain z-0 pointer-events-none select-none"
-              />
-              <span className="relative z-10">+ Add Evidance</span>
-            </div>
-          </MiniButton> */}
-        {/* </div> */}
-
-        {/* heading */}
         <div className="flex justify-between items-start">
           <div>
             <h1 className="text-2xl font-semibold mb-1">{evidence.id}</h1>
@@ -160,7 +139,7 @@ export default function EvidenceDetailPage() {
               <MiniButtonContent
                 bg={bgButtonTransparent}
                 text="Edit"
-                icon={iconEdit}
+                icon={<FaEdit />}
                 textColor="text-white"
               />
             </MiniButton>
@@ -171,7 +150,6 @@ export default function EvidenceDetailPage() {
           </div>
         </div>
 
-        {/* meta line */}
         <div className="text-sm flex flex-wrap gap-x-6 gap-y-2">
           <div>
             <span className="opacity-60">Person Related:</span> {personRef?.name || '-'}
@@ -186,7 +164,6 @@ export default function EvidenceDetailPage() {
 
         <div className="mt-5 border-t" style={{ borderColor: '#C3CFE0' }} />
 
-        {/* modal */}
         <StageContentModal
           open={modal}
           stage={active}
@@ -199,7 +176,6 @@ export default function EvidenceDetailPage() {
         />
       </div>
       <div className="space-y-8">
-        {/* Atas: cuma kanan atas bengkok */}
         <BoxTopRight>
           <div className="flex gap-4">
             <div
@@ -238,13 +214,11 @@ export default function EvidenceDetailPage() {
           </div>
         </BoxTopRight>
 
-        {/* Tengah: kotak normal */}
         <BoxNone>
           <div className="border rounded-xl p-2 mb-4" style={{ borderColor: 'var(--border)' }}>
             <div className="text-2xl font-semibold mb-10">Chain of custody</div>
 
-            {/* Grid 7 kolom: O — O — O — O */}
-            <div  className="max-w-4xl mx-auto grid place-items-center justify-items-center grid-cols-[auto_1fr_auto_1fr_auto_1fr_auto] items-center gap-x-4 mb-4">
+            <div className="max-w-4xl mx-auto grid place-items-center justify-items-center grid-cols-[auto_1fr_auto_1fr_auto_1fr_auto] items-center gap-x-4 mb-4">
               {stageMeta.map((m, idx) => {
                 const style = STAGE_STYLE[m.key] || NODE_DEFAULT
                 const isActive = active === m.key
@@ -268,7 +242,11 @@ export default function EvidenceDetailPage() {
                       <div className="relative h-5 w-full">
                         <div
                           className="absolute left-0 right-0 border-t-2 border-dashed"
-                          style={{ top: '50%', transform: 'translateY(-50%)', borderColor: '#888888' }}
+                          style={{
+                            top: '50%',
+                            transform: 'translateY(-50%)',
+                            borderColor: '#888888'
+                          }}
                         />
                       </div>
                     )}
@@ -277,7 +255,6 @@ export default function EvidenceDetailPage() {
               })}
             </div>
 
-            {/* label + meta di bawah node */}
             <div className="grid grid-cols-4 gap-6">
               {stageMeta.map((m) => (
                 <div key={m.key} className="flex flex-col items-center text-center">
@@ -291,19 +268,20 @@ export default function EvidenceDetailPage() {
           </div>
         </BoxNone>
 
-        {/* Bawah: kiri atas + kanan bawah bengkok */}
         <BoxTopLeftBottomRight>
-          {/* ======= TABS ======= */}
           <div className="grid grid-cols-4 gap-3 mb-3">
             {STAGES.map((s) => {
-              const style = STAGE_STYLE[s.key] || NODE_DEFAULT
+              // const style = STAGE_STYLE[s.key] || NODE_DEFAULT
               const isActive = active === s.key
 
-              // pilih background sesuai status
-              const bg = isActive ? stageOn : stageOff // pastikan kamu sudah import dua file bg image
+              const bg = isActive ? stageOn : stageOff
 
               return (
-                <div key={s.key} onClick={() => setActive(s.key)} className="relative w-[300px] h-[80px] flex items-center justify-center text-sm font-medium">
+                <div
+                  key={s.key}
+                  onClick={() => setActive(s.key)}
+                  className="relative w-[300px] h-20 flex items-center justify-center text-sm font-medium"
+                >
                   <img
                     src={bg}
                     alt=""
@@ -313,23 +291,11 @@ export default function EvidenceDetailPage() {
                     {s.label}
                   </span>
                 </div>
-                // <MiniButton key={s.key} onClick={() => setActive(s.key)} className="font-[Aldrich]">
-                //   <MiniButtonContent
-                //     bg={bg}
-                //     text={s.label}
-                //     textColor={isActive ? 'text-white' : 'text-[#ddd]'}
-                //   />
-                // </MiniButton>
               )
             })}
           </div>
 
-          {/* ===== Panel stage ===== */}
-          <div
-            className=" p-5"
-            // style={{ borderColor: 'var(--border)', background: 'var(--panel)' }}
-          >
-            {/* header lokasi kiri, waktu & investigator kanan */}
+          <div className="p-5">
             <div className="flex items-start justify-between">
               <div className="text-xl font-semibold">{panelLocation || latest?.title || ''}</div>
               <div className="text-right">
@@ -400,10 +366,10 @@ export default function EvidenceDetailPage() {
                         {Array.isArray(latest.tools)
                           ? latest.tools.map((t, i) => <li key={i}>{t}</li>)
                           : (latest.tools || '')
-                            .split(',')
-                            .map((t) => t.trim())
-                            .filter(Boolean)
-                            .map((t, i) => <li key={i}>{t}</li>)}
+                              .split(',')
+                              .map((t) => t.trim())
+                              .filter(Boolean)
+                              .map((t, i) => <li key={i}>{t}</li>)}
                       </ol>
                     </div>
                   </div>

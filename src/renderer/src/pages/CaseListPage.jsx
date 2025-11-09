@@ -339,7 +339,7 @@ function PageSizeDropdown({ value, onChange, icon }) {
         createPortal(
           <div
             ref={menuRef}
-            className="fixed z-[1000] rounded-sm overflow-hidden shadow-lg"
+            className="fixed z-1000 rounded-sm overflow-hidden shadow-lg"
             style={{
               left: pos.left,
               top: pos.top,

@@ -20,7 +20,7 @@ export function MiniButtonContent({ bg, text, icon, textColor = 'text-white' }) 
         className="absolute inset-0 w-full h-full object-contain z-0 pointer-events-none select-none"
       />
       <span className={`relative z-10 flex items-center gap-2 ${textColor}`}>
-        {icon && <img src={icon} width={14} alt="" />} {text}
+        {icon && <span className="text-[14px]">{icon}</span>} {text}
       </span>
     </div>
   )
