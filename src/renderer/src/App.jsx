@@ -7,6 +7,7 @@ import SuspectListPage from './pages/SuspectListPage'
 import CaseDetailPage from './pages/CaseDetailPage.jsx'
 import EvidenceDetailPage from './pages/EvidenceDetailPage.jsx'
 import SuspectDetailPage from './pages/SuspectDetailPage.jsx'
+import UserManagement from './pages/UserManagement.jsx'
 
 export default function App() {
   return (
@@ -14,6 +15,7 @@ export default function App() {
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/" element={<Navigate to="/cases" replace />} />
+        <Route path="/user-management" element={<UserManagement />} />
         <Route path="/cases" element={<CaseListPage />} />
         <Route path="/cases/:id" element={<CaseDetailPage />} />
         <Route path="/evidence" element={<EvidenceListPage />} />
