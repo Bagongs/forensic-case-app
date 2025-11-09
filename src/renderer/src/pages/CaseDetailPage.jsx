@@ -17,6 +17,8 @@ import CaseLogBox from '../components/CaseLogBox'
 import { PersonSectionBox } from '../components/PersonSectionBox'
 import { PersonBox } from '../components/PersonBox'
 import { EvidenceCard } from '../components/EvidanceCard'
+import { BoxAllSideWithTopNotchChamfered } from '../components/BaseBox'
+import ExactSvgCutBox from '../components/common/ExactSvgCutBox'
 
 const fmtDate = (iso) => {
   if (!iso) return '-'
@@ -126,6 +128,21 @@ export default function CaseDetailPage() {
     )
   }
 
+  const PATH_D = `
+M368.22 0.75
+L429.666 56.8008
+L429.881 56.9961
+H1276.12
+L1290.25 70.9805
+V304.737
+L1276.13 318.25
+H14.875
+L0.75 304.265
+V14.7344
+L14.875 0.75
+H368.22
+Z`.trim()
+
   return (
     <CaseLayout title="Case Management" showBack={true}>
       {/* <div className="flex py-8 items-center gap-3 mb-2">
@@ -176,15 +193,32 @@ export default function CaseDetailPage() {
         {/* LEFT */}
         <div className="space-y-6">
           {/* description */}
-          <section
-            className="rounded-xl border p-4"
-            style={{ borderColor: 'var(--border)', background: 'var(--panel)' }}
+          <ExactSvgCutBox
+            pathD={PATH_D}
+            paddingX={40}
+            titlePaddingTop={41}
+            contentSpacing={20}
+            titleFontSize={30}
           >
-            <div className="text-sm font-semibold mb-2" style={{ color: 'var(--dim)' }}>
-              Case description
-            </div>
-            <p className="text-sm leading-relaxed">{item.description || 'No description.'}</p>
-          </section>
+            {({ titleFontSize, contentSpacing }) => (
+              <>
+                <div
+                  className="font-[Aldrich]"
+                  style={{
+                    color: '#C3CFE0',
+                    fontSize: titleFontSize,
+                    fontWeight: 600,
+                    marginBottom: contentSpacing
+                  }}
+                >
+                  Case description
+                </div>
+                <p className="text-sm leading-relaxed text-[#E7E9EE]">
+                  {item.description || 'No description.'}
+                </p>
+              </>
+            )}
+          </ExactSvgCutBox>
 
           {/* persons */}
           {/* <section
@@ -289,7 +323,7 @@ export default function CaseDetailPage() {
           <PersonSectionBox
             title="Person of Interest"
             total={persons.length}
-            borderColor='#FFFFFF'
+            borderColor="#FFFFFF"
             actionBgImage={bgButtonTransparent}
             onAddPerson={() => setAddPersonOpen(true)}
           >
@@ -304,12 +338,7 @@ export default function CaseDetailPage() {
                 onAddEvidence={() => console.log('add evidence for', person.name)}
               >
                 {person.evidences.map((ev, j) => (
-                  <EvidenceCard
-                    key={j}
-                    image={ev.image}
-                    code={ev.code}
-                    summary={ev.summary}
-                  />
+                  <EvidenceCard key={j} image={ev.image} code={ev.code} summary={ev.summary} />
                 ))}
               </PersonBox>
             ))}
