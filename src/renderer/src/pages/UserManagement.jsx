@@ -13,7 +13,9 @@ import dropdownIcon from '../assets/icons/dropdown-icon.svg'
 
 import { LuPencil, LuTrash2 } from 'react-icons/lu'
 import { IoChevronForwardSharp, IoChevronBackSharp } from 'react-icons/io5'
-import { IoMdArrowRoundBack } from 'react-icons/io'
+import AddUserModal from '../components/AddUserModal'
+import EditUserModal from '../components/EditUserModal'
+import ConfirmDeleteModal from '../components/ConfirmDeleteModal'
 
 /* ===== Tokens & Const ===== */
 const COLORS = {
@@ -42,9 +44,13 @@ const PAGE_SIZES = [5, 10, 15]
 export default function UserManagement() {
   const nav = useNavigate()
   const { users, addUser, editUser, removeUser } = useUsers()
+
   const [q, setQ] = useState('')
   const [pageSize, setPageSize] = useState(PAGE_SIZES[0])
   const [page, setPage] = useState(1)
+  const [openAdd, setOpenAdd] = useState(false)
+  const [editingUser, setEditingUser] = useState(null)
+  const [deleteUser, setDeleteUser] = useState(null)
 
   const filtered = useMemo(() => {
     const s = q.toLowerCase()
@@ -52,9 +58,7 @@ export default function UserManagement() {
       (u) =>
         u.name?.toLowerCase().includes(s) ||
         u.email?.toLowerCase().includes(s) ||
-        String(u.tag || '')
-          .toLowerCase()
-          .includes(s)
+        String(u.tag || '').toLowerCase().includes(s)
     )
   }, [users, q])
 
@@ -65,36 +69,9 @@ export default function UserManagement() {
 
   useEffect(() => setPage(1), [q, pageSize])
 
-  const handleAddUser = () => {
-    // TODO: ganti ke modal Add User milikmu
-    const id = addUser?.({ name: 'New User', email: 'new@user.com', tag: 'Investigator' })
-    if (id) nav(`/users/${id}`)
-  }
-  const onEdit = (u) => {
-    // TODO: buka modal edit user
-    editUser?.(u.id, { name: u.name })
-  }
-  const onDelete = (u) => {
-    // TODO: konfirmasi sebelum hapus
-    removeUser?.(u.id)
-  }
-
   return (
-    // Kosongkan title bawaan CaseLayout (kita render header custom agar ada ikon Back di sebelah judul)
-    <CaseLayout title="">
-      {/* Header dengan ikon Back + judul */}
-      <div className="flex items-center gap-3 mb-4">
-        <button
-          onClick={() => nav(-1)}
-          className="inline-flex items-center justify-center w-8 h-8 rounded"
-          title="Back"
-        >
-          <IoMdArrowRoundBack size={22} color={COLORS.arrowGold} />
-        </button>
-        <h1 className="text-xl font-semibold tracking-wide">USER MANAGEMENT</h1>
-      </div>
-
-      {/* Search + Add User */}
+    <CaseLayout title="User Management" showBack={true}>
+      {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="relative w-[427px]">
           <input
@@ -111,12 +88,12 @@ export default function UserManagement() {
           />
         </div>
 
-        <MiniButton onClick={handleAddUser}>
+        <MiniButton onClick={() => setOpenAdd(true)}>
           <MiniButtonContent bg={bgButton} text="+ Add User" textColor="text-black" />
         </MiniButton>
       </div>
 
-      {/* Tabel */}
+      {/* Table */}
       <div
         className="relative border rounded-sm overflow-hidden"
         style={{ borderColor: COLORS.border, background: COLORS.tableBodyBg }}
@@ -138,7 +115,7 @@ export default function UserManagement() {
 
           <tbody>
             {rows.map((u) => (
-              <tr key={u.id || `${u.email}-${u.name}`} className="hover:bg-white/5">
+              <tr key={u.id} className="hover:bg-white/5">
                 <td className="px-4 py-3 border-b" style={{ borderColor: COLORS.border }}>
                   {u.name}
                 </td>
@@ -151,7 +128,7 @@ export default function UserManagement() {
                 <td className="px-4 py-3 border-b" style={{ borderColor: COLORS.border }}>
                   <div className="flex items-center gap-2">
                     <button
-                      onClick={() => onEdit(u)}
+                      onClick={() => setEditingUser(u)}
                       className="inline-flex items-center justify-center w-8 h-8 rounded"
                       title="Edit"
                       style={{
@@ -162,7 +139,7 @@ export default function UserManagement() {
                       <LuPencil className="w-4 h-4" />
                     </button>
                     <button
-                      onClick={() => onDelete(u)}
+                      onClick={() => setDeleteUser(u)}
                       className="inline-flex items-center justify-center w-8 h-8 rounded"
                       title="Delete"
                       style={{
@@ -187,7 +164,7 @@ export default function UserManagement() {
           </tbody>
         </table>
 
-        {/* Footer controls di dalam card */}
+        {/* Footer */}
         <div
           className="flex items-center justify-between px-4 py-3 border-t"
           style={{ borderColor: COLORS.border }}
@@ -203,6 +180,32 @@ export default function UserManagement() {
           <Pagination page={safePage} totalPages={totalPages} onChange={setPage} />
         </div>
       </div>
+
+      {/* Modals */}
+      {openAdd && (
+        <AddUserModal open={openAdd} onClose={() => setOpenAdd(false)} onSave={addUser} />
+      )}
+
+      {editingUser && (
+        <EditUserModal
+          open={!!editingUser}
+          user={editingUser}
+          onClose={() => setEditingUser(null)}
+          onSave={editUser}
+        />
+      )}
+
+      {deleteUser && (
+        <ConfirmDeleteModal
+          open={!!deleteUser}
+          name={deleteUser.name}
+          onClose={() => setDeleteUser(null)}
+          onConfirm={() => {
+            removeUser(deleteUser.id)
+            setDeleteUser(null)
+          }}
+        />
+      )}
     </CaseLayout>
   )
 }

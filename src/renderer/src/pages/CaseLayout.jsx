@@ -28,7 +28,7 @@ export default function CaseLayout({ title, showBack = false, children }) {
   }
 
   return (
-    <div className="relative">
+    <div className="relative overflow-x-hidden">
       <img
         src={headerImg}
         alt=""

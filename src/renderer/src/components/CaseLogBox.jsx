@@ -1,5 +1,5 @@
 /* eslint-disable react/prop-types */
-import { BoxTopLeftBottomRight } from './BaseBox'
+import { BoxAllSide } from './BaseBox'
 
 export default function CaseLogBox({
   title = 'Case Log',
@@ -12,13 +12,7 @@ export default function CaseLogBox({
   cut = 18
 }) {
   return (
-    <BoxTopLeftBottomRight
-      className="w-full"
-      cut={cut}
-      borderColor={borderColor}
-      borderW={borderW}
-      bg={bg}
-    >
+    <BoxAllSide className="w-full" cut={cut} borderColor={borderColor} borderW={borderW} bg={bg}>
       {/* Header */}
       <div className="flex items-start justify-between mb-4">
         <div className="font-[Aldrich] text-[16px] text-[#F4F6F8]">{title}</div>
@@ -79,6 +73,6 @@ export default function CaseLogBox({
           </div>
         ))}
       </div>
-    </BoxTopLeftBottomRight>
+    </BoxAllSide>
   )
 }

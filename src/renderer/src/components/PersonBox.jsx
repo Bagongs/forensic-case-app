@@ -3,33 +3,58 @@ import { FaEdit } from 'react-icons/fa'
 import iconAddEvidance from '../assets/icons/icon-add-evidance.svg'
 // import iconExpand from '../assets/icons/icon-expand.svg' // kalau mau pakai di Add Evidence
 
-export function PersonBox({
-  name,
-  roleLabel,
-  roleColor = '#E0A200',
-  children,
-  onEdit,
-  onAddEvidence,
-  actionBgImage
-}) {
+export function PersonBox({ name, roleLabel, children, onEdit, onAddEvidence, actionBgImage }) {
+  const badgeStatus = (status = 'Suspect') => {
+    const s = status.toLowerCase()
+    let bg = '#222',
+      color = '#fff',
+      border = '#fff'
+
+    if (s === 'witness') {
+      bg = '#004166'
+      border = '#9FDCFF'
+      color = '#9FDCFF'
+    } else if (s === 'reported') {
+      bg = '#332E00'
+      border = '#D2BA00'
+      color = '#D2BA00'
+    } else if (s === 'suspected') {
+      bg = '#332400'
+      border = '#FF7402'
+      color = '#FF7402'
+    } else if (s === 'suspect') {
+      bg = '#511600'
+      border = '#FF6551'
+      color = '#FF6551'
+    } else if (s === 'defendant') {
+      bg = '#330006'
+      border = '#FF0221'
+      color = '#FF0221'
+    }
+
+    return (
+      <div
+        className="py-1 text-[13px] font-semibold text-center rounded-full"
+        style={{
+          background: bg,
+          color,
+          border: `2px solid ${border}`,
+          width: 'fit-content',
+          minWidth: 120
+        }}
+      >
+        {status}
+      </div>
+    )
+  }
+
   return (
     <div className="px-5 py-6 border" style={{ border: 'none', background: '#151D28' }}>
       {/* header row */}
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-3">
           <div className="font-[Aldrich] text-[20px] text-[#F4F6F8]">{name}</div>
-          {roleLabel && (
-            <span
-              className="px-3 py-0.5 text-[12px] font-[Noto Sans] rounded-full"
-              style={{
-                backgroundColor: '#223142',
-                color: '#DDE9F7',
-                border: '1px solid #3F526B'
-              }}
-            >
-              {roleLabel}
-            </span>
-          )}
+          {badgeStatus(roleLabel)}
         </div>
 
         <div className="flex gap-3">

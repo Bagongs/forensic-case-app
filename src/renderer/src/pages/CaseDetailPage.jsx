@@ -1,11 +1,11 @@
-// src/renderer/src/pages/case/CaseDetailPage.jsx
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useCases } from '../store/cases'
 import AddPersonInlineModal from '../components/AddPersonInlineModal'
 import ChangeStatusModal from '../components/ChangeStatusModal'
 import EditCaseModal from '../components/EditCaseModal'
 import EditPersonModal from '../components/EditPersonModal'
+import AddEvidenceModal from '../components/AddEvidenceModal'
 import CaseLayout from './CaseLayout'
 import MiniButton, { MiniButtonContent } from '../components/MiniButton'
 import bgButton from '../assets/image/bg-button.svg'
@@ -16,7 +16,9 @@ import { PersonSectionBox } from '../components/PersonSectionBox'
 import { PersonBox } from '../components/PersonBox'
 import { EvidenceCard } from '../components/EvidanceCard'
 import ExactSvgCutBox from '../components/common/ExactSvgCutBox'
-import { FaEdit } from 'react-icons/fa'
+import { FaEdit, FaRegSave } from 'react-icons/fa'
+import { LiaEditSolid } from 'react-icons/lia'
+import editBg from '../assets/image/edit.svg'
 
 const fmtDate = (iso) => {
   if (!iso) return '-'
@@ -24,43 +26,50 @@ const fmtDate = (iso) => {
   const dd = String(d.getDate()).padStart(2, '0')
   const mm = String(d.getMonth() + 1).padStart(2, '0')
   const yyyy = d.getFullYear()
-  return `${dd}/${mm}/${yyyy}`
+  const hh = String(d.getHours()).padStart(2, '0')
+  const min = String(d.getMinutes()).padStart(2, '0')
+  return `${dd}/${mm}/${yyyy} ${hh}:${min}`
 }
+
+const mapLogs = (logs = []) =>
+  logs
+    .slice()
+    .sort((a, b) => new Date(b.at) - new Date(a.at))
+    .map((l) => ({
+      status: l.type,
+      by: l.by || undefined,
+      date: fmtDate(l.at),
+      change: l.note || undefined,
+      hasNotes: !!l.note
+    }))
 
 export default function CaseDetailPage() {
   const { id } = useParams()
   const nav = useNavigate()
-  const logs = [
-    { status: 'Re-open', date: '16 Mei 2025, 12:00', hasNotes: true },
-    {
-      status: 'Edit',
-      by: 'Wisnu',
-      date: '16 Mei 2025, 12:00',
-      change: 'Adding person Nathalie'
-    },
-    {
-      status: 'Edit',
-      by: 'Wisnu',
-      date: '16 Mei 2025, 09:00',
-      change: 'Adding evidence 3234222'
-    },
-    { status: 'Closed', date: '12 Mei 2025, 14:00', hasNotes: true },
-    { status: 'Open', date: '9 Mei 2025, 10:00' }
-  ]
 
-  // selectors dari store
+  // store selectors
   const getCaseById = useCases((s) => s.getCaseById)
   const addNote = useCases((s) => s.addNote)
   const updateCase = useCases((s) => s.updateCase)
+  const updatePerson = useCases((s) => s.updatePerson)
+  const addEvidenceToPerson = useCases((s) => s.addEvidenceToPerson)
+
+  // ambil data case
+  const item = getCaseById?.(id)
+
+  // local state
   const [editPersonOpen, setEditPersonOpen] = useState(false)
   const [selectedPerson, setSelectedPerson] = useState(null)
-
-  const item = getCaseById?.(id)
-  const [summary, setSummary] = useState(item?.summary || '')
-
   const [addPersonOpen, setAddPersonOpen] = useState(false)
   const [statusOpen, setStatusOpen] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
+  const [isEditing, setIsEditing] = useState(false)
+  const [summary, setSummary] = useState(item?.summary || '')
+  const [openAddEv, setOpenAddEv] = useState(false)
+  const [personForEvidence, setPersonForEvidence] = useState(null)
+  const savingRef = useRef(false)
+
+  const logs = useMemo(() => mapLogs(item?.logs || []), [item?.logs])
 
   const statChip = useMemo(() => {
     if (!item) return null
@@ -104,8 +113,33 @@ L14.875 0.75
 H368.22
 Z`.trim()
 
+  const actionLabel = isEditing ? 'Save' : summary.trim() ? 'Edit' : 'Add'
+  const actionIcon = isEditing ? (
+    <FaRegSave className="text-[16px]" />
+  ) : (
+    <LiaEditSolid className="text-[18px]" />
+  )
+
+  const onSummaryAction = async () => {
+    if (!isEditing) {
+      setIsEditing(true)
+      return
+    }
+    if (savingRef.current) return
+    savingRef.current = true
+    try {
+      setIsEditing(false)
+      updateCase(item.id, { summary })
+    } catch (e) {
+      console.log(e)
+    } finally {
+      savingRef.current = false
+    }
+  }
+
   return (
     <CaseLayout title="Case Management" showBack={true}>
+      {/* HEADER */}
       <div className="flex mt-8 items-start justify-between">
         <div>
           <div className="text-xs opacity-70">{item.id}</div>
@@ -138,6 +172,7 @@ Z`.trim()
 
       <div className="my-5 border-t" style={{ borderColor: '#C3CFE0' }} />
 
+      {/* MAIN GRID */}
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6">
         <div className="space-y-6">
           <ExactSvgCutBox
@@ -166,6 +201,8 @@ Z`.trim()
               </>
             )}
           </ExactSvgCutBox>
+
+          {/* PERSONS SECTION */}
           <PersonSectionBox
             title="Person of Interest"
             total={item.persons.length}
@@ -177,36 +214,60 @@ Z`.trim()
               <PersonBox
                 key={i}
                 name={person.name}
-                roleLabel={person.role}
-                roleColor={person.roleColor}
+                roleLabel={person.status}
                 actionBgImage={bgButton}
-                onEdit={() => (setSelectedPerson(person), setEditPersonOpen(true))}
-                onAddEvidence={() => console.log('add evidence for', person.name)}
+                onEdit={() => {
+                  setSelectedPerson(person)
+                  setEditPersonOpen(true)
+                }}
+                onAddEvidence={() => {
+                  setPersonForEvidence(person)
+                  setOpenAddEv(true)
+                }}
               >
                 {person.evidences.map((ev, j) => (
-                  <EvidenceCard key={j} image={ev.image} code={ev.code} summary={ev.summary} />
+                  <EvidenceCard
+                    key={j}
+                    image={ev.previewDataUrl || ev.image}
+                    code={ev.fileName || ev.id}
+                    summary={ev.summary}
+                  />
                 ))}
+                {person.evidences.length === 0 && (
+                  <div className="text-sm text-[#888F99]">No evidence added.</div>
+                )}
               </PersonBox>
             ))}
           </PersonSectionBox>
         </div>
+
+        {/* RIGHT SIDE */}
         <aside>
           <CaseLogBox
             title="Case Log"
             logs={logs}
             actionLabel="Change"
-            onAction={() => console.log('Change clicked')}
+            onAction={() => setStatusOpen(true)}
           />
         </aside>
+
+        {/* SUMMARY */}
         <SummaryBox
-          title="Case Summary"
+          title="Summary"
           value={summary}
           onChange={setSummary}
-          actionLabel="Edit"
-          onAction={() => console.log('Edit Summary')}
+          placeholder="Click Add to write summary"
+          editable={isEditing}
+          actionLabel={actionLabel}
+          actionIcon={actionIcon}
+          actionBgImage={editBg}
+          actionSize={{ w: 100, h: 27 }}
+          actionOffset={{ top: 22, right: 24 }}
+          onAction={onSummaryAction}
         />
       </div>
 
+      {/* MODALS */}
       <AddPersonInlineModal
         caseId={item.id}
         open={addPersonOpen}
@@ -238,6 +299,25 @@ Z`.trim()
         person={selectedPerson}
         author={item.investigator || ''}
       />
+
+      {openAddEv && personForEvidence && (
+        <AddEvidenceModal
+          open={openAddEv}
+          onClose={() => {
+            setOpenAddEv(false)
+            setPersonForEvidence(null)
+          }}
+          onSave={(data) => {
+            addEvidenceToPerson(item.id, personForEvidence.id, data)
+            setOpenAddEv(false)
+            setPersonForEvidence(null)
+          }}
+          defaultCaseId={item.id}
+          defaultCaseName={item.name}
+          defaultInvestigator={item.investigator}
+          defaultPerson={personForEvidence}
+        />
+      )}
     </CaseLayout>
   )
 }

@@ -6,16 +6,20 @@ import HorizontalLine from './common/HorizontalLine'
 
 export default function EditCaseModal({ open, onClose, initial, onSave }) {
   const [name, setName] = useState(initial?.name || '')
+  const [id, setId] = useState(initial?.id || '')
   const [description, setDescription] = useState(initial?.description || '')
   const [investigator, setInvestigator] = useState(initial?.investigator || '')
   const [agency, setAgency] = useState(initial?.agency || '')
-  const [workUnit, setWorkUnit] = useState(initial?.workunit || '')
+  const [workUnit, setWorkUnit] = useState(initial?.workUnit || '')
 
   useEffect(() => {
     if (open) {
       setName(initial?.name || '')
       setDescription(initial?.description || '')
       setInvestigator(initial?.investigator || '')
+      setId(initial?.id || '')
+      setAgency(initial?.agency || '')
+      setWorkUnit(initial?.workUnit || '')
     }
   }, [open, initial])
 
@@ -61,6 +65,18 @@ export default function EditCaseModal({ open, onClose, initial, onSave }) {
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Case Description"
             className="w-full px-3 py-2 rounded-lg border bg-transparent resize-none"
+            style={{ borderColor: 'var(--border)' }}
+          />
+        </div>
+        <div>
+          <div className="text-xs font-semibold mb-1" style={{ color: 'var(--dim)' }}>
+            Case ID
+          </div>
+          <input
+            value={id}
+            disabled
+            placeholder="case id"
+            className="w-full px-3 py-2 rounded-lg border bg-transparent"
             style={{ borderColor: 'var(--border)' }}
           />
         </div>

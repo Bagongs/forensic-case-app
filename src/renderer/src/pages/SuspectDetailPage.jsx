@@ -1,49 +1,95 @@
+/* eslint-disable react/prop-types */
 import { useParams } from 'react-router-dom'
 import CaseLayout from './CaseLayout'
 import MiniButton, { MiniButtonContent } from '../components/MiniButton'
 import { useCases } from '../store/cases'
 import bgButton from '../assets/image/bg-button.svg'
 import bgButtonTransparent from '../assets/image/bg-button-transparent.svg'
-import { useState } from 'react'
-import { FaEdit } from 'react-icons/fa'
+import { useRef, useState } from 'react'
+import { FaEdit, FaRegSave } from 'react-icons/fa'
+import iconAddEvidance from '../assets/icons/icon-add-evidance.svg'
+import SummaryBox from '../components/SummaryBox'
+import { LiaEditSolid } from 'react-icons/lia'
+import editBg from '../assets/image/edit.svg'
+import EditPersonModal from '../components/EditPersonModal'
+import AddEvidenceModal from '../components/AddEvidenceModal'
 
 export default function SuspectDetailPage() {
-  const { caseId } = useParams()
+  const { suspectId } = useParams()
   const cases = useCases((s) => s.cases)
-  const caseData = cases.find((c) => c.id === caseId)
-  const person = caseData?.persons?.[0] ?? {} // sementara ambil 1 dulu
-  const [editOpen, setEditOpen] = useState(false)
-  const evidences = person.evidences ?? [
-    {
-      id: '342342352',
-      img: 'https://placehold.co/200x120?text=Evidence+1',
-      summary: 'GPS handphone suspect menyatakan posisi yang berada di TKP pada saat kejadian.'
-    },
-    {
-      id: '342342353',
-      img: 'https://placehold.co/200x120?text=Evidence+2',
-      summary: 'Terdapat dialog seputar pembakaran dengan suspect lain.'
-    },
-    {
-      id: '324235232',
-      img: 'https://placehold.co/200x120?text=Evidence+2',
-      summary: 'Terdapat dialog seputar pembakaran dengan suspect lain.'
+  const updatePerson = useCases((s) => s.updatePerson)
+  const addEvidenceToPerson = useCases((s) => s.addEvidenceToPerson)
+
+  // cari case & person berdasarkan suspectId
+  let caseData = null
+  let person = null
+  for (const c of cases) {
+    const found = (c.persons || []).find((p) => p.id === suspectId)
+    if (found) {
+      caseData = c
+      person = found
+      break
     }
-  ]
+  }
+
+  const [summary, setSummary] = useState(person?.summary || '')
+  const [isEditing, setIsEditing] = useState(false)
+  const [openModalEdit, setOpenModalEdit] = useState(false)
+  const [openAddEv, setOpenAddEv] = useState(false)
+  const savingRef = useRef(false)
+  const evidences = person?.evidences ?? []
+
+  const actionLabel = isEditing ? 'Save' : summary.trim() ? 'Edit' : 'Add'
+  const actionIcon = isEditing ? (
+    <FaRegSave className="text-[16px]" />
+  ) : (
+    <LiaEditSolid className="text-[18px]" />
+  )
+
+  const onSummaryAction = async () => {
+    if (!person || !caseData) return
+    if (!isEditing) {
+      setIsEditing(true)
+      return
+    }
+    if (savingRef.current) return
+    savingRef.current = true
+    try {
+      updatePerson(caseData.id, person.id, { summary })
+      setIsEditing(false)
+    } catch (e) {
+      console.error('Failed to save summary:', e)
+    } finally {
+      savingRef.current = false
+    }
+  }
+
+  if (!caseData || !person) {
+    return (
+      <CaseLayout title="Suspect Management" showBack={true}>
+        <div className="text-center text-[#C7D2E1] mt-10">
+          Suspect not found for ID: <b>{suspectId}</b>
+        </div>
+      </CaseLayout>
+    )
+  }
 
   return (
     <CaseLayout title="Suspect Management" showBack={true}>
+      {/* HEADER */}
       <div className="flex mt-8 items-start justify-between">
         <div>
           <h1 className="font-[Aldrich] text-[26px] text-[#F4F6F8] mb-1">
             {person.name || 'Unknown'}
           </h1>
           <div className="text-[#DDE3ED] text-[14px]">
-            {caseData?.investigator || '-'} - {caseData?.date || '20/12/2025'}
+            {caseData?.investigator || '-'} -{' '}
+            {caseData?.date ||
+              new Date(caseData?.createdAt || Date.now()).toLocaleDateString('id-ID')}
           </div>
           <div className="mt-2 flex items-center gap-3">
             <span
-              className="px-3 py-[2px] text-[13px] rounded-full"
+              className="px-3 py-0.5 text-[13px] rounded-full"
               style={{ background: '#531313', color: '#FBEAEA' }}
             >
               {person.status || 'Defendant'}
@@ -56,12 +102,12 @@ export default function SuspectDetailPage() {
           </div>
         </div>
 
-        {/* action buttons */}
+        {/* ACTION BUTTONS */}
         <div className="flex gap-3">
-          <MiniButton onClick={() => setEditOpen(true)}>
+          <MiniButton onClick={() => setOpenModalEdit(true)}>
             <MiniButtonContent
               bg={bgButtonTransparent}
-              text="Edit"
+              text={'Edit'}
               icon={<FaEdit />}
               textColor="text-white"
             />
@@ -73,80 +119,102 @@ export default function SuspectDetailPage() {
       </div>
 
       <div className="my-5 border-t" style={{ borderColor: '#C3CFE0' }} />
-      <div className="flex flex-col gap-6">
-        {/* ===== EVIDENCE LIST SECTION ===== */}
-        <div
-          className="relative p-5"
-          style={{
-            background: '#151D28',
-            border: '1px solid #2E3B4D'
-          }}
-        >
-          {/* Header */}
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="font-[Aldrich] text-[18px] text-[#F4F6F8]">
-              Evidence <span className="opacity-60">({evidences.length})</span>
-            </h2>
 
-            <MiniButton onClick={() => {}}>
-              <MiniButtonContent bg={bgButton} text="+ Add Evidence" textColor="text-black" />
-            </MiniButton>
-          </div>
+      {/* EVIDENCES */}
+      <div
+        className="relative p-5"
+        style={{
+          background: '#151D28',
+          border: '1px solid #2E3B4D'
+        }}
+      >
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="font-[Aldrich] text-[18px] text-[#F4F6F8]">
+            Evidence <span className="opacity-60">({evidences.length})</span>
+          </h2>
 
-          {/* Scrollable evidence list */}
-          <div
-            className="grid gap-4 pr-2 overflow-y-auto"
+          <button
+            onClick={() => setOpenAddEv(true)}
+            className="flex items-center justify-center gap-2 px-6 py-2 text-[13px] font-[Aldrich] text-black transition-all active:scale-[0.98]"
             style={{
-              maxHeight: 240,
-              scrollbarWidth: 'thin'
+              background:
+                'radial-gradient(circle at center, rgba(237,199,2,1) 0%, rgba(237,199,2,0.7) 100%)',
+              borderTop: '1px solid #EDC702B2',
+              borderBottom: '1px solid #EDC702B2',
+              boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.3), 0 2px 4px rgba(0,0,0,0.25)'
             }}
           >
-            {evidences.map((e) => (
-              <div key={e.id} className="flex gap-4 items-start">
-                <img
-                  src={e.img}
-                  alt="evidence"
-                  className="w-[180px] h-[110px] object-cover rounded-sm border"
-                  style={{ borderColor: '#3E4B5D' }}
-                />
-                <div className="flex-1">
-                  <div className="font-[Aldrich] text-[15px] mb-1 text-[#F4F6F8]">
-                    Summary {e.id}
-                  </div>
-                  <div className="text-[#D0D5DF] text-[13.5px] leading-relaxed">{e.summary}</div>
+            <img src={iconAddEvidance} alt="" className="w-4 h-4 opacity-90" />
+            Add Evidence
+          </button>
+        </div>
+
+        <div className="grid gap-4 pr-2 overflow-y-auto" style={{ maxHeight: 240 }}>
+          {evidences.map((e) => (
+            <div key={e.id} className="flex gap-4 items-start">
+              <img
+                src={e.previewDataUrl || e.img || 'https://placehold.co/180x110?text=No+Image'}
+                alt="evidence"
+                className="w-[180px] h-[110px] object-cover rounded-sm border"
+                style={{ borderColor: '#3E4B5D' }}
+              />
+              <div className="flex-1">
+                <div className="font-[Aldrich] text-[15px] mb-1 text-[#F4F6F8]">
+                  {e.fileName || 'Evidence'}
+                </div>
+                <div className="text-[#D0D5DF] text-[13.5px] leading-relaxed">
+                  {e.summary || '-'}
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
-
-        {/* ===== NOTES SECTION ===== */}
-        <div
-          className="relative p-5"
-          style={{
-            background: '#1A2432',
-            border: '1px solid #2E3B4D',
-            borderRadius: '8px'
-          }}
-        >
-          {/* Header + Edit button */}
-          <div className="flex justify-between items-center mb-2">
-            <div className="font-[Aldrich] text-[16px] text-[#F4F6F8]">Notes</div>
-            <button
-              className="flex items-center gap-2 border border-[#6A7A94] px-3 py-[6px] text-[13px] hover:brightness-110 transition rounded"
-              style={{ background: '#263246' }}
-            >
-              ✏️ Edit
-            </button>
-          </div>
-
-          {/* Note content */}
-          <div className="text-[#D0D5DF] text-[14px] leading-relaxed">
-            {person.notes ||
-              'Dokumentasi detail, isolasi jaringan, serta pencatatan chain of custody sangat penting untuk memastikan integritas bukti GPS handphone dan dapat dipertanggungjawabkan di pengadilan.'}
-          </div>
+            </div>
+          ))}
+          {evidences.length === 0 && (
+            <div className="text-[#C7D2E1] text-sm opacity-70">No evidences found.</div>
+          )}
         </div>
       </div>
+
+      {/* SUMMARY */}
+      <div className="mt-6">
+        <SummaryBox
+          title="Summary"
+          value={summary}
+          onChange={setSummary}
+          placeholder="Click Add to write summary"
+          editable={isEditing}
+          actionLabel={actionLabel}
+          actionIcon={actionIcon}
+          actionBgImage={editBg}
+          actionSize={{ w: 100, h: 27 }}
+          actionOffset={{ top: 22, right: 24 }}
+          onAction={onSummaryAction}
+        />
+      </div>
+
+      {/* MODALS */}
+      {openModalEdit && (
+        <EditPersonModal
+          open={openModalEdit}
+          onClose={() => setOpenModalEdit(false)}
+          caseId={caseData.id}
+          person={person}
+        />
+      )}
+
+      {openAddEv && (
+        <AddEvidenceModal
+          open={openAddEv}
+          onClose={() => setOpenAddEv(false)}
+          onSave={(data) => {
+            addEvidenceToPerson(caseData.id, person.id, data)
+            setOpenAddEv(false)
+          }}
+          defaultCaseId={caseData.id}
+          defaultCaseName={caseData.name}
+          defaultInvestigator={caseData.investigator}
+          defaultPerson={person}
+        />
+      )}
     </CaseLayout>
   )
 }

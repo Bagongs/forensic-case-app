@@ -12,6 +12,8 @@ import stageOn from '../assets/image/stage-on.svg'
 import stageOff from '../assets/image/stage-off.svg'
 import bgButtonTransparent from '../assets/image/bg-button-transparent.svg'
 import { FaEdit } from 'react-icons/fa'
+import HorizontalLine from '../components/common/HorizontalLine'
+import EditEvidenceModal from '../components/EditEvidenceModal'
 
 const STAGES = [
   { key: 'acquisition', label: 'Acquisition' },
@@ -32,13 +34,13 @@ const NODE_DEFAULT = { fill: '#313131', border: '#888888' }
 const fmtDateLong = (iso) =>
   iso
     ? new Date(iso).toLocaleString('id-ID', {
-      day: '2-digit',
-      month: 'long',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false
-    })
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      })
     : ''
 const fmtDateShort = fmtDateLong
 const truncate = (s, n = 256) => (!s ? '' : s.length > n ? s.slice(0, n).trimEnd() + '…' : s)
@@ -48,6 +50,7 @@ export default function EvidenceDetailPage() {
   const nav = useNavigate()
   const getEvidenceById = useCases((s) => s.getEvidenceById)
   const addChainContent = useCases((s) => s.addChainContent)
+  const updateEvidence = useCases((s) => s.updateEvidence)
 
   const ref = getEvidenceById(evidenceId)
   if (!ref) {
@@ -65,8 +68,8 @@ export default function EvidenceDetailPage() {
 
   const { evidence, caseRef, personRef } = ref
   const [active, setActive] = useState(STAGES[0].key)
-  const [modal, setModal] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
+  const [openStage, setOpenStage] = useState(null)
 
   const chain = evidence.chain || { acquisition: [], preparation: [], extraction: [], analysis: [] }
   const contents = chain?.[active] ?? []
@@ -149,7 +152,6 @@ export default function EvidenceDetailPage() {
             </MiniButton>
           </div>
         </div>
-
         <div className="text-sm flex flex-wrap gap-x-6 gap-y-2">
           <div>
             <span className="opacity-60">Person Related:</span> {personRef?.name || '-'}
@@ -161,18 +163,14 @@ export default function EvidenceDetailPage() {
             <span className="opacity-60">Source:</span> {evidence.source || '-'}
           </div>
         </div>
-
         <div className="mt-5 border-t" style={{ borderColor: '#C3CFE0' }} />
-
         <StageContentModal
-          open={modal}
-          stage={active}
-          evidenceId={evidence.id}
-          onClose={() => setModal(false)}
-          onSubmit={(payload) => {
-            setModal(false)
-            handleSubmitStage(payload)
-          }}
+          open={!!openStage}
+          initialStage={openStage}
+          caseNumber="CASE-2025-001"
+          caseTitle="Forensic Mobile Extraction"
+          onClose={() => setOpenStage(null)}
+          onSubmitStage={handleSubmitStage}
         />
       </div>
       <div className="space-y-8">
@@ -294,7 +292,7 @@ export default function EvidenceDetailPage() {
               )
             })}
           </div>
-
+          <HorizontalLine color={'#C3CFE0'} />
           <div className="p-5">
             <div className="flex items-start justify-between">
               <div className="text-xl font-semibold">{panelLocation || latest?.title || ''}</div>
@@ -304,7 +302,7 @@ export default function EvidenceDetailPage() {
               </div>
             </div>
 
-            <div className="h-px my-4" style={{ background: '#C3CFE0' }} />
+            {/* <div className="h-px my-4" style={{ background: '#C3CFE0' }} /> */}
 
             {!latest ? (
               <div className="text-sm opacity-70 py-8 text-center">State masih kosong</div>
@@ -401,10 +399,29 @@ export default function EvidenceDetailPage() {
             )}
 
             <div className="mt-6 flex justify-center">
-              <MiniButton onClick={() => setModal(true)}>+ Add content</MiniButton>
+              <MiniButton onClick={() => setOpenStage(active)}>+ Add content</MiniButton>
             </div>
           </div>
         </BoxTopLeftBottomRight>
+        <EditEvidenceModal
+          open={editOpen}
+          onClose={() => setEditOpen(false)}
+          onSave={(updated) => {
+            updateEvidence(updated.id, {
+              summary: updated.summary,
+              source: updated.source,
+              investigator: updated.investigator,
+              personOfInterest: updated.personOfInterest,
+              fileName: updated.fileName,
+              fileSize: updated.fileSize,
+              fileMime: updated.fileMime,
+              previewDataUrl: updated.previewDataUrl
+            })
+            setEditOpen(false)
+          }}
+          evidenceData={evidence}
+          caseName={caseRef?.name}
+        />
       </div>
     </CaseLayout>
   )

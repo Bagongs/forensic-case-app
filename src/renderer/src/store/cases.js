@@ -1,9 +1,8 @@
-// src/renderer/src/store/cases.js
 import { create } from 'zustand'
 
 const newId = () => crypto.randomUUID?.() ?? String(Date.now())
 
-/* ===== helper: bangun daftar evidence datar untuk halaman list ===== */
+/* ===== Helper: Build flat evidences list ===== */
 const buildFlatEvidences = (cases) => {
   const list = []
   for (const c of cases || []) {
@@ -33,14 +32,32 @@ const buildFlatEvidences = (cases) => {
   return list
 }
 
+/* ===== Persist helpers ===== */
+const STORAGE_KEY = 'cases_store_v1'
+
+function loadFromStorage() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if (!raw) return { cases: [], evidences: [] }
+    const parsed = JSON.parse(raw)
+    // ✅ support dua format: { cases: [...] } dan langsung [ ... ]
+    const casesData = Array.isArray(parsed) ? parsed : parsed.cases || []
+    return {
+      cases: casesData,
+      evidences: buildFlatEvidences(casesData)
+    }
+  } catch {
+    return { cases: [], evidences: [] }
+  }
+}
+
+/* ===== Zustand Store ===== */
 export const useCases = create((set, get) => ({
-  /* ================== STATE PRIMER ================== */
-  cases: [],
-  evidences: [], // versi flat agar mudah dipakai di list
+  ...loadFromStorage(),
 
   _rebuildEvidences: () => {
-    const cases = get().cases
-    set({ evidences: buildFlatEvidences(cases) })
+    const evidences = buildFlatEvidences(get().cases)
+    set({ evidences })
   },
 
   /* ================== CASE ================== */
@@ -123,7 +140,7 @@ export const useCases = create((set, get) => ({
         const log = {
           id: newId(),
           at: new Date().toISOString(),
-          type: nextStatus, // 'Open' | 'Re-Open' | 'Closed'
+          type: nextStatus,
           by,
           note: note?.trim() || undefined
         }
@@ -173,15 +190,7 @@ export const useCases = create((set, get) => ({
     set({
       cases: (get().cases || []).map((c) => {
         if (c.id !== caseId) return c
-        const persons = (c.persons || []).map((p) =>
-          p.id === personId
-            ? {
-                ...p,
-                name: patch.name ?? p.name,
-                status: patch.status ?? p.status
-              }
-            : p
-        )
+        const persons = (c.persons || []).map((p) => (p.id === personId ? { ...p, ...patch } : p))
         return {
           ...c,
           persons,
@@ -192,14 +201,7 @@ export const useCases = create((set, get) => ({
               at: new Date().toISOString(),
               type: 'Updated',
               by,
-              note: `person updated: ${personId} (${
-                [
-                  patch.name !== undefined ? 'name' : null,
-                  patch.status !== undefined ? 'status' : null
-                ]
-                  .filter(Boolean)
-                  .join(', ') || 'no fields'
-              })`
+              note: `person updated: ${personId}`
             }
           ]
         }
@@ -248,8 +250,25 @@ export const useCases = create((set, get) => ({
     return eid
   },
 
-  // alias kompatibilitas
   addEvidence: (caseId, personId, ev) => get().addEvidenceToPerson(caseId, personId, ev),
+  updateEvidence: (evidenceId, patch) => {
+    set({
+      cases: (get().cases || []).map((c) => ({
+        ...c,
+        persons: (c.persons || []).map((p) => ({
+          ...p,
+          evidences: (p.evidences || []).map((e) => {
+            if (e.id !== evidenceId) return e
+            return {
+              ...e,
+              ...patch // overwrite field yg diubah
+            }
+          })
+        }))
+      }))
+    })
+    get()._rebuildEvidences()
+  },
 
   getEvidenceById: (evidenceId) => {
     const cases = get().cases || []
@@ -265,8 +284,6 @@ export const useCases = create((set, get) => ({
     return null
   },
 
-  // Tambah konten ke salah satu stage chain-of-custody
-  // stage: 'acquisition' | 'preparation' | 'extraction' | 'analysis'
   addChainContent: (evidenceId, stage, item) => {
     const newIdVal = newId()
     set({
@@ -287,7 +304,6 @@ export const useCases = create((set, get) => ({
               {
                 id: newIdVal,
                 createdAt: new Date().toISOString(),
-                // ⬇️ simpan SEMUA field yang dikirim modal (type, header, steps, dst.)
                 ...item
               }
             ]
@@ -296,5 +312,15 @@ export const useCases = create((set, get) => ({
         }))
       }))
     })
+    get()._rebuildEvidences()
   }
 }))
+
+/* ====== Auto-save ke localStorage ====== */
+useCases.subscribe((state) => {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ cases: state.cases }))
+  } catch (err) {
+    console.warn('Failed to save to localStorage', err)
+  }
+})

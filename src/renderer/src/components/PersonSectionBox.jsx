@@ -1,4 +1,5 @@
 /* eslint-disable react/prop-types */
+import { FaUserPlus } from 'react-icons/fa'
 import { BoxAllSide } from './BaseBox'
 import MiniButton, { MiniButtonContent } from './MiniButton'
 
@@ -29,7 +30,12 @@ export function PersonSectionBox({
 
         {onAddPerson && (
           <MiniButton onClick={onAddPerson} className="ml-auto font-[Aldrich]">
-            <MiniButtonContent bg={actionBgImage} text="+ Add Person" textColor="text-white" />
+            <MiniButtonContent
+              bg={actionBgImage}
+              text="Add Person"
+              icon={<FaUserPlus />}
+              textColor="text-white"
+            />
           </MiniButton>
         )}
       </div>

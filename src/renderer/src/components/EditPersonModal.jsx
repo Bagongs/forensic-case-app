@@ -1,10 +1,9 @@
-// src/renderer/src/components/EditPersonModal.jsx
 /* eslint-disable react/prop-types */
 import { useEffect, useRef, useState } from 'react'
 import Modal from './Modal'
 import { useCases } from '../store/cases'
 
-const STATUS_OPTIONS = ['Suspect', 'Witness', 'Victim', 'Unknown']
+const STATUS_OPTIONS = ['Witness', 'Reported', 'Suspected', 'Suspect', 'Defendant']
 const DEVICE_SOURCES = ['Hp', 'Ssd', 'HardDisk', 'Pc', 'Laptop', 'DVR']
 
 export default function EditPersonModal({ open, onClose, caseId, person, author = '' }) {
@@ -12,8 +11,8 @@ export default function EditPersonModal({ open, onClose, caseId, person, author 
   const addEvidenceToPerson = useCases((s) => s.addEvidenceToPerson)
 
   // person core
-  const [name, setName] = useState(person?.name || '')
-  const [status, setStatus] = useState(person?.status || 'Suspect')
+  const [name, setName] = useState('')
+  const [status, setStatus] = useState('Suspect')
 
   // optional new evidence
   const [addEv, setAddEv] = useState(false)
@@ -26,6 +25,7 @@ export default function EditPersonModal({ open, onClose, caseId, person, author 
   const [previewBlobUrl, setPreviewBlobUrl] = useState(null)
   const fileRef = useRef(null)
 
+  // 🧩 RESET STATE SAAT OPEN BERUBAH
   useEffect(() => {
     if (open) {
       setName(person?.name || '')
@@ -39,10 +39,16 @@ export default function EditPersonModal({ open, onClose, caseId, person, author 
       if (previewBlobUrl) URL.revokeObjectURL(previewBlobUrl)
       setPreviewBlobUrl(null)
       setPreviewDataUrl(null)
+    } else {
+      // cleanup saat close
+      if (previewBlobUrl) URL.revokeObjectURL(previewBlobUrl)
+      setPreviewBlobUrl(null)
+      setPreviewDataUrl(null)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, person?.id])
 
+  // 🧩 HANDLE FILE PICK
   function onPickFile(e) {
     const f = e.target.files?.[0] || null
     setFile(f)
@@ -65,14 +71,18 @@ export default function EditPersonModal({ open, onClose, caseId, person, author 
     <Modal
       open={open}
       title="Edit Person of Interest"
-      onCancel={onClose}
+      onCancel={() => {
+        if (previewBlobUrl) URL.revokeObjectURL(previewBlobUrl)
+        setPreviewBlobUrl(null)
+        onClose()
+      }}
       confirmText="Save"
       disableConfirm={!canSubmit}
       onConfirm={() => {
-        // 1) update core fields
+        // 1️⃣ Update core person data
         updatePerson(caseId, person.id, { name: name.trim(), status }, author)
 
-        // 2) (optional) add new evidence
+        // 2️⃣ Optional: add new evidence
         if (addEv && (file || summary.trim())) {
           addEvidenceToPerson(caseId, person.id, {
             id: evIdMode === 'gen' ? undefined : evId.trim(),
@@ -80,11 +90,13 @@ export default function EditPersonModal({ open, onClose, caseId, person, author 
             summary: summary.trim(),
             fileName: file?.name,
             fileSize: file?.size,
-            mime: file?.type,
+            fileMime: file?.type, // ✅ pakai fileMime, bukan mime
             previewDataUrl
           })
         }
 
+        if (previewBlobUrl) URL.revokeObjectURL(previewBlobUrl)
+        setPreviewBlobUrl(null)
         onClose?.()
       }}
       size="lg"
@@ -100,10 +112,11 @@ export default function EditPersonModal({ open, onClose, caseId, person, author 
             style={{ borderColor: 'var(--border)' }}
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="name"
+            placeholder="Enter name"
           />
         </div>
 
+        {/* STATUS FIELD */}
         <div>
           <div className="text-xs font-semibold mb-1" style={{ color: 'var(--dim)' }}>
             Status
@@ -111,7 +124,7 @@ export default function EditPersonModal({ open, onClose, caseId, person, author 
           <select
             className="w-full px-3 py-2 rounded-lg border bg-transparent"
             style={{ borderColor: 'var(--border)' }}
-            value={status}
+            value={status} // ✅ status terkontrol
             onChange={(e) => setStatus(e.target.value)}
           >
             {STATUS_OPTIONS.map((s) => (
@@ -122,10 +135,9 @@ export default function EditPersonModal({ open, onClose, caseId, person, author 
           </select>
         </div>
 
-        {/* Divider */}
-        <div className="border-t my-2" style={{ borderColor: 'var(--border)' }} />
+        {/* Optional Evidence Section */}
+        {/* <div className="border-t my-2" style={{ borderColor: 'var(--border)' }} />
 
-        {/* Add evidence toggle */}
         <label className="inline-flex items-center gap-2 cursor-pointer">
           <input
             type="checkbox"
@@ -134,10 +146,9 @@ export default function EditPersonModal({ open, onClose, caseId, person, author 
             onChange={(e) => setAddEv(e.target.checked)}
           />
           <span className="text-sm">Add evidence (optional)</span>
-        </label>
+        </label> */}
 
-        {/* Evidence form */}
-        {addEv && (
+        {/* {addEv && (
           <>
             <div>
               <div className="text-xs font-semibold mb-1" style={{ color: 'var(--dim)' }}>
@@ -167,7 +178,7 @@ export default function EditPersonModal({ open, onClose, caseId, person, author 
                 <input
                   className="w-full px-3 py-2 rounded-lg border bg-transparent"
                   style={{ borderColor: 'var(--border)' }}
-                  placeholder="evidence id"
+                  placeholder="Enter evidence ID"
                   value={evId}
                   onChange={(e) => setEvId(e.target.value)}
                 />
@@ -246,7 +257,7 @@ export default function EditPersonModal({ open, onClose, caseId, person, author 
               )}
             </div>
           </>
-        )}
+        )} */}
       </div>
     </Modal>
   )

@@ -18,6 +18,7 @@ import iconFilter from '../assets/icons/icon-filter.svg'
 import iconSearch from '../assets/icons/icon-search.svg'
 import bgButton from '../assets/image/bg-button.svg'
 import dropdownIcon from '../assets/icons/dropdown-icon.svg'
+import Pagination from '../components/Pagination'
 
 /* ====== CONSTANTS ====== */
 const COLORS = {
@@ -63,31 +64,20 @@ function StatusCell({ value = 'Open' }) {
   )
 }
 
-function IconChevron({ dir = 'left' }) {
-  const rotate = dir === 'right' ? 'rotate-180' : ''
-  return (
-    <svg
-      className={`w-4 h-4 ${rotate}`}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-    >
-      <path d="M15 19l-7-7 7-7" />
-    </svg>
-  )
-}
-
 /* ====== MAIN COMPONENT ====== */
 export default function CaseListPage() {
   const nav = useNavigate()
   const { cases, addCase } = useCases()
+
   const [q, setQ] = useState('')
   const [modal, setModal] = useState(false)
 
   const [pageSize, setPageSize] = useState(PAGE_SIZES[0])
   const [page, setPage] = useState(1)
-  const [sortOrder, setSortOrder] = useState(null) // null | 'asc' | 'desc'
+  const [sortOrder, setSortOrder] = useState(null)
+  const [filterOpen, setFilterOpen] = useState(false)
+  const [statusFilter, setStatusFilter] = useState(['Open'])
+  const filterBtnRef = useRef(null)
 
   const stats = useMemo(() => {
     const open = cases.filter((c) => c.status === 'Open').length
@@ -96,12 +86,13 @@ export default function CaseListPage() {
     return { open, closed, reopen }
   }, [cases])
 
-  // filter
+  // filtering & sorting
   const filtered = useMemo(() => {
     let arr = cases.filter(
       (c) =>
-        c.name.toLowerCase().includes(q.toLowerCase()) ||
-        String(c.id).toLowerCase().includes(q.toLowerCase())
+        (statusFilter.length === 0 || statusFilter.includes(c.status)) &&
+        (c.name.toLowerCase().includes(q.toLowerCase()) ||
+          String(c.id).toLowerCase().includes(q.toLowerCase()))
     )
 
     if (sortOrder) {
@@ -113,14 +104,14 @@ export default function CaseListPage() {
     }
 
     return arr
-  }, [cases, q, sortOrder])
+  }, [cases, q, sortOrder, statusFilter])
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize))
   const safePage = Math.min(page, totalPages)
   const start = (safePage - 1) * pageSize
   const currentRows = filtered.slice(start, start + pageSize)
 
-  useEffect(() => setPage(1), [q, pageSize, sortOrder])
+  useEffect(() => setPage(1), [q, pageSize, sortOrder, statusFilter])
 
   const handleSaveCase = (payload) => {
     const id = addCase(payload)
@@ -128,7 +119,6 @@ export default function CaseListPage() {
     nav(`/cases/${id}`)
   }
 
-  // fungsi toggle sort
   const toggleSort = () => {
     setSortOrder((prev) => {
       if (prev === null) return 'desc'
@@ -148,13 +138,13 @@ export default function CaseListPage() {
 
       {/* === Search + Actions === */}
       <div className="flex justify-between items-center gap-3 mb-3 w-full">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 mb-3">
           <div className="relative w-[427px]">
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="Search case"
-              className="w-full pl-3 pr-9 py-2 rounded-sm outline-none"
+              className="w-full pl-3 pr-3 py-1 border border-[#C3CFE0] bg-transparent"
               style={{
                 border: '1px solid #C3CFE0',
                 background: 'transparent',
@@ -167,7 +157,7 @@ export default function CaseListPage() {
               className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 opacity-70 pointer-events-none"
             />
           </div>
-          <MiniButton>
+          <MiniButton ref={filterBtnRef} onClick={() => setFilterOpen((s) => !s)}>
             <div className="flex items-center gap-1">
               <img src={iconFilter} width={15} height={15} /> Filter
             </div>
@@ -178,6 +168,15 @@ export default function CaseListPage() {
           <MiniButtonContent bg={bgButton} text="+ Add Case" textColor="text-black" />
         </MiniButton>
       </div>
+
+      {/* === Filter Dropdown === */}
+      <FilterDropdown
+        open={filterOpen}
+        onClose={() => setFilterOpen(false)}
+        selected={statusFilter}
+        onChange={setStatusFilter}
+        anchorRef={filterBtnRef}
+      />
 
       {/* === Table Container === */}
       <div
@@ -263,7 +262,7 @@ export default function CaseListPage() {
           </tbody>
         </table>
 
-        {/* === Footer Controls (inside same card) === */}
+        {/* === Footer Controls === */}
         <div
           className="flex items-center justify-between px-4 py-3 border-t"
           style={{ borderColor: COLORS.border }}
@@ -382,53 +381,96 @@ function TotalCaseCard({ total = 0 }) {
   )
 }
 
-/* ====== Pagination ====== */
-function Pagination({ page, totalPages, onChange }) {
-  const go = (p) => onChange(Math.max(1, Math.min(totalPages, p)))
-  const nums = []
-  if (totalPages <= 6) {
-    for (let i = 1; i <= totalPages; i++) nums.push(i)
-  } else {
-    nums.push(1, 2, 3, '...', totalPages)
-  }
+function FilterDropdown({ open, onClose, selected, onChange, anchorRef }) {
+  const menuRef = useRef(null)
+  const [pos, setPos] = useState({ top: 0, left: 0 })
 
-  return (
-    <div className="flex items-center gap-2">
-      <button
-        onClick={() => go(page - 1)}
-        disabled={page === 1}
-        className="p-2 disabled:opacity-40"
+  useLayoutEffect(() => {
+    if (open && anchorRef?.current) {
+      const rect = anchorRef.current.getBoundingClientRect()
+      setPos({
+        top: rect.bottom + 8,
+        left: rect.left
+      })
+    }
+  }, [open])
+
+  useEffect(() => {
+    if (!open) return
+    const handleClickOutside = (e) => {
+      if (menuRef.current?.contains(e.target) || anchorRef.current?.contains(e.target)) return
+      onClose()
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [open])
+
+  const OPTIONS = ['Open', 'Closed', 'Re-Open']
+  if (!open) return null
+
+  return createPortal(
+    <div
+      ref={menuRef}
+      className="fixed z-2000 border rounded-sm shadow-lg"
+      style={{
+        top: pos.top,
+        left: pos.left,
+        width: 240,
+        background: '#0C121C',
+        border: 'none',
+        color: '#fff'
+      }}
+    >
+      <div
+        className="flex items-center justify-between px-4 py-3 border-b"
+        style={{ background: '#162337', borderBottom: '0.1px solid #E8C902' }}
       >
-        <IconChevron dir="left" />
-      </button>
+        <span className="font-semibold text-[14px] tracking-wide">FILTER METHOD</span>
+        <button onClick={onClose} className="text-lg leading-none opacity-80 hover:opacity-100">
+          ×
+        </button>
+      </div>
 
-      {nums.map((n, idx) =>
-        n === '...' ? (
-          <span key={`dots-${idx}`} className="px-3">
-            …
-          </span>
-        ) : (
-          <button
-            key={n}
-            onClick={() => go(n)}
-            className="min-w-10 h-10 px-3 rounded-sm"
-            style={{
-              background: n === page ? COLORS.pageActive : 'transparent',
-              border: '1px solid transparent'
-            }}
-          >
-            {n}
-          </button>
-        )
-      )}
-
-      <button
-        onClick={() => go(page + 1)}
-        disabled={page === totalPages}
-        className="p-2 disabled:opacity-40"
-      >
-        <IconChevron dir="right" />
-      </button>
-    </div>
+      <div className="flex flex-col gap-3 px-4 py-4">
+        {OPTIONS.map((opt) => {
+          const isChecked = selected.includes(opt)
+          return (
+            <div
+              key={opt}
+              onClick={() => {
+                if (isChecked) onChange(selected.filter((s) => s !== opt))
+                else onChange([...selected, opt])
+              }}
+              className="flex items-center gap-3 cursor-pointer select-none"
+            >
+              <div
+                className="w-5 h-5 flex items-center justify-center border"
+                style={{
+                  borderColor: '#C3CFE0',
+                  background: isChecked ? '#2E5B9F' : 'transparent'
+                }}
+              >
+                {isChecked && (
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="white"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                )}
+              </div>
+              <span className="text-[15px]">{opt}</span>
+            </div>
+          )
+        })}
+      </div>
+    </div>,
+    document.body
   )
 }

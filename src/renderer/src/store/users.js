@@ -1,74 +1,15 @@
-/* eslint-disable no-unused-vars */
-// src/renderer/src/store/users.js
 import { create } from 'zustand'
 
-/* ===== util id sederhana (tanpa dependency) ===== */
+/* ===== util id sederhana ===== */
 const genId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8)
 
-/* ===== seed data (sesuai contoh screenshot) ===== */
-const SEED_USERS = [
-  {
-    id: genId(),
-    name: 'Agus Smith',
-    email: 'smith18@tech.com',
-    tag: 'Admin',
-    createdAt: '2025-01-12T10:00:00Z'
-  },
-  {
-    id: genId(),
-    name: 'Jane Cooper',
-    email: 'cooper77@tech.com',
-    tag: 'Ahli Forensic',
-    createdAt: '2025-01-12T10:05:00Z'
-  },
-  {
-    id: genId(),
-    name: 'Esther Howard',
-    email: 'howard@tech.com',
-    tag: 'Investigator',
-    createdAt: '2025-01-12T10:10:00Z'
-  },
-  {
-    id: genId(),
-    name: 'Guy Hawkins',
-    email: 'guyhawkins@tech.com',
-    tag: 'Investigator',
-    createdAt: '2025-01-12T10:15:00Z'
-  },
-  {
-    id: genId(),
-    name: 'Leslie Alexander',
-    email: 'alexanderleslie@tech.com',
-    tag: 'Ahli Forensic',
-    createdAt: '2025-01-12T10:20:00Z'
-  },
-  {
-    id: genId(),
-    name: 'Robert Fox',
-    email: 'foxrobert22@tech.com',
-    tag: 'Investigator',
-    createdAt: '2025-01-12T10:25:00Z'
-  },
-  {
-    id: genId(),
-    name: 'Jacob Jones',
-    email: 'jacobjones@tech.com',
-    tag: 'Investigator',
-    createdAt: '2025-01-12T10:30:00Z'
-  },
-  {
-    id: genId(),
-    name: 'Robert Fox',
-    email: 'foxrobert22@tech.com',
-    tag: 'Investigator',
-    createdAt: '2025-01-12T10:35:00Z'
-  }
-]
+/* ===== seed data ===== */
+const SEED_USERS = []
 
 const STORAGE_KEY = 'users_store_v1'
 
 /* ===== helper persist ===== */
-function loadFromStorage() {
+const loadFromStorage = () => {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return null
@@ -79,7 +20,8 @@ function loadFromStorage() {
     return null
   }
 }
-function saveToStorage(state) {
+
+const saveToStorage = (state) => {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ users: state.users }))
   } catch {
@@ -89,7 +31,6 @@ function saveToStorage(state) {
 
 /* ===== Zustand store ===== */
 export const useUsers = create((set, get) => {
-  // hydrate initial
   const hydrated = loadFromStorage()
 
   const initialState = {
@@ -101,19 +42,30 @@ export const useUsers = create((set, get) => {
 
     /* -------- CRUD -------- */
     addUser: ({ name, email, tag }) => {
-      const u = {
+      const s = get()
+
+      // Cegah duplikat email
+      const exists = s.users.some((u) => u.email.toLowerCase() === email.toLowerCase())
+      if (exists) {
+        alert('Email already exists!')
+        return null
+      }
+
+      const newUser = {
         id: genId(),
         name: name?.trim() || 'Untitled',
         email: email?.trim() || '',
-        tag: tag || '-',
+        tag: tag?.trim() || '-',
         createdAt: new Date().toISOString()
       }
-      set((s) => {
-        const next = { users: [u, ...s.users] }
-        saveToStorage(next)
-        return next
-      })
-      return u.id
+
+      const next = {
+        users: [newUser, ...s.users].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      }
+
+      set(next)
+      saveToStorage(next)
+      return newUser.id
     },
 
     editUser: (id, patch) => {
@@ -134,7 +86,7 @@ export const useUsers = create((set, get) => {
       })
     },
 
-    /* optional bulk ops */
+    /* -------- bulk ops -------- */
     importUsers: (arr = []) => {
       const normalized = arr.map((u) => ({
         id: u.id || genId(),

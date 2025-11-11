@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 /* eslint-disable react/prop-types */
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 
@@ -18,26 +19,31 @@ export default function SummaryBox({
   // style params
   gradient = 'linear-gradient(180deg, #1C2737 -94.25%, #1B2533 100%)',
   borderColor = '#4C607D',
-  borderW = 1.5, // sedikit >1px biar tajam di HiDPI
-  cut = 18 // besar potongan (px)
+  borderW = 1.5,
+  cut = 18,
+
+  // warna efek glow
+  glowColor = '#FFFFFF', // putih utama
+  glowShadowAlpha = 0.7, // intensitas shadow putih
+  glowAuraAlpha = 0.5 // intensitas aura radial
 }) {
   const textRef = useRef(null)
   const boxRef = useRef(null)
 
   // autosize textarea
-  // useEffect(() => {
-  //   if (!textRef.current) return
-  //   const el = textRef.current
-  //   el.style.height = 'auto'
-  //   el.style.height = `${el.scrollHeight}px`
-  // }, [value])
+  useEffect(() => {
+    if (!textRef.current) return
+    const el = textRef.current
+    el.style.height = 'auto'
+    el.style.height = `${el.scrollHeight}px`
+  }, [value])
 
   // autofocus saat masuk edit
-  // useEffect(() => {
-  //   if (editable && textRef.current) textRef.current.focus()
-  // }, [editable])
+  useEffect(() => {
+    if (editable && textRef.current) textRef.current.focus()
+  }, [editable])
 
-  // ukur container untuk SVG path
+  // ukur container untuk SVG border
   const [size, setSize] = useState({ w: 0, h: 0 })
   useLayoutEffect(() => {
     if (!boxRef.current) return
@@ -49,10 +55,8 @@ export default function SummaryBox({
     return () => ro.disconnect()
   }, [])
 
-  // path polygon: cut di kiri-atas & kanan-bawah
   const d = getPathD(size.w, size.h, cut)
 
-  // clipPath untuk konten (inner, dishrink 1px supaya stroke tidak ketutup)
   const innerClip = `polygon(
     ${Math.max(0, cut - borderW)}px ${borderW}px,
     calc(100% - ${borderW}px) ${borderW}px,
@@ -62,15 +66,19 @@ export default function SummaryBox({
     ${borderW}px ${Math.max(0, cut - borderW)}px
   )`
 
+  const paddingRight = onAction ? actionSize.w + 24 : undefined
+  const glowShadow = `0 0 14px ${hexToRgba(glowColor, glowShadowAlpha)}`
+
   return (
     <div className="relative w-full" ref={boxRef}>
-      {/* SVG border di belakang — tidak kena clip */}
+      {/* SVG border di belakang */}
       <svg
         className="absolute inset-0 pointer-events-none"
         width="100%"
         height="100%"
         viewBox={`0 0 ${Math.max(size.w, 1)} ${Math.max(size.h, 1)}`}
         preserveAspectRatio="none"
+        aria-hidden
       >
         <path
           d={d}
@@ -83,13 +91,13 @@ export default function SummaryBox({
         />
       </svg>
 
-      {/* Layer konten (di-clip) */}
+      {/* konten */}
       <div
         className="relative p-4"
         style={{
           background: gradient,
           clipPath: innerClip,
-          paddingRight: onAction ? `${actionSize.w + 24}px` : undefined
+          paddingRight
         }}
       >
         {/* Header */}
@@ -103,15 +111,8 @@ export default function SummaryBox({
             onChange={(e) => onChange?.(e.target.value)}
             placeholder={placeholder}
             rows={rowsMin}
-            tabIndex={-1} // cegah auto focus
-            autoFocus={false} // pastikan tidak fokus otomatis
-            inputMode="none" // cegah keyboard muncul otomatis di mobile
             className="w-full resize-none bg-transparent outline-none font-[Noto Sans] text-[14px] text-[#E7E9EE] placeholder-[#9AA3B2]"
-            style={{
-              lineHeight: 1.5,
-              overflow: 'hidden',
-              minHeight: 36
-            }}
+            style={{ lineHeight: 1.5, overflow: 'hidden', minHeight: 36 }}
           />
         ) : (
           <p className="font-[Noto Sans] text-[14px] text-[#E7E9EE] whitespace-pre-wrap">
@@ -124,24 +125,35 @@ export default function SummaryBox({
           <button
             type="button"
             onClick={onAction}
-            className="absolute overflow-hidden font-[Aldrich] text-[14px] flex items-center justify-center gap-2 hover:brightness-110 transition"
+            title={actionLabel}
+            className={[
+              'group absolute z-10 overflow-hidden font-[Aldrich] text-[14px]',
+              'flex items-center justify-center gap-2',
+              'transition-all duration-200 ease-out',
+              // 'hover:brightness-110',
+              // 'hover:[box-shadow:0_0_14px_rgba(255,255,255,0.7)] focus:[box-shadow:0_0_14px_rgba(255,255,255,0.7)]',
+              'focus:outline-none focus:ring-0 rounded',
+              'px-3 py-5 -mt-2'
+            ].join(' ')}
             style={{
               top: actionOffset.top,
               right: actionOffset.right,
               width: actionSize.w,
               height: actionSize.h,
-              background: 'transparent',
               border: 'none'
             }}
           >
+            {/* background image */}
             {actionBgImage && (
               <img
                 src={actionBgImage}
                 alt=""
-                className="absolute inset-0 w-full h-full object-cover pointer-events-none select-none"
+                className="absolute inset-0 w-full h-full object-contain pointer-events-none select-none"
                 draggable="false"
               />
             )}
+
+            {/* konten tombol */}
             {actionIcon ? <span className="relative z-10">{actionIcon}</span> : null}
             <span className="relative z-10">{actionLabel}</span>
           </button>
@@ -151,18 +163,29 @@ export default function SummaryBox({
   )
 }
 
-/** Buat path polygon cut-corner untuk ukuran dinamis (px) */
+/** Path polygon cut-corner */
 function getPathD(w, h, c) {
-  // fallback saat pertama render
   if (!w || !h) return `M0,0 H1 V1 H0 Z`
   const cut = Math.max(0, c)
-  return [
-    `M ${cut} 0`,
-    `H ${w}`, // garis atas
-    `V ${h - cut}`, // kanan
-    `L ${w - cut} ${h}`, // potong kanan-bawah
-    `H 0`, // bawah
-    `V ${cut}`, // kiri
-    `Z`
-  ].join(' ')
+  return [`M ${cut} 0`, `H ${w}`, `V ${h - cut}`, `L ${w - cut} ${h}`, `H 0`, `V ${cut}`, `Z`].join(
+    ' '
+  )
+}
+
+/** Konversi HEX → RGBA */
+function hexToRgba(hex, alpha = 1) {
+  const h = hex.replace('#', '')
+  const bigint = parseInt(
+    h.length === 3
+      ? h
+          .split('')
+          .map((c) => c + c)
+          .join('')
+      : h,
+    16
+  )
+  const r = (bigint >> 16) & 255
+  const g = (bigint >> 8) & 255
+  const b = bigint & 255
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`
 }

@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import CaseLayout from './CaseLayout'
 import StatsCard from '../components/StatsCard'
@@ -8,10 +8,27 @@ import AddEvidenceModal from '../components/AddEvidenceModal'
 import { useCases } from '../store/cases'
 import bgCase from '../assets/image/stats/case.png'
 import bgEvidance from '../assets/image/stats/evidance.png'
-import iconFilter from '../assets/icons/icon-filter.svg'
 import iconSearch from '../assets/icons/icon-search.svg'
 import bgButton from '../assets/image/bg-button.svg'
+import Pagination from '../components/Pagination'
 
+/* ====== CONSTANTS ====== */
+const COLORS = {
+  tableBody: '#111720',
+  theadBg: 'var(--panel)',
+  border: 'var(--border)',
+  dim: 'var(--dim)',
+  detailBtn: '#2A3A51',
+  pageActive: '#273549',
+  gold: '#EDC702',
+  status: {
+    Open: '#42D200',
+    'Re-Open': '#FFC720',
+    Closed: '#FF0221'
+  }
+}
+const PAGE_SIZES = [5, 10, 15]
+/* ====== MAIN COMPONENT ====== */
 export default function EvidenceListPage() {
   const nav = useNavigate()
 
@@ -38,6 +55,10 @@ export default function EvidenceListPage() {
   const [q, setQ] = useState('')
   const [modal, setModal] = useState(false)
 
+  // pagination states
+  const [pageSize, setPageSize] = useState(PAGE_SIZES[0])
+  const [page, setPage] = useState(1)
+
   // --- Stats ---
   const stats = useMemo(() => {
     const totalCase = new Set((evidences || []).map((e) => e.caseId)).size
@@ -56,6 +77,13 @@ export default function EvidenceListPage() {
         e.id.toLowerCase().includes(term)
     )
   }, [q, evidences])
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize))
+  const safePage = Math.min(page, totalPages)
+  const start = (safePage - 1) * pageSize
+  const currentRows = filtered.slice(start, start + pageSize)
+
+  useEffect(() => setPage(1), [q, pageSize])
 
   const caseOptions = cases.map((c) => ({ value: c.id, label: c.name }))
 
@@ -122,15 +150,6 @@ export default function EvidenceListPage() {
               className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 opacity-70"
             />
           </div>
-          <MiniButton
-            onClick={() => {
-              /* TODO: open filter drawer */
-            }}
-          >
-            <div className="flex items-center gap-1">
-              <img src={iconFilter} width={15} height={15} /> Filter
-            </div>
-          </MiniButton>
         </div>
         <MiniButton onClick={() => setModal(true)} className="ml-auto">
           <MiniButtonContent bg={bgButton} text="+ Add Evidence" textColor="text-black" />
@@ -138,16 +157,19 @@ export default function EvidenceListPage() {
       </div>
 
       {/* --- Table --- */}
-      <div className="overflow-hidden border " style={{ borderColor: 'var(--border)' }}>
+      <div
+        className="relative border rounded-sm overflow-hidden"
+        style={{ borderColor: COLORS.border, background: COLORS.tableBody }}
+      >
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-left" style={{ background: 'var(--panel)' }}>
+            <tr className="text-left" style={{ background: COLORS.theadBg }}>
               {['Evidence ID', 'Case Name', 'Agency', 'Investigator', 'Date Created', 'Action'].map(
                 (h) => (
                   <th
                     key={h}
                     className="px-4 py-3 border-b"
-                    style={{ borderColor: 'var(--border)', color: 'var(--dim)' }}
+                    style={{ borderColor: COLORS.border, color: COLORS.dim }}
                   >
                     {h}
                   </th>
@@ -156,9 +178,9 @@ export default function EvidenceListPage() {
             </tr>
           </thead>
           <tbody>
-            {filtered.map((row) => (
+            {currentRows.map((row) => (
               <tr key={row.id} className="hover:bg-white/5">
-                <td className="px-4 py-3 border-b" style={{ borderColor: 'var(--border)' }}>
+                <td className="px-4 py-3 border-b" style={{ borderColor: COLORS.border }}>
                   <div className="flex items-center gap-2">
                     <span
                       className={`inline-block w-1.5 h-4 rounded ${
@@ -168,45 +190,58 @@ export default function EvidenceListPage() {
                     {row.id}
                   </div>
                 </td>
-                <td className="px-4 py-3 border-b" style={{ borderColor: 'var(--border)' }}>
+                <td className="px-4 py-3 border-b" style={{ borderColor: COLORS.border }}>
                   {row.caseName}
                 </td>
-                <td className="px-4 py-3 border-b" style={{ borderColor: 'var(--border)' }}>
+                <td className="px-4 py-3 border-b" style={{ borderColor: COLORS.border }}>
                   {row.agency || '-'}
                 </td>
-                <td className="px-4 py-3 border-b" style={{ borderColor: 'var(--border)' }}>
+                <td className="px-4 py-3 border-b" style={{ borderColor: COLORS.border }}>
                   {row.investigator || '-'}
                 </td>
-                <td className="px-4 py-3 border-b" style={{ borderColor: 'var(--border)' }}>
+                <td className="px-4 py-3 border-b" style={{ borderColor: COLORS.border }}>
                   {row.date}
                 </td>
-                <td className="px-4 py-3 border-b" style={{ borderColor: 'var(--border)' }}>
-                  <MiniButton onClick={() => nav(`/evidence/${row.id}`)}>Detail</MiniButton>
+                <td className="px-4 py-3 border-b" style={{ borderColor: COLORS.border }}>
+                  <button
+                    onClick={() => nav(`/evidence/${row.id}`)}
+                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded"
+                    style={{ background: COLORS.detailBtn }}
+                  >
+                    <img src={iconSearch} className="w-4 h-4 opacity-90" />
+                    <span>Detail</span>
+                  </button>
                 </td>
               </tr>
             ))}
-            {filtered.length === 0 && (
+            {currentRows.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-6 text-center" style={{ color: 'var(--dim)' }}>
+                <td colSpan={6} className="px-4 py-6 text-center" style={{ color: COLORS.dim }}>
                   No evidence
                 </td>
               </tr>
             )}
           </tbody>
         </table>
+
+        <div
+          className="flex items-center justify-between px-4 py-3 border-t"
+          style={{ borderColor: COLORS.border }}
+        >
+          <div>
+            <div className="flex items-center gap-6 text-xs opacity-70">
+              <div className="flex items-center gap-2">
+                <span className="w-1.5 h-4 rounded bg-indigo-300 inline-block" /> generated case id
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-1.5 h-4 rounded bg-pink-300 inline-block" /> Manual case id
+              </div>
+            </div>
+          </div>
+          <Pagination page={safePage} totalPages={totalPages} onChange={setPage} />
+        </div>
       </div>
 
-      {/* --- Legend --- */}
-      <div className="flex items-center gap-6 text-xs opacity-70 mt-3">
-        <div className="flex items-center gap-2">
-          <span className="w-1 h-5 rounded bg-indigo-300 inline-block" /> generated case id
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="w-1 h-5 rounded bg-pink-300 inline-block" /> Manual case id
-        </div>
-      </div>
-
-      {/* --- Modal --- */}
       <AddEvidenceModal
         open={modal}
         onClose={() => setModal(false)}

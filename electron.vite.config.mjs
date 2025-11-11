@@ -11,14 +11,13 @@ export default defineConfig({
     plugins: [externalizeDepsPlugin()]
   },
   renderer: {
+    base: './',
     resolve: {
       alias: {
+        '@': resolve('src/renderer/src'),
         '@renderer': resolve('src/renderer/src')
       }
     },
-    plugins: [
-      tailwindcss(),
-      react()
-    ]
+    plugins: [react(), tailwindcss()]
   }
 })
