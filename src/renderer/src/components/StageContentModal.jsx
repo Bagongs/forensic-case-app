@@ -1,21 +1,19 @@
 /* eslint-disable react-refresh/only-export-components */
-/* eslint-disable no-unused-vars */
 /* eslint-disable react/prop-types */
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { IoClose } from 'react-icons/io5'
 import { useEvidenceChain } from '../store/evidenceChain'
+import { useCases } from '../store/cases'
+import SummaryBox from './SummaryBox'
 
-/* ======================= TOKENS ======================= */
 const TOKENS = {
   modalBg: '#151D28',
   ring: '#394F6F',
   text: '#F4F6F8',
   dim: '#A8B3C4',
-  gold: '#EDC702',
-  goldAlpha: '#EDC702B2'
+  gold: '#EDC702'
 }
 
-/* ======================= STAGES ======================= */
 export const STAGES = {
   ACQUISITION: 'acquisition',
   PREPARATION: 'preparation',
@@ -23,23 +21,23 @@ export const STAGES = {
   ANALYSIS: 'analysis'
 }
 
-/* ================== PRIMITIVE FIELDS ================== */
+/* =============== PRIMITIVES =============== */
 const Label = ({ children }) => (
-  <div className="text-[14px] mb-2" style={{ color: TOKENS.dim }}>
+  <div className="text-sm mb-2" style={{ color: TOKENS.dim }}>
     {children}
   </div>
 )
 const Input = (p) => (
   <input
     {...p}
-    className={`w-full h-11 rounded-md bg-transparent px-3 text-[14px] outline-none ${p.className || ''}`}
+    className="w-full h-11 rounded-md bg-transparent px-3 text-sm outline-none"
     style={{ color: TOKENS.text, border: `1px solid ${TOKENS.ring}` }}
   />
 )
 const Select = ({ options = [], ...p }) => (
   <select
     {...p}
-    className={`w-full h-11 rounded-md bg-transparent px-3 text-[14px] outline-none appearance-none ${p.className || ''}`}
+    className="w-full h-11 rounded-md bg-transparent px-3 text-sm outline-none appearance-none"
     style={{ color: TOKENS.text, border: `1px solid ${TOKENS.ring}` }}
   >
     {options.map((o) => (
@@ -57,36 +55,39 @@ const Textarea = (p) => (
   <textarea
     {...p}
     rows={p.rows ?? 3}
-    className={`w-full rounded-md bg-transparent px-3 py-2 text-[14px] outline-none resize-y ${p.className || ''}`}
+    className="w-full rounded-md bg-transparent px-3 py-2 text-sm outline-none resize-y"
     style={{ color: TOKENS.text, border: `1px solid ${TOKENS.ring}` }}
   />
 )
-const Field = ({ label, children, className }) => (
-  <div className={className}>
+const Field = ({ label, children }) => (
+  <div>
     <Label>{label}</Label>
     {children}
   </div>
 )
 const Row = ({ children, cols = 2 }) => (
   <div
-    className={`grid gap-4 sm:gap-5 ${cols === 3 ? 'grid-cols-1 sm:grid-cols-3' : 'grid-cols-1 sm:grid-cols-2'}`}
+    className={`grid gap-4 ${cols === 3 ? 'grid-cols-1 sm:grid-cols-3' : 'grid-cols-1 sm:grid-cols-2'}`}
   >
     {children}
   </div>
 )
 
-/* ======================= MAIN MODAL ======================= */
+/* =============== MAIN MODAL =============== */
 export default function StageContentModal({
   open,
-  caseNumber = '32342223',
-  caseTitle = 'Buronan Maroko Interpol',
+  caseNumber,
+  caseTitle,
   initialStage = STAGES.ACQUISITION,
+  evidenceId,
   onClose,
   onSubmitStage
 }) {
   const [stage, setStage] = useState(initialStage)
   const [submitting, setSubmitting] = useState(false)
   const collectorRef = useRef(null)
+  const { addChainContent } = useCases()
+  const { preparation } = useEvidenceChain()
 
   useEffect(() => {
     if (open) setStage(initialStage)
@@ -95,21 +96,22 @@ export default function StageContentModal({
   const title = useMemo(
     () =>
       ({
-        [STAGES.ACQUISITION]: 'Acquisition',
-        [STAGES.PREPARATION]: 'Preparation',
-        [STAGES.EXTRACTION]: 'Extraction',
-        [STAGES.ANALYSIS]: 'Analysis'
+        acquisition: 'Acquisition',
+        preparation: 'Preparation',
+        extraction: 'Extraction',
+        analysis: 'Analysis'
       })[stage] || 'Stage',
     [stage]
   )
 
   if (!open) return null
 
-  async function handleFooterSubmit() {
+  async function handleSubmit() {
     try {
       setSubmitting(true)
       const payload = (await collectorRef.current?.()) ?? {}
       await onSubmitStage?.(stage, payload)
+      if (evidenceId) addChainContent(evidenceId, stage, payload)
       onClose?.()
     } finally {
       setSubmitting(false)
@@ -117,44 +119,30 @@ export default function StageContentModal({
   }
 
   return (
-    <div
-      className="fixed inset-0 z-1000 flex items-center justify-center"
-      role="dialog"
-      aria-modal="true"
-    >
-      <div
-        className="absolute inset-0"
-        style={{ background: 'rgba(0,0,0,.6)' }}
-        onClick={() => onClose?.()}
-      />
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center">
+      <div className="absolute inset-0 bg-black/60" onClick={onClose}></div>
       <div
         className="relative w-[min(920px,95vw)] max-h-[92vh] rounded-xl overflow-hidden flex flex-col"
-        style={{ background: TOKENS.modalBg, boxShadow: '0 20px 60px rgba(0,0,0,.4)' }}
+        style={{ background: TOKENS.modalBg }}
       >
-        {/* Header */}
-        <div className="px-6 sm:px-8 pt-6 pb-5 border-b" style={{ borderColor: TOKENS.ring }}>
-          <div className="flex items-start justify-between">
+        <header className="px-6 pt-6 pb-5 border-b" style={{ borderColor: TOKENS.ring }}>
+          <div className="flex justify-between">
             <div>
-              <div className="text-[24px] font-semibold" style={{ color: TOKENS.text }}>
+              <h1 className="text-2xl font-semibold" style={{ color: TOKENS.text }}>
                 {title}
-              </div>
-              <div className="mt-1 flex items-baseline gap-4">
-                <div className="text-[28px] font-bold tracking-wide" style={{ color: TOKENS.gold }}>
-                  {caseNumber}
-                </div>
-                <div className="text-[18px]" style={{ color: TOKENS.text }}>
-                  {caseTitle}
-                </div>
+              </h1>
+              <div className="flex items-baseline gap-3 mt-1">
+                <span className="text-2xl font-bold text-yellow-400">{caseNumber}</span>
+                <span className="text-lg text-gray-200">{caseTitle}</span>
               </div>
             </div>
-            <button onClick={onClose} className="p-2 rounded-lg" aria-label="Close">
+            <button onClick={onClose} className="p-2">
               <IoClose size={28} color={TOKENS.text} />
             </button>
           </div>
-        </div>
+        </header>
 
-        {/* Body */}
-        <div className="px-6 sm:px-8 py-6 overflow-auto space-y-6">
+        <div className="p-6 overflow-auto space-y-6">
           {stage === STAGES.ACQUISITION && (
             <AcquisitionPanel registerCollector={(fn) => (collectorRef.current = fn)} />
           )}
@@ -165,44 +153,34 @@ export default function StageContentModal({
             <ExtractionPanel registerCollector={(fn) => (collectorRef.current = fn)} />
           )}
           {stage === STAGES.ANALYSIS && (
-            <AnalysisPanel registerCollector={(fn) => (collectorRef.current = fn)} />
+            <AnalysisPanel
+              registerCollector={(fn) => (collectorRef.current = fn)}
+              preparationData={preparation}
+            />
           )}
         </div>
 
-        {/* Footer */}
-        <div className="px-6 sm:px-8 pb-6 flex justify-end gap-3">
+        <footer className="flex justify-end gap-3 px-6 pb-6">
           <button
             onClick={onClose}
-            className="h-11 px-6 rounded-md text-[14px]"
-            style={{
-              color: TOKENS.text,
-              background: 'transparent',
-              border: '1.5px solid #EDC702'
-            }}
+            className="h-11 px-6 rounded-md text-sm border border-yellow-400 text-gray-200"
           >
             Cancel
           </button>
           <button
-            onClick={handleFooterSubmit}
+            onClick={handleSubmit}
             disabled={submitting}
-            className="h-11 px-6 rounded-md text-[14px]"
-            style={{
-              color: '#121212',
-              background:
-                'radial-gradient(50% 50% at 50% 50%, #EDC702 0%, rgba(237,199,2,0.7) 100%)',
-              border: '3px solid #EDC702B2',
-              opacity: submitting ? 0.7 : 1
-            }}
+            className="h-11 px-6 rounded-md text-sm bg-yellow-400 text-black font-semibold"
           >
-            Submit
+            {submitting ? 'Saving...' : 'Submit'}
           </button>
-        </div>
+        </footer>
       </div>
     </div>
   )
 }
 
-/* ======================= PANELS ======================= */
+/* =============== ACQUISITION =============== */
 function AcquisitionPanel({ registerCollector }) {
   const { acquisition, setStageData } = useEvidenceChain()
   const [v, setV] = useState({
@@ -217,46 +195,44 @@ function AcquisitionPanel({ registerCollector }) {
     ...acquisition
   })
 
-  useEffect(() => {
-    registerCollector?.(async () => {
-      setStageData(STAGES.ACQUISITION, v)
-      return v
-    })
-  }, [v, registerCollector, setStageData])
+  const addStep = () => setV({ ...v, steps: [...v.steps, ''], photos: [...v.photos, null] })
 
-  const setStep = (i, val) => {
-    const next = [...v.steps]
-    next[i] = val
-    setV({ ...v, steps: next })
-  }
   const setPhoto = (i, file) => {
-    const next = [...v.photos]
-    next[i] = file
-    setV({ ...v, photos: next })
+    const reader = new FileReader()
+    reader.onload = () => {
+      const next = [...v.photos]
+      next[i] = reader.result
+      setV({ ...v, photos: next })
+    }
+    reader.readAsDataURL(file)
   }
-  const addStep = () => {
-    setV({ ...v, steps: [...v.steps, ''], photos: [...v.photos, null] })
-  }
+
+  useEffect(() => {
+    registerCollector(async () => {
+      const payload = {
+        ...v,
+        id: crypto.randomUUID(),
+        // type: STAGES.ACQUISITION,
+        createdAt: new Date().toISOString()
+      }
+      setStageData(STAGES.ACQUISITION, payload)
+      return payload
+    })
+  }, [v])
 
   return (
     <>
       <Row>
         <Field label="Investigator">
           <Input
-            placeholder="Name"
             value={v.investigator}
             onChange={(e) => setV({ ...v, investigator: e.target.value })}
           />
         </Field>
         <Field label="Location">
-          <Input
-            placeholder="Location"
-            value={v.location}
-            onChange={(e) => setV({ ...v, location: e.target.value })}
-          />
+          <Input value={v.location} onChange={(e) => setV({ ...v, location: e.target.value })} />
         </Field>
       </Row>
-
       <Row cols={3}>
         <Field label="Evidence Source">
           <Select
@@ -266,84 +242,51 @@ function AcquisitionPanel({ registerCollector }) {
           />
         </Field>
         <Field label="Evidence Type">
-          <Input
-            placeholder="Evidence Type"
-            value={v.type}
-            onChange={(e) => setV({ ...v, type: e.target.value })}
-          />
+          <Input value={v.type} onChange={(e) => setV({ ...v, type: e.target.value })} />
         </Field>
         <Field label="Evidence Detail">
-          <Input
-            placeholder="Evidence Detail"
-            value={v.detail}
-            onChange={(e) => setV({ ...v, detail: e.target.value })}
-          />
+          <Input value={v.detail} onChange={(e) => setV({ ...v, detail: e.target.value })} />
         </Field>
       </Row>
 
-      <div className="mt-5">
-        <Label>Steps for Confiscating Evidence</Label>
-
-        {v.steps.map((s, i) => (
-          <div key={i} className="flex items-start gap-3 mb-3">
-            <Textarea
-              rows={2}
-              placeholder={`${i + 1}.`}
-              value={s}
-              onChange={(e) => setStep(i, e.target.value)}
-              className="flex-1"
-            />
-
-            <label
-              className="cursor-pointer h-11 px-5 rounded-md flex items-center justify-center"
-              style={{
-                background: '#394F6F',
-                color: '#F4F6F8',
-                border: '1px solid #394F6F',
-                whiteSpace: 'nowrap'
-              }}
-            >
-              Upload Photo
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => {
-                  if (e.target.files?.[0]) setPhoto(i, e.target.files[0])
-                }}
-              />
-            </label>
-          </div>
-        ))}
-
-        <div className="mt-4">
-          <button
-            onClick={addStep}
-            className="h-11 px-6 rounded-md text-[14px]"
-            style={{
-              color: '#F4F6F8',
-              border: '1px solid #394F6F',
-              background: 'transparent'
+      <Label>Steps for Confiscating Evidence</Label>
+      {v.steps.map((s, i) => (
+        <div key={i} className="flex items-start gap-3 mb-3">
+          <Textarea
+            rows={2}
+            value={s}
+            onChange={(e) => {
+              const next = [...v.steps]
+              next[i] = e.target.value
+              setV({ ...v, steps: next })
             }}
-          >
-            + Add
-          </button>
+          />
+          <label className="cursor-pointer px-4 py-2 border border-gray-500 rounded-md">
+            Upload Photo
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => e.target.files?.[0] && setPhoto(i, e.target.files[0])}
+            />
+          </label>
         </div>
-      </div>
+      ))}
+      <button
+        onClick={addStep}
+        className="h-10 px-4 border border-gray-500 rounded-md text-sm text-gray-200 mt-2"
+      >
+        + Add
+      </button>
 
-      <Field label="Notes" className="mt-5">
-        <Textarea
-          placeholder="Evidence notes"
-          rows={3}
-          value={v.notes}
-          onChange={(e) => setV({ ...v, notes: e.target.value })}
-        />
+      <Field label="Notes">
+        <Textarea value={v.notes} onChange={(e) => setV({ ...v, notes: e.target.value })} />
       </Field>
     </>
   )
 }
-
-function PreparationPanel({ onPrev, registerCollector }) {
+/* =============== PREPARATION =============== */
+function PreparationPanel({ registerCollector }) {
   const { preparation, setStageData } = useEvidenceChain()
   const [v, setV] = useState({
     investigator: '',
@@ -351,22 +294,30 @@ function PreparationPanel({ onPrev, registerCollector }) {
     source: '',
     type: '',
     detail: '',
-    hypothesis: preparation.hypothesis?.length ? preparation.hypothesis : [''],
-    tool: '',
+    pairs: [{ investigation: '', tools: '' }],
     notes: '',
     ...preparation
   })
-  useEffect(() => {
-    registerCollector?.(async () => {
-      setStageData(STAGES.PREPARATION, v)
-      return v
-    })
-  }, [v, registerCollector, setStageData])
 
-  const setHyp = (i, val) => {
-    const next = [...v.hypothesis]
-    next[i] = val
-    setV({ ...v, hypothesis: next })
+  const addPair = () => setV({ ...v, pairs: [...v.pairs, { investigation: '', tools: '' }] })
+
+  useEffect(() => {
+    registerCollector(async () => {
+      const payload = {
+        ...v,
+        id: crypto.randomUUID(),
+        // type: STAGES.PREPARATION,
+        createdAt: new Date().toISOString()
+      }
+      setStageData(STAGES.PREPARATION, payload)
+      return payload
+    })
+  }, [v])
+
+  const setPair = (i, key, val) => {
+    const next = [...v.pairs]
+    next[i][key] = val
+    setV({ ...v, pairs: next })
   }
 
   return (
@@ -374,19 +325,15 @@ function PreparationPanel({ onPrev, registerCollector }) {
       <Row>
         <Field label="Investigator">
           <Input
-            placeholder="Name"
             value={v.investigator}
             onChange={(e) => setV({ ...v, investigator: e.target.value })}
           />
         </Field>
         <Field label="Location">
-          <Input
-            placeholder="Location"
-            value={v.location}
-            onChange={(e) => setV({ ...v, location: e.target.value })}
-          />
+          <Input value={v.location} onChange={(e) => setV({ ...v, location: e.target.value })} />
         </Field>
       </Row>
+
       <Row cols={3}>
         <Field label="Evidence Source">
           <Select
@@ -396,62 +343,48 @@ function PreparationPanel({ onPrev, registerCollector }) {
           />
         </Field>
         <Field label="Evidence Type">
-          <Input
-            placeholder="Name"
-            value={v.type}
-            onChange={(e) => setV({ ...v, type: e.target.value })}
-          />
+          <Input value={v.type} onChange={(e) => setV({ ...v, type: e.target.value })} />
         </Field>
         <Field label="Evidence Detail">
-          <Input
-            placeholder="Nomor HP"
-            value={v.detail}
-            onChange={(e) => setV({ ...v, detail: e.target.value })}
-          />
+          <Input value={v.detail} onChange={(e) => setV({ ...v, detail: e.target.value })} />
         </Field>
       </Row>
-      <Row>
-        <Field label="Investigation Hypotesis">
-          <div className="space-y-3">
-            {v.hypothesis.map((h, i) => (
-              <Textarea
-                key={i}
-                rows={2}
-                placeholder={`${i + 1}.`}
-                value={h}
-                onChange={(e) => setHyp(i, e.target.value)}
-              />
-            ))}
-            <button
-              onClick={() => setV({ ...v, hypothesis: [...v.hypothesis, ''] })}
-              className="h-[42px] px-5 rounded-md"
-              style={{ color: TOKENS.text, border: `1px solid ${TOKENS.ring}` }}
-            >
-              + Add
-            </button>
+
+      <Label>Investigation Hypothesis & Tools Used</Label>
+      {v.pairs.map((p, i) => (
+        <div key={i} className="grid grid-cols-2 gap-3 mb-3 items-start">
+          <Textarea
+            placeholder="Investigation Hypothesis"
+            value={p.investigation}
+            onChange={(e) => setPair(i, 'investigation', e.target.value)}
+          />
+          <div>
+            <Label>Tool Used</Label>
+            <Select
+              value={p.tools}
+              onChange={(e) => setPair(i, 'tools', e.target.value)}
+              options={['Select tools', 'Magnet Axiom', 'Oxygen', 'Cellebrite', 'Encase']}
+            />
           </div>
-        </Field>
-        <Field label="Tool Used">
-          <Select
-            value={v.tool}
-            onChange={(e) => setV({ ...v, tool: e.target.value })}
-            options={['Select tools', 'Magnet Axiom', 'Cellebrite', 'Oxygen']}
-          />
-        </Field>
-      </Row>
+        </div>
+      ))}
+
+      <button
+        onClick={addPair}
+        className="h-10 px-4 border border-gray-500 rounded-md text-sm text-gray-200"
+      >
+        + Add
+      </button>
+
       <Field label="Notes">
-        <Textarea
-          placeholder="Evidence notes"
-          rows={3}
-          value={v.notes}
-          onChange={(e) => setV({ ...v, notes: e.target.value })}
-        />
+        <Textarea value={v.notes} onChange={(e) => setV({ ...v, notes: e.target.value })} />
       </Field>
     </>
   )
 }
 
-function ExtractionPanel({ onPrev, registerCollector }) {
+/* =============== EXTRACTION =============== */
+function ExtractionPanel({ registerCollector }) {
   const { extraction, setStageData } = useEvidenceChain()
   const [v, setV] = useState({
     investigator: '',
@@ -459,33 +392,42 @@ function ExtractionPanel({ onPrev, registerCollector }) {
     source: '',
     type: '',
     detail: '',
-    results: '',
+    files: [],
     notes: '',
     ...extraction
   })
+
+  const addFile = (file) => {
+    const reader = new FileReader()
+    reader.onload = () =>
+      setV({ ...v, files: [...v.files, { name: file.name, base64: reader.result }] })
+    reader.readAsDataURL(file)
+  }
+
   useEffect(() => {
-    registerCollector?.(async () => {
-      setStageData(STAGES.EXTRACTION, v)
-      return v
+    registerCollector(async () => {
+      const payload = {
+        ...v,
+        id: crypto.randomUUID(),
+        // type: STAGES.EXTRACTION,
+        createdAt: new Date().toISOString()
+      }
+      setStageData(STAGES.EXTRACTION, payload)
+      return payload
     })
-  }, [v, registerCollector, setStageData])
+  }, [v])
 
   return (
     <>
       <Row>
         <Field label="Investigator">
           <Input
-            placeholder="Name"
             value={v.investigator}
             onChange={(e) => setV({ ...v, investigator: e.target.value })}
           />
         </Field>
         <Field label="Location">
-          <Input
-            placeholder="Location"
-            value={v.location}
-            onChange={(e) => setV({ ...v, location: e.target.value })}
-          />
+          <Input value={v.location} onChange={(e) => setV({ ...v, location: e.target.value })} />
         </Field>
       </Row>
       <Row cols={3}>
@@ -497,94 +439,97 @@ function ExtractionPanel({ onPrev, registerCollector }) {
           />
         </Field>
         <Field label="Evidence Type">
-          <Input
-            placeholder="Name"
-            value={v.type}
-            onChange={(e) => setV({ ...v, type: e.target.value })}
-          />
+          <Input value={v.type} onChange={(e) => setV({ ...v, type: e.target.value })} />
         </Field>
-        <Field label="Evidance Detail">
-          <Input
-            placeholder="Detail"
-            value={v.detail}
-            onChange={(e) => setV({ ...v, detail: e.target.value })}
-          />
+        <Field label="Evidence Detail">
+          <Input value={v.detail} onChange={(e) => setV({ ...v, detail: e.target.value })} />
         </Field>
       </Row>
-      <Field label="Extraction Results">
-        <Textarea
-          rows={5}
-          value={v.results}
-          onChange={(e) => setV({ ...v, results: e.target.value })}
-        />
+
+      <Field label="Extraction Files">
+        <label className="cursor-pointer h-11 px-5 rounded-md flex items-center justify-center border border-gray-500 w-fit text-sm text-gray-200">
+          Upload File
+          <input
+            type="file"
+            accept="*"
+            className="hidden"
+            onChange={(e) => e.target.files?.[0] && addFile(e.target.files[0])}
+          />
+        </label>
+        <ul className="mt-3 space-y-1 text-sm text-gray-400">
+          {v.files.map((f, i) => (
+            <li key={i}>📄 {f.name}</li>
+          ))}
+        </ul>
       </Field>
+
       <Field label="Notes">
-        <Textarea
-          rows={3}
-          value={v.notes}
-          onChange={(e) => setV({ ...v, notes: e.target.value })}
-        />
+        <Textarea value={v.notes} onChange={(e) => setV({ ...v, notes: e.target.value })} />
       </Field>
     </>
   )
 }
 
-function AnalysisPanel({ onPrev, registerCollector }) {
-  const { analysis, preparation, setStageData } = useEvidenceChain()
+/* =============== ANALYSIS =============== */
+function AnalysisPanel({ registerCollector, preparationData }) {
+  const { analysis, setStageData } = useEvidenceChain()
+  const prepPairs =
+    preparationData?.pairs ??
+    preparationData?.hypothesis?.map((h, i) => ({
+      investigation: h,
+      tools: preparationData.tool[i] ?? ''
+    })) ??
+    []
 
-  // Prefill hypotheses dari Preparation jika Analysis masih kosong
-  const initial = (() => {
-    const base = {
-      investigator: '',
-      location: '',
-      source: '',
-      type: '',
-      detail: '',
-      analystName: '',
-      hypotheses: ['', '', ''],
-      tools: ['Magnet Axiom', 'Cellebrite', 'Oxygen'],
-      results: ['', '', ''],
-      summary: '',
-      ...analysis
-    }
-    const fromPrep = Array.isArray(preparation?.hypothesis) ? preparation.hypothesis : []
-    const isEmpty = (arr) => !arr || arr.every((s) => !String(s || '').trim())
-    if (fromPrep.length && isEmpty(base.hypotheses)) base.hypotheses = [...fromPrep]
-    return base
-  })()
-
-  const [v, setV] = useState(initial)
-  const setArr = (key, i, val) => {
-    const next = [...v[key]]
-    next[i] = val
-    setV({ ...v, [key]: next })
-  }
+  const [v, setV] = useState({
+    investigator: '',
+    location: '',
+    source: '',
+    type: '',
+    detail: '',
+    analystName: '',
+    analysisPairs: prepPairs.map((p) => ({
+      investigation: p.investigation || '',
+      tools: p.tools || '',
+      result: ''
+    })),
+    summary: '',
+    ...analysis
+  })
 
   useEffect(() => {
-    registerCollector?.(async () => {
-      setStageData(STAGES.ANALYSIS, v)
-      return v
+    registerCollector(async () => {
+      const payload = {
+        ...v,
+        id: crypto.randomUUID(),
+        // type: STAGES.ANALYSIS,
+        createdAt: new Date().toISOString()
+      }
+      setStageData(STAGES.ANALYSIS, payload)
+      return payload
     })
-  }, [v, registerCollector, setStageData])
+  }, [v])
+
+  const setResult = (i, val) => {
+    const next = [...v.analysisPairs]
+    next[i].result = val
+    setV({ ...v, analysisPairs: next })
+  }
 
   return (
     <>
       <Row>
         <Field label="Investigator">
           <Input
-            placeholder="Name"
             value={v.investigator}
             onChange={(e) => setV({ ...v, investigator: e.target.value })}
           />
         </Field>
         <Field label="Location">
-          <Input
-            placeholder="Location"
-            value={v.location}
-            onChange={(e) => setV({ ...v, location: e.target.value })}
-          />
+          <Input value={v.location} onChange={(e) => setV({ ...v, location: e.target.value })} />
         </Field>
       </Row>
+
       <Row cols={3}>
         <Field label="Evidence Source">
           <Select
@@ -594,65 +539,49 @@ function AnalysisPanel({ onPrev, registerCollector }) {
           />
         </Field>
         <Field label="Evidence Type">
-          <Input
-            placeholder="Name"
-            value={v.type}
-            onChange={(e) => setV({ ...v, type: e.target.value })}
-          />
+          <Input value={v.type} onChange={(e) => setV({ ...v, type: e.target.value })} />
         </Field>
         <Field label="Evidence Detail">
-          <Input
-            placeholder="Nomor HP"
-            value={v.detail}
-            onChange={(e) => setV({ ...v, detail: e.target.value })}
-          />
+          <Input value={v.detail} onChange={(e) => setV({ ...v, detail: e.target.value })} />
         </Field>
       </Row>
 
-      <Field label="Investigator">
+      {/* <Field label="Analyst Name">
         <Input
-          placeholder="Solehun"
           value={v.analystName}
           onChange={(e) => setV({ ...v, analystName: e.target.value })}
         />
-      </Field>
+      </Field> */}
 
-      <Row>
-        <Field label="Investigation Hypotesis">
-          <div className="space-y-3">
-            {v.hypotheses.map((h, i) => (
-              <Textarea
-                key={i}
-                rows={2}
-                placeholder={`${i + 1}.`}
-                value={h}
-                onChange={(e) => setArr('hypotheses', i, e.target.value)}
-              />
-            ))}
-          </div>
-        </Field>
-        <Field label="Tool Used">
-          <div className="space-y-3">
-            {v.tools.map((t, i) => (
-              <Input key={i} value={t} onChange={(e) => setArr('tools', i, e.target.value)} />
-            ))}
-          </div>
-        </Field>
-      </Row>
-
-      <Field label="Analysis Result">
-        <div className="space-y-3">
-          {v.results.map((r, i) => (
-            <Textarea
-              key={i}
-              rows={2}
-              placeholder={`${i + 1}.`}
-              value={r}
-              onChange={(e) => setArr('results', i, e.target.value)}
-            />
+      {/* Investigation Hypothesis & Tool Used */}
+      <div className="flex flex-row gap-5 w-full">
+        <div className="flex flex-col gap-2 w-full">
+          <Label>Investigation Hypotesis</Label>
+          {v.analysisPairs.map((p, i) => (
+            <Input key={i} readOnly value={p.investigation} className="mb-3" />
           ))}
         </div>
-      </Field>
+
+        <div className="flex flex-col gap-2">
+          <Label>Tool Used</Label>
+          {v.analysisPairs.map((p, i) => (
+            <Input key={i} readOnly value={p.tools} className="mb-3" />
+          ))}
+        </div>
+      </div>
+
+      {/* Analysis Result */}
+      <Label>Analysis Result</Label>
+      {v.analysisPairs.map((p, i) => (
+        <Textarea
+          key={i}
+          rows={2}
+          placeholder={`${i + 1}.`}
+          value={p.result}
+          onChange={(e) => setResult(i, e.target.value)}
+          className="mb-3"
+        />
+      ))}
 
       <Field label="Summary">
         <Textarea

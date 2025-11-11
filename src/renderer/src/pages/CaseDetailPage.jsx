@@ -261,7 +261,7 @@ Z`.trim()
           actionLabel={actionLabel}
           actionIcon={actionIcon}
           actionBgImage={editBg}
-          actionSize={{ w: 100, h: 27 }}
+          actionSize={{ w: 70, h: 27 }}
           actionOffset={{ top: 22, right: 24 }}
           onAction={onSummaryAction}
         />

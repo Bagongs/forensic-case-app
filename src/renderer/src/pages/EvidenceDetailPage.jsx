@@ -1,19 +1,23 @@
 /* eslint-disable react/prop-types */
 /* eslint-disable react-hooks/rules-of-hooks */
-import { Fragment, useMemo, useState } from 'react'
+import { Fragment, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useCases } from '../store/cases'
 import MiniButton, { MiniButtonContent } from '../components/MiniButton'
 import StageContentModal from '../components/StageContentModal'
 import CaseLayout from './CaseLayout'
 import bgButton from '../assets/image/bg-button.svg'
-import { BoxNone, BoxTopLeftBottomRight, BoxTopRight } from '../components/BaseBox'
+import { BoxAllSide, BoxNone, BoxTopLeftBottomRight, BoxTopRight } from '../components/BaseBox'
 import stageOn from '../assets/image/stage-on.svg'
 import stageOff from '../assets/image/stage-off.svg'
 import bgButtonTransparent from '../assets/image/bg-button-transparent.svg'
-import { FaEdit } from 'react-icons/fa'
+import { FaEdit, FaFile, FaRegSave } from 'react-icons/fa'
 import HorizontalLine from '../components/common/HorizontalLine'
 import EditEvidenceModal from '../components/EditEvidenceModal'
+import bgExtranctionResult from '../assets/image/bg-extraction-result.svg'
+import SummaryBox from '../components/SummaryBox'
+import { LiaEditSolid } from 'react-icons/lia'
+import editBg from '../assets/image/edit.svg'
 
 const STAGES = [
   { key: 'acquisition', label: 'Acquisition' },
@@ -24,10 +28,10 @@ const STAGES = [
 
 // ====== Accent warna per stage ======
 const STAGE_STYLE = {
-  acquisition: { fill: '#04122F', border: '#2563EB' },
-  preparation: { fill: '#312002', border: '#F59E0B' },
-  extraction: { fill: '#321501', border: '#F97316' },
-  analysis: { fill: '#062D14', border: '#16A34A' }
+  acquisition: { fill: '#243F65', border: '#A9CCFD' },
+  preparation: { fill: '#243F65', border: '#A9CCFD' },
+  extraction: { fill: '#243F65', border: '#A9CCFD' },
+  analysis: { fill: '#243F65', border: '#A9CCFD' }
 }
 const NODE_DEFAULT = { fill: '#313131', border: '#888888' }
 
@@ -73,8 +77,9 @@ export default function EvidenceDetailPage() {
 
   const chain = evidence.chain || { acquisition: [], preparation: [], extraction: [], analysis: [] }
   const contents = chain?.[active] ?? []
-  const latest = contents.length > 0 ? contents[contents.length - 1] : null
-
+  const latest = Array.isArray(contents) ? contents[contents.length - 1] || null : contents || null
+  console.log('latest : ', latest)
+  console.log('contents : ', contents)
   // meta kecil di heading (tanggal dibuat evidence)
   const headerMeta = useMemo(() => {
     const d = new Date(evidence.createdAt || Date.now())
@@ -82,14 +87,15 @@ export default function EvidenceDetailPage() {
     return { date }
   }, [evidence.createdAt])
 
-  function handleSubmitStage(item) {
-    addChainContent(evidence.id, active, item)
+  // ✅ FIXED: fungsi submit stage sekarang kompatibel dengan StageContentModal
+  function handleSubmitStage(stage, data) {
+    addChainContent(evidence.id, stage, data)
   }
 
   // ===== panel header fields =====
-  const panelLocation = latest?.header?.location || ''
+  const panelLocation = latest?.location || ''
   const panelDatetime = fmtDateLong(latest?.createdAt)
-  const panelInvestigator = latest?.header?.investigator || ''
+  const panelInvestigator = latest?.investigator || ''
 
   const devicePieces = []
   if (latest?.header?.devType) devicePieces.push(latest.header.devType)
@@ -100,14 +106,18 @@ export default function EvidenceDetailPage() {
   const deviceLine = devicePieces.join('')
 
   // Notes prioritas dari modal (item.notes)
-  const noteSource = latest?.notes || latest?.header?.officerNote || latest?.header?.note || ''
+  const noteSource = latest?.notes || latest?.summary || ''
   const notePreview = truncate(noteSource, 256)
 
   // meta untuk progress bar
   const stageMeta = STAGES.map(({ key, label }) => {
-    const list = chain?.[key] || []
-    const last = list.length ? list[list.length - 1] : null
-    const note = last?.notes || last?.header?.officerNote || last?.header?.note || ''
+    const list = chain?.[key]
+    const last = Array.isArray(list)
+      ? list[list.length - 1]
+      : list && typeof list === 'object'
+        ? list
+        : null
+    const note = last?.notes || last?.summary || ''
     return {
       key,
       label,
@@ -120,12 +130,39 @@ export default function EvidenceDetailPage() {
 
   // foto besar utk acquisition: ambil preview terakhir yang ada
   const acqPreview =
-    latest?.type === 'acquisition'
+    active === 'acquisition'
       ? [...(latest?.steps || [])].reverse().find((s) => s?.previewDataUrl)?.previewDataUrl || null
       : null
 
   // ===== investigator name for heading =====
   const headingInvestigator = caseRef?.investigator || latest?.header?.investigator || '-'
+  const [summary, setSummary] = useState('')
+  const savingRef = useRef(false)
+  const [isEditing, setIsEditing] = useState(false)
+
+  const actionLabel = isEditing ? 'Save' : summary.trim() ? 'Edit' : 'Add'
+  const actionIcon = isEditing ? (
+    <FaRegSave className="text-[16px]" />
+  ) : (
+    <LiaEditSolid className="text-[18px]" />
+  )
+
+  const onSummaryAction = async () => {
+    if (!isEditing) {
+      setIsEditing(true)
+      return
+    }
+    if (savingRef.current) return
+    savingRef.current = true
+    try {
+      setIsEditing(false)
+      // updateCase(item.id, { summary })
+    } catch (e) {
+      console.log(e)
+    } finally {
+      savingRef.current = false
+    }
+  }
 
   return (
     <CaseLayout title="Evidence Management" showBack={true}>
@@ -167,8 +204,8 @@ export default function EvidenceDetailPage() {
         <StageContentModal
           open={!!openStage}
           initialStage={openStage}
-          caseNumber="CASE-2025-001"
-          caseTitle="Forensic Mobile Extraction"
+          caseNumber={caseRef?.id || 'CASE-UNKNOWN'}
+          caseTitle={caseRef?.name || 'Untitled Case'}
           onClose={() => setOpenStage(null)}
           onSubmitStage={handleSubmitStage}
         />
@@ -177,14 +214,14 @@ export default function EvidenceDetailPage() {
         <BoxTopRight>
           <div className="flex gap-4">
             <div
-              className="w-28 h-20 rounded border flex items-center justify-center overflow-hidden"
+              className="w-40 h-32 rounded border flex items-center justify-center overflow-hidden"
               style={{ borderColor: 'var(--border)' }}
             >
               {evidence.previewDataUrl || evidence.previewUrl ? (
                 <img
                   src={evidence.previewDataUrl || evidence.previewUrl}
                   alt="preview"
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-contain"
                 />
               ) : (
                 <span className="text-xs opacity-60">No Preview</span>
@@ -195,7 +232,7 @@ export default function EvidenceDetailPage() {
                 <div className="text-xs font-semibold mb-1" style={{ color: 'var(--dim)' }}>
                   Summary
                 </div>
-                <div className="text-sm">{evidence.summary || '-'}</div>
+                <div className="text-sm mt-3">{evidence.summary || '-'}</div>
               </div>
 
               <div
@@ -260,6 +297,7 @@ export default function EvidenceDetailPage() {
                   {m.date && <div className="text-sm opacity-60">{m.date}</div>}
                   {m.investigator && <div className="text-sm opacity-60">{m.investigator}</div>}
                   {m.note && <div className="text-sm opacity-70 mt-1">notes: {m.note}</div>}
+                  {m.summary}
                 </div>
               ))}
             </div>
@@ -269,11 +307,8 @@ export default function EvidenceDetailPage() {
         <BoxTopLeftBottomRight>
           <div className="grid grid-cols-4 gap-3 mb-3">
             {STAGES.map((s) => {
-              // const style = STAGE_STYLE[s.key] || NODE_DEFAULT
               const isActive = active === s.key
-
               const bg = isActive ? stageOn : stageOff
-
               return (
                 <div
                   key={s.key}
@@ -285,7 +320,7 @@ export default function EvidenceDetailPage() {
                     alt=""
                     className="absolute inset-0 w-full h-full object-contain z-0 pointer-events-none select-none"
                   />
-                  <span className={`relative z-10 flex items-center gap-2 text-white`}>
+                  <span className="relative z-10 flex items-center gap-2 text-white">
                     {s.label}
                   </span>
                 </div>
@@ -293,32 +328,45 @@ export default function EvidenceDetailPage() {
             })}
           </div>
           <HorizontalLine color={'#C3CFE0'} />
-          <div className="p-5">
-            <div className="flex items-start justify-between">
-              <div className="text-xl font-semibold">{panelLocation || latest?.title || ''}</div>
-              <div className="text-right">
-                {panelDatetime && <div className="text-sm opacity-60">{panelDatetime}</div>}
-                {panelInvestigator && <div className="text-sm opacity-60">{panelInvestigator}</div>}
-              </div>
-            </div>
-
-            {/* <div className="h-px my-4" style={{ background: '#C3CFE0' }} /> */}
-
+          <div className="">
+            {latest &&
+              typeof latest === 'object' &&
+              !Array.isArray(latest) &&
+              Object.keys(latest ?? {}).length > 0 && (
+                <>
+                  <div className="flex items-center justify-between">
+                    <div className="text-[18px] font-semibold">
+                      {panelLocation || 'Unknown Location'}
+                    </div>
+                    <div className="text-right">
+                      {panelDatetime && <div className="text-[18px]">{panelDatetime}</div>}
+                      {panelInvestigator && (
+                        <div className="text-[18px] opacity-80">{panelInvestigator}</div>
+                      )}
+                    </div>
+                  </div>
+                  <HorizontalLine />
+                  <div className="flex flex-row gap-5 mb-3">
+                    <div>Evidence Source : {latest.source}</div>
+                    <div>Evidence Type : {latest.type}</div>
+                    <div>Evidence Detail : {latest.detail}</div>
+                  </div>
+                </>
+              )}
             {!latest ? (
-              <div className="text-sm opacity-70 py-8 text-center">State masih kosong</div>
+              <div className="text-sm opacity-70 py-8 text-center"></div>
             ) : (
               <div className="grid gap-6">
-                {/* Acquisition: langkah + foto besar */}
                 {active === 'acquisition' && (
                   <div className="grid grid-cols-1 md:grid-cols-[1fr_380px] gap-8">
                     <div>
                       <div className="text-lg font-semibold mb-2">
-                        {latest.title || 'Langkah - langkah penyitaan barang bukti:'}
+                        {latest.title || 'Steps for Confiscating Evidence : '}
                       </div>
                       <ol className="list-decimal pl-6 text-base leading-relaxed space-y-2">
                         {(latest.steps || []).map((s, i) => (
                           <li key={i} className="whitespace-pre-wrap">
-                            {s?.desc}
+                            {s?.desc || s}
                           </li>
                         ))}
                       </ol>
@@ -343,66 +391,155 @@ export default function EvidenceDetailPage() {
                   </div>
                 )}
 
-                {/* Preparation: hipotesis & tools (judul ikut modal bila ada) */}
                 {active === 'preparation' && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                  <div className="overflow-x-auto">
+                    <table className="w-full border-collapse text-base">
+                      <thead>
+                        <tr className="border-b border-gray-600">
+                          <th className="text-left text-lg font-semibold pb-2">
+                            Investigation Hypothesis
+                          </th>
+                          <th className="text-left text-lg font-semibold pb-2 w-1/4">Tool Used</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(latest.pairs || []).map((p, i) => (
+                          <tr
+                            key={i}
+                            className="border-b border-gray-700 hover:bg-white/5 transition-colors"
+                          >
+                            <td className="py-2 align-top">
+                              <div className="flex items-start">
+                                {/* <span className="mr-2">{i + 1}.</span> */}
+                                <span className="whitespace-pre-wrap">{p.investigation}</span>
+                              </div>
+                            </td>
+                            <td className="py-2 align-top font-medium">{p.tools}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+                {active === 'extraction' && (
+                  <div className="flex justify-center items-center my-5 relative">
+                    <img src={bgExtranctionResult} width={180} />
+                    <div className="absolute -mt-8 text-center">
+                      <p className="font-bold">Handphone A</p>
+                      <p>Size : 67gb</p>
+                    </div>
+                    <button className="absolute bg-[#2A3A51] px-5 mt-32 border-y-black border border-x-0">
+                      Download
+                    </button>
+                  </div>
+                )}
+                {active === 'analysis' && (
+                  <div className="grid grid-cols-1 md:grid-cols-[1fr_300px] place-items-center gap-8">
+                    {/* === KIRI: Analysis Result === */}
                     <div>
-                      <div className="text-lg font-semibold mb-2">
-                        {latest.hypothesisTitle || 'Hipotesis penyelidikan'}
-                      </div>
-                      <ol className="list-decimal pl-6 text-base leading-relaxed">
-                        {(latest.hypothesis || []).map((h, i) => (
-                          <li key={i}>{h}</li>
+                      <div className="text-lg font-semibold mb-3">Analysis Result:</div>
+                      <ol className="list-decimal pl-6 text-base leading-relaxed space-y-3">
+                        {(latest.analysisPairs || []).map((p, i) => (
+                          <li key={i} className="space-y-1">
+                            <div className="whitespace-pre-wrap">{p.result}</div>
+                          </li>
                         ))}
                       </ol>
                     </div>
-                    <div>
-                      <div className="text-lg font-semibold mb-2">
-                        {latest.toolsTitle || 'Tools yang akan digunakan'}
-                      </div>
-                      <ol className="list-decimal pl-6 text-base leading-relaxed">
-                        {Array.isArray(latest.tools)
-                          ? latest.tools.map((t, i) => <li key={i}>{t}</li>)
-                          : (latest.tools || '')
-                              .split(',')
-                              .map((t) => t.trim())
-                              .filter(Boolean)
-                              .map((t, i) => <li key={i}>{t}</li>)}
-                      </ol>
+
+                    {/* === KANAN: File Report / Summary === */}
+                    <div className="md:justify-self-end">
+                      <BoxAllSide>
+                        <BoxAllSide>
+                          <div className="flex flex-row justify-center items-center gap-5">
+                            <FaFile size={30} />
+                            <div className="flex flex-col">
+                              <p className="font-bold">Handphone A</p>
+                              <p>Size : 67gb</p>
+                            </div>
+                          </div>
+                        </BoxAllSide>
+                        <button className="bg-[#2A3A51] px-5 mt-5 border-y-black border border-x-0 flex justify-self-center">
+                          Download
+                        </button>
+                      </BoxAllSide>
+                      {/* <div className="border rounded-2xl p-5 bg-white/5 w-full max-w-[300px] text-center">
+                        <div className="flex flex-col items-center justify-center border border-gray-500 rounded-lg py-6 mb-4">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            strokeWidth={1.5}
+                            stroke="currentColor"
+                            className="w-10 h-10 mb-3 opacity-80"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M12 4.5v15m0 0l6-6m-6 6l-6-6"
+                            />
+                          </svg>
+                          <div className="text-lg font-semibold">PDF Report</div>
+                          <div className="text-sm opacity-70">File: 14 Mb</div>
+                        </div>
+
+                        <button className="px-5 py-2 bg-[#394F6F] text-white font-medium rounded-md hover:bg-[#4b618a] transition">
+                          Download
+                        </button>
+                      </div> */}
                     </div>
                   </div>
                 )}
 
-                {/* Device line */}
-                {deviceLine && <div className="text-xl font-semibold">{deviceLine}</div>}
+                {/* {deviceLine && <div className="text-xl font-semibold">{deviceLine}ppp</div>} */}
 
-                {/* Notes box */}
-                {notePreview && (
-                  <div
-                    className="rounded-xl border p-5 bg-white/50"
-                    style={{ borderColor: 'var(--border)' }}
-                  >
-                    <div className="text-lg font-semibold mb-2">Notes</div>
-                    <div className="text-base leading-relaxed">{notePreview}</div>
-                  </div>
-                )}
-
-                {/* (opsional) daftar item-detail di bawah ringkasan */}
-                {contents.length > 0 && (
+                {/* {Array.isArray(contents) && contents.length > 0 && (
                   <div className="grid gap-3">
+                    pppp
                     {contents.map((it) => (
                       <StageItemCard key={it.id} item={it} />
                     ))}
                   </div>
+                )} */}
+                {notePreview && (
+                  <>
+                    <div
+                      className="rounded-xl border p-5 bg-white/50"
+                      style={{ borderColor: 'var(--border)' }}
+                    >
+                      <div className="text-lg font-semibold mb-2">Notes</div>
+                      <div className="text-base leading-relaxed">{notePreview}</div>
+                    </div>
+                    <SummaryBox
+                      title="Summary"
+                      value={summary}
+                      onChange={setSummary}
+                      placeholder="Click Add to write summary"
+                      editable={isEditing}
+                      actionLabel={actionLabel}
+                      actionIcon={actionIcon}
+                      actionBgImage={editBg}
+                      actionSize={{ w: 70, h: 27 }}
+                      actionOffset={{ top: 15, right: 24 }}
+                      onAction={onSummaryAction}
+                    />
+                  </>
                 )}
               </div>
             )}
-
-            <div className="mt-6 flex justify-center">
-              <MiniButton onClick={() => setOpenStage(active)}>+ Add content</MiniButton>
-            </div>
+            {(!latest ||
+              (typeof latest === 'object' &&
+                !Array.isArray(latest) &&
+                Object.keys(latest ?? {}).length === 0)) && (
+              <div className="mt-6 flex justify-center">
+                <div className="inline-block bg-[#394F6F] rounded-md">
+                  <MiniButton onClick={() => setOpenStage(active)}>+ Add content</MiniButton>
+                </div>
+              </div>
+            )}
           </div>
         </BoxTopLeftBottomRight>
+
         <EditEvidenceModal
           open={editOpen}
           onClose={() => setEditOpen(false)}
@@ -467,7 +604,7 @@ function StageItemCard({ item }) {
           {item.steps.map((s, i) => (
             <div key={i} className="grid grid-cols-[1.5rem_1fr_auto] items-start gap-2">
               <div className="opacity-60 text-xs">{s.no}</div>
-              <div className="text-sm whitespace-pre-wrap">{s.desc}</div>
+              <div className="text-sm whitespace-pre-wrap">{s.desc || s}</div>
               {s.previewDataUrl && (
                 <img
                   src={s.previewDataUrl}
@@ -534,7 +671,7 @@ function StageItemCard({ item }) {
               </div>
               <ul className="list-disc pl-5 text-sm">
                 {item.expectations.map((e, i) => (
-                  <li key={i}>{e}</li>
+                  <li key={i}>{e} ppp </li>
                 ))}
               </ul>
             </div>

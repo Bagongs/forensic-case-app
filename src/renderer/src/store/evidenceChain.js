@@ -1,72 +1,47 @@
-// src/renderer/store/evidenceChain.js
 import { create } from 'zustand'
 
-/**
- * Satu store untuk chain-of-custody per evidence.
- * Jika kamu punya banyak evidence sekaligus, bisa tambahkan keyed by evidenceId.
- */
+export const STAGES = {
+  ACQUISITION: 'acquisition',
+  PREPARATION: 'preparation',
+  EXTRACTION: 'extraction',
+  ANALYSIS: 'analysis'
+}
+
 export const useEvidenceChain = create((set, get) => ({
-  // data per stage
   acquisition: {},
-  preparation: {
-    investigator: '',
-    location: '',
-    source: '',
-    type: '',
-    detail: '',
-    hypothesis: [''], // array string
-    tool: '',
-    notes: ''
-  },
+  preparation: {},
   extraction: {},
-  analysis: {
-    investigator: '',
-    location: '',
-    source: '',
-    type: '',
-    detail: '',
-    analystName: '',
-    hypotheses: ['', '', ''],
-    tools: ['Magnet Axiom', 'Cellebrite', 'Oxygen', 'Encase'],
-    results: ['', '', ''],
-    summary: ''
+  analysis: {},
+
+  setStageData: (stage, payload) => {
+    const enriched = {
+      ...payload,
+      id: payload?.id || crypto.randomUUID(),
+      type: stage,
+      createdAt: payload?.createdAt || new Date().toISOString()
+    }
+
+    set({ [stage]: enriched })
+
+    try {
+      const data = JSON.parse(localStorage.getItem('evidenceChain') || '{}')
+      data[stage] = enriched
+      localStorage.setItem('evidenceChain', JSON.stringify(data))
+    } catch (err) {
+      console.error('Failed to save evidenceChain:', err)
+    }
+
+    return enriched
   },
 
-  // setter generic per stage
-  setStageData: (stage, payload) => set(() => ({ [stage]: payload })),
-
-  // --- helper khusus kebutuhanmu ---
-  /**
-   * Salin nilai dari Preparation → Analysis.
-   * - hypothesis (Preparation) → hypotheses (Analysis)
-   * - tool (Preparation) → tools[0] (Analysis) jika belum diisi
-   */
-  importFromPreparationToAnalysis: () => {
-    const { preparation, analysis } = get()
-    const next = { ...analysis }
-
-    if (Array.isArray(preparation.hypothesis) && preparation.hypothesis.length) {
-      next.hypotheses = [...preparation.hypothesis]
-      // opsional: juga jadikan sebagai draft results awal
-      // next.results = [...preparation.hypothesis]
-    }
-    if (preparation.tool && (!next.tools || !next.tools[0])) {
-      next.tools = [preparation.tool, ...(next.tools?.slice(1) || [])]
-    }
-    set({ analysis: next })
-    return next
-  },
-
-  resetAll: () =>
-    set({
+  resetAll: () => {
+    const empty = {
       acquisition: {},
-      preparation: { hypothesis: [''] },
+      preparation: {},
       extraction: {},
-      analysis: {
-        hypotheses: ['', '', ''],
-        tools: ['Magnet Axiom', 'Cellebrite', 'Oxygen', 'Encase'],
-        results: ['', '', ''],
-        summary: ''
-      }
-    })
+      analysis: {}
+    }
+    set(empty)
+    localStorage.setItem('evidenceChain', JSON.stringify(empty))
+  }
 }))

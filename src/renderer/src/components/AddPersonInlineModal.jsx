@@ -6,7 +6,7 @@ import Modal from './Modal'
 import { useCases } from '../store/cases'
 
 const DEVICE_SOURCES = ['Hp', 'Ssd', 'HardDisk', 'Pc', 'Laptop', 'DVR']
-const STATUS_OPTIONS = ['Suspect', 'Witness', 'Victim', 'Unknown']
+const STATUS_OPTIONS = ['Witness', 'Reported', 'Suspected', 'Suspect', 'Defendant']
 
 export default function AddPersonInlineModal({ caseId, open, onClose }) {
   const { addPersonToCase } = useCases()

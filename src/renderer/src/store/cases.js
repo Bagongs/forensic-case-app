@@ -51,6 +51,14 @@ function loadFromStorage() {
   }
 }
 
+/* ===== Struktur default chain (baru) ===== */
+const defaultChain = {
+  acquisition: [], // array
+  preparation: {},
+  extraction: {},
+  analysis: {}
+}
+
 /* ===== Zustand Store ===== */
 export const useCases = create((set, get) => ({
   ...loadFromStorage(),
@@ -169,12 +177,7 @@ export const useCases = create((set, get) => ({
                   fileMime: evidence.fileMime,
                   previewDataUrl: evidence.previewDataUrl || null,
                   source: evidence.source,
-                  chain: evidence.chain || {
-                    acquisition: [],
-                    preparation: [],
-                    extraction: [],
-                    analysis: []
-                  }
+                  chain: evidence.chain || structuredClone(defaultChain)
                 }
               ]
             : []
@@ -232,12 +235,7 @@ export const useCases = create((set, get) => ({
                       fileMime: ev.fileMime,
                       previewDataUrl: ev.previewDataUrl || null,
                       source: ev.source,
-                      chain: ev.chain || {
-                        acquisition: [],
-                        preparation: [],
-                        extraction: [],
-                        analysis: []
-                      }
+                      chain: structuredClone(defaultChain)
                     }
                   ]
                 }
@@ -284,6 +282,7 @@ export const useCases = create((set, get) => ({
     return null
   },
 
+  /* ================== EVIDENCE CHAIN ================== */
   addChainContent: (evidenceId, stage, item) => {
     const newIdVal = newId()
     set({
@@ -293,20 +292,19 @@ export const useCases = create((set, get) => ({
           ...p,
           evidences: (p.evidences || []).map((e) => {
             if (e.id !== evidenceId) return e
-            const chain = e.chain || {
-              acquisition: [],
-              preparation: [],
-              extraction: [],
-              analysis: []
+            const chain = e.chain || structuredClone(defaultChain)
+
+            if (stage === 'acquisition') {
+              // ⬇️ simpan sebagai array
+              chain.acquisition = [
+                ...(chain.acquisition || []),
+                { id: newIdVal, createdAt: new Date().toISOString(), ...item }
+              ]
+            } else {
+              // ⬇️ stage lain cukup object tunggal
+              chain[stage] = { createdAt: new Date().toISOString(), ...item }
             }
-            chain[stage] = [
-              ...(chain[stage] || []),
-              {
-                id: newIdVal,
-                createdAt: new Date().toISOString(),
-                ...item
-              }
-            ]
+
             return { ...e, chain }
           })
         }))
