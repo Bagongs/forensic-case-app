@@ -12,6 +12,7 @@ function IconChevron({ dir = 'left' }) {
       fill="none"
       stroke="currentColor"
       strokeWidth="2"
+      color="#EDC702"
     >
       <path d="M15 19l-7-7 7-7" />
     </svg>
@@ -50,6 +51,7 @@ export default function Pagination({ page, totalPages, onChange }) {
             className="min-w-10 h-10 px-3 rounded-sm"
             style={{
               background: n === page ? COLORS.pageActive : 'transparent',
+              color: n === page ? '#EDC702' : '',
               border: '1px solid transparent'
             }}
           >

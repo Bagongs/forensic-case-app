@@ -49,13 +49,13 @@ export default function EditUserModal({ open, onClose, onSave, user }) {
         <FormLabel>Email</FormLabel>
         <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" />
 
-        <FormLabel>New Password</FormLabel>
+        <FormLabel>Password</FormLabel>
         <div className="relative">
           <Input
             type={showPass ? 'text' : 'password'}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="Leave blank to keep current password"
+            placeholder="Password"
           />
           <button
             type="button"
@@ -72,7 +72,7 @@ export default function EditUserModal({ open, onClose, onSave, user }) {
             type={showConfirm ? 'text' : 'password'}
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
-            placeholder="Re-enter new password"
+            placeholder="Re-enter Password"
           />
           <button
             type="button"

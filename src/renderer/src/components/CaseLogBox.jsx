@@ -58,7 +58,7 @@ export default function CaseLogBox({
                 <button
                   className="mt-1 bg-[#1E2A3C] text-[13px]"
                   style={{
-                    background: 'linear-gradient(180deg, #263449 0%, #2B3C54 100%)',
+                    background: 'linear-gradient(180deg, #222E41 0%, #111720 100%)',
                     borderTop: '1px solid #C3CFE0',
                     borderBottom: '1px solid #C3CFE0',
                     borderLeft: 'none',

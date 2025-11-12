@@ -73,12 +73,27 @@ export default function CaseDetailPage() {
 
   const statChip = useMemo(() => {
     if (!item) return null
+
+    const status = item.status || 'Open'
+
+    const COLORS = {
+      Open: { bg: '#103300', border: '#42D200', text: '#42D200' },
+      Closed: { bg: '#330006', border: '#FF0221', text: '#FF0221' },
+      'Re-Open': { bg: '#664C00', border: '#FFC720', text: '#FFC720' }
+    }
+
+    const color = COLORS[status] || COLORS.Open
+
     return (
       <span
-        className="px-5 py-0.5 rounded-full border text-xs"
-        style={{ borderColor: 'var(--border)' }}
+        className="px-5 py-1.5 min-w-28 rounded-full border text-xs font-medium select-none text-center"
+        style={{
+          backgroundColor: color.bg,
+          borderColor: color.border,
+          color: color.text
+        }}
       >
-        {item.status || 'Open'}
+        {status}
       </span>
     )
   }, [item])
@@ -141,14 +156,16 @@ Z`.trim()
     <CaseLayout title="Case Management" showBack={true}>
       {/* HEADER */}
       <div className="flex mt-8 items-start justify-between">
-        <div>
+        <div className="flex flex-col gap-2">
           <div className="text-xs opacity-70">{item.id}</div>
-          <div className="text-3xl font-semibold flex items-center gap-3">
-            {item.name} {statChip}
-          </div>
-          <div className="text-sm opacity-70 mt-1">
-            {item.investigator ? `${item.investigator} • ` : ''}
-            {fmtDate(item.createdAt)}
+          <div>
+            <div className="text-3xl font-semibold flex items-center gap-3">
+              {item.name} {statChip}
+            </div>
+            <div className="text-sm opacity-70 mt-1">
+              {item.investigator ? `${item.investigator} • ` : ''}
+              {fmtDate(item.createdAt)}
+            </div>
           </div>
           <div className="text-sm opacity-70 mt-1">
             Agency: {item.agency || '-'} &nbsp;&nbsp; Work Unit: {item.workUnit || '-'}
@@ -195,7 +212,7 @@ Z`.trim()
                 >
                   Case description
                 </div>
-                <p className="text-sm leading-relaxed text-[#E7E9EE]">
+                <p className="text-base leading-relaxed text-[#E7E9EE]">
                   {item.description || 'No description.'}
                 </p>
               </>

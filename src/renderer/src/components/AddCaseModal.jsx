@@ -3,6 +3,7 @@
 // src/renderer/src/components/AddCaseModal.jsx
 import { useEffect, useRef, useState } from 'react'
 import Modal from './Modal'
+import HorizontalLine from './common/HorizontalLine'
 
 export default function AddCaseModal({ open, onClose, onSave }) {
   const [name, setName] = useState('')
@@ -52,11 +53,7 @@ export default function AddCaseModal({ open, onClose, onSave }) {
       <div className="grid gap-4">
         {/* Case name */}
         <FormLabel>Case name</FormLabel>
-        <Input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Enter case name"
-        />
+        <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Name" />
 
         {/* Description */}
         <FormLabel>Case Description</FormLabel>
@@ -64,14 +61,14 @@ export default function AddCaseModal({ open, onClose, onSave }) {
           rows={5}
           value={desc}
           onChange={(e) => setDesc(e.target.value)}
-          placeholder="Describe the case"
+          placeholder="Case Description"
         />
 
         {/* Case ID */}
         <FormLabel>Case ID</FormLabel>
         <div className="flex items-center gap-6">
           <Radio checked={idMode === 'gen'} onChange={() => setIdMode('gen')}>
-            Auto Generate
+            Generating
           </Radio>
           <Radio checked={idMode === 'manual'} onChange={() => setIdMode('manual')}>
             Manual Input
@@ -81,18 +78,17 @@ export default function AddCaseModal({ open, onClose, onSave }) {
           <Input
             value={manualId}
             onChange={(e) => setManualId(e.target.value)}
-            placeholder="Input case ID manually"
+            placeholder="Input Case ID "
           />
         )}
 
-        <hr className="my-1 border-t" style={{ borderColor: 'var(--border)' }} />
+        <HorizontalLine color={'var(--border)'} />
 
-        {/* Investigator */}
         <FormLabel>Main Investigator</FormLabel>
         <Input
           value={investigator}
           onChange={(e) => setInvestigator(e.target.value)}
-          placeholder="Enter investigator name"
+          placeholder="Input Name"
         />
 
         {/* Agency */}
@@ -102,7 +98,7 @@ export default function AddCaseModal({ open, onClose, onSave }) {
             <Input
               value={agency}
               onChange={(e) => setAgency(e.target.value)}
-              placeholder="Enter agency "
+              placeholder="Input agency "
             />
           </div>
 
@@ -112,7 +108,7 @@ export default function AddCaseModal({ open, onClose, onSave }) {
             <Input
               value={workUnit}
               onChange={(e) => setWorkUnit(e.target.value)}
-              placeholder="Enter work unit "
+              placeholder="Input Work Unit "
             />
           </div>
         </div>

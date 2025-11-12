@@ -76,7 +76,7 @@ export default function CaseListPage() {
   const [page, setPage] = useState(1)
   const [sortOrder, setSortOrder] = useState(null)
   const [filterOpen, setFilterOpen] = useState(false)
-  const [statusFilter, setStatusFilter] = useState(['Open'])
+  const [statusFilter, setStatusFilter] = useState([])
   const filterBtnRef = useRef(null)
 
   const stats = useMemo(() => {

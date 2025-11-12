@@ -17,6 +17,7 @@ import bgExtranctionResult from '../assets/image/bg-extraction-result.svg'
 import { LiaEditSolid } from 'react-icons/lia'
 import editBg from '../assets/image/edit.svg'
 import NotesBox from '../components/NotesBox'
+import Pagination from '../components/Pagination'
 
 const STAGES = [
   { key: 'acquisition', label: 'Acquisition' },
@@ -107,12 +108,6 @@ export default function EvidenceDetailPage() {
     }
   })
 
-  const acqPreview =
-    active === 'acquisition'
-      ? [...(latest?.steps || [])].reverse().find((s) => s && s.previewDataUrl)?.previewDataUrl ||
-        null
-      : null
-
   const headingInvestigator = caseRef?.investigator || latest?.investigator || '-'
 
   // ==== NotesBox state ====
@@ -165,6 +160,11 @@ export default function EvidenceDetailPage() {
     if (typeof prevContent === 'object' && Object.keys(prevContent).length === 0) return false
     return true
   })()
+
+  const [page, setPage] = useState(1)
+  const totalPages = latest?.photos?.length || 0
+
+  const currentImg = totalPages > 0 ? latest?.photos[page - 1] : null
 
   return (
     <CaseLayout title="Evidence Management" showBack={true}>
@@ -358,7 +358,7 @@ export default function EvidenceDetailPage() {
             )}
 
             {!latest ? (
-              <div className="text-sm opacity-70 text-center" />
+              <div className="" />
             ) : (
               <div className="grid gap-6">
                 {active === 'acquisition' && showContent && (
@@ -376,21 +376,26 @@ export default function EvidenceDetailPage() {
                       </ol>
                     </div>
                     <div className="md:justify-self-end">
-                      {acqPreview ? (
+                      {currentImg ? (
                         <img
-                          src={acqPreview}
-                          alt="acquisition"
-                          className="w-[380px] max-w-full aspect-4/3 object-cover rounded border"
+                          src={currentImg}
+                          alt={`acquisition-${page}`}
+                          className="w-[300px] max-w-full aspect-4/3 object-contain rounded border"
                           style={{ borderColor: 'var(--border)' }}
                         />
                       ) : (
                         <div
-                          className="w-[380px] max-w-full aspect-4/3 grid place-items-center rounded border text-sm opacity-60"
+                          className="w-[300px] max-w-full aspect-4/3 grid place-items-center rounded border text-sm opacity-60"
                           style={{ borderColor: 'var(--border)' }}
                         >
-                          Tidak ada foto
+                          No Image
                         </div>
                       )}
+                      <div className="flex justify-center my-3">
+                        {totalPages > 1 && (
+                          <Pagination page={page} totalPages={totalPages} onChange={setPage} />
+                        )}
+                      </div>
                     </div>
                   </div>
                 )}
@@ -439,7 +444,7 @@ export default function EvidenceDetailPage() {
                 )}
 
                 {active === 'analysis' && showContent && (
-                  <div className="grid grid-cols-1 md:grid-cols-[1fr_300px] place-items-center gap-8">
+                  <div className="flex flex-row justify-between gap-8">
                     <div>
                       <div className="text-lg font-semibold mb-3">Analysis Result:</div>
                       <ol className="list-decimal pl-6 text-base leading-relaxed space-y-3">

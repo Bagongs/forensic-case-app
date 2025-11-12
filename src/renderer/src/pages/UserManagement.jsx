@@ -22,7 +22,7 @@ const COLORS = {
   border: 'var(--border)',
   dim: 'var(--dim)',
   theadBg: 'var(--panel)',
-  tableBodyBg: 'transparent',
+  tableBodyBg: '#111720',
 
   pageActiveBg: '#273549',
   pageActiveBorder: '#C3CFE0',
@@ -72,7 +72,7 @@ export default function UserManagement() {
   return (
     <CaseLayout title="User Management" showBack={true}>
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-3">
         <div className="relative w-[427px]">
           <input
             value={q}

@@ -21,7 +21,6 @@ export const STAGES = {
 
 const DEVICE_SOURCES = ['Hp', 'Ssd', 'HardDisk', 'Pc', 'Laptop', 'DVR']
 
-
 /* =============== PRIMITIVES =============== */
 const Label = ({ children }) => (
   <div className="text-sm mb-2" style={{ color: TOKENS.dim }}>
@@ -91,6 +90,7 @@ export default function StageContentModal({
   const [submitting, setSubmitting] = useState(false)
   const collectorRef = useRef(null)
   const { preparation } = useEvidenceChain()
+  const [investigationTools, setInvestigationTools] = useState(null)
 
   useEffect(() => {
     if (open) setStage(initialStage)
@@ -187,13 +187,14 @@ function AcquisitionPanel({ registerCollector }) {
     location: '',
     source: '',
     type: '',
+    stage: '',
     detail: '',
     steps: [''],
     photos: [null],
     notes: '',
     ...acquisition
   })
-  const [currentPhotoIdx, setCurrentPhotoIdx] = useState(0)
+  // const [currentPhotoIdx, setCurrentPhotoIdx] = useState(0)
 
   const addStep = () => setV({ ...v, steps: [...v.steps, ''], photos: [...v.photos, null] })
 
@@ -203,14 +204,12 @@ function AcquisitionPanel({ registerCollector }) {
       const next = [...v.photos]
       next[i] = reader.result
       setV({ ...v, photos: next })
-      setCurrentPhotoIdx(i)
+      // setCurrentPhotoIdx(i)
     }
     reader.readAsDataURL(file)
   }
 
-  const uploadedPhotos = (v.photos || []).map((p, idx) => ({ src: p, idx })).filter((p) => !!p.src)
-  const activePhoto =
-    uploadedPhotos.find((p) => p.idx === currentPhotoIdx) || uploadedPhotos[0] || null
+  // const uploadedPhotos = (v.photos || []).map((p, idx) => ({ src: p, idx })).filter((p) => !!p.src)
 
   useEffect(() => {
     registerCollector(async () => {
@@ -233,47 +232,6 @@ function AcquisitionPanel({ registerCollector }) {
 
   return (
     <>
-      {/* GALLERY + DOTS */}
-      {uploadedPhotos.length > 0 && (
-        <div className="mb-6">
-          <div
-            className="w-full max-w-[720px] aspect-[4/3] mx-auto rounded-lg overflow-hidden grid place-items-center"
-            style={{ border: `1px solid ${TOKENS.ring}`, background: '#0F1621' }}
-          >
-            {activePhoto ? (
-              <img
-                src={activePhoto.src}
-                alt="acquisition-main"
-                className="w-full h-full object-contain"
-              />
-            ) : (
-              <div className="text-sm" style={{ color: TOKENS.dim }}>
-                No Photo
-              </div>
-            )}
-          </div>
-          <div className="flex items-center justify-center gap-2 mt-3">
-            {uploadedPhotos.map((p, i) => {
-              const isActive = p.idx === (activePhoto?.idx ?? -1)
-              return (
-                <button
-                  key={p.idx}
-                  onClick={() => setCurrentPhotoIdx(p.idx)}
-                  title={`Photo ${i + 1}`}
-                  className="rounded-full"
-                  style={{
-                    width: 10,
-                    height: 10,
-                    border: `1px solid ${TOKENS.ring}`,
-                    background: isActive ? TOKENS.gold : 'transparent'
-                  }}
-                />
-              )
-            })}
-          </div>
-        </div>
-      )}
-
       <Row>
         <Field label="Investigator">
           <Input
@@ -305,8 +263,7 @@ function AcquisitionPanel({ registerCollector }) {
       <Label>Steps for Confiscating Evidence</Label>
       {v.steps.map((s, i) => (
         <div key={i} className="flex items-start gap-3 mb-3">
-          <Textarea
-            rows={2}
+          <Input
             value={s}
             onChange={(e) => {
               const next = [...v.steps]
@@ -315,7 +272,7 @@ function AcquisitionPanel({ registerCollector }) {
             }}
           />
           {v.photos?.[i] ? (
-            <div className="flex flex-col items-center gap-2">
+            <div className="flex flex-col items-center gap-2 text-nowrap">
               <img
                 src={v.photos[i]}
                 alt={`step-${i + 1}`}
@@ -323,8 +280,8 @@ function AcquisitionPanel({ registerCollector }) {
                 style={{ border: `1px solid ${TOKENS.ring}` }}
               />
               <label
-                className="cursor-pointer px-3 py-1 border rounded-md text-sm"
-                style={{ borderColor: TOKENS.ring, color: TOKENS.text }}
+                className="cursor-pointer px-3 py-3 border rounded-sm text-sm "
+                style={{ backgroundColor: '#394F6F', border: 'none' }}
               >
                 Change Photo
                 <input
@@ -337,8 +294,8 @@ function AcquisitionPanel({ registerCollector }) {
             </div>
           ) : (
             <label
-              className="cursor-pointer px-4 py-2 border rounded-md"
-              style={{ borderColor: TOKENS.ring, color: TOKENS.text }}
+              className="cursor-pointer px-4 py-3 border rounded-sm text-sm text-nowrap"
+              style={{ backgroundColor: '#394F6F', border: 'none' }}
             >
               Upload Photo
               <input
@@ -374,6 +331,7 @@ function PreparationPanel({ registerCollector }) {
     location: '',
     source: '',
     type: '',
+    stage: '',
     detail: '',
     pairs: [{ investigation: '', tools: '' }],
     notes: '',
@@ -479,6 +437,7 @@ function ExtractionPanel({ registerCollector }) {
     location: '',
     source: '',
     type: '',
+    stage: '',
     detail: '',
     files: [],
     notes: '',
@@ -575,6 +534,7 @@ function AnalysisPanel({ registerCollector }) {
     location: '',
     source: '',
     type: '',
+    stage: '',
     detail: '',
     analysisPairs: prepPairs.map((p) => ({
       investigation: p.investigation || '',

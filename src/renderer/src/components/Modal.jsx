@@ -64,7 +64,6 @@ export default function Modal({
 
   if (!open) return null
 
-  // ✅ ukuran fleksibel termasuk xl
   const width =
     size === 'sm'
       ? 'w-[420px]'
@@ -112,19 +111,23 @@ export default function Modal({
           )}
         </div>
 
-        {/* Body (scrollable jika isi tinggi) */}
         <div className="p-6 max-h-[70vh] overflow-auto">{children}</div>
 
-        {/* Footer */}
         {footer !== undefined ? (
           <div className="px-6 pb-5">{footer}</div>
         ) : (
-          <div className="px-6 pb-5 flex justify-end gap-3">
+          <div
+            className={`px-6 pb-5 flex ${confirmText != 'Delete' ? 'justify-end' : 'justify-center'}  gap-3 `}
+          >
             <button
               type="button"
               onClick={onCancel}
               className="px-5 h-10 text-sm rounded-sm"
-              style={{ background: 'transparent', border: '1.5px solid #EDC702', color: '#E7E9EE' }}
+              style={{
+                background: 'transparent',
+                border: confirmText != 'Delete' ? '1.5px solid #EDC702' : '1.5px solid #7D7D7D',
+                color: '#E7E9EE'
+              }}
             >
               {cancelText}
             </button>
@@ -135,9 +138,12 @@ export default function Modal({
                 disabled={disableConfirm}
                 className="px-5 h-10 text-sm rounded-sm disabled:opacity-60"
                 style={{
-                  background: 'radial-gradient(circle, #EDC702 0%, #B89E02 100%)',
-                  color: '#0C0C0C',
-                  border: '1px solid #EDC702B2'
+                  background:
+                    confirmText != 'Delete'
+                      ? 'radial-gradient(circle, #EDC702 0%, #B89E02 100%)'
+                      : 'radial-gradient(circle, #B10202 0%, #B10101B2 100%)',
+                  color: confirmText != 'Delete' ? '#0C0C0C' : '#F4F6F8',
+                  border: confirmText != 'Delete' ? '1px solid #EDC702B2' : '0.7px solid #B10202B2'
                 }}
               >
                 {confirmText}

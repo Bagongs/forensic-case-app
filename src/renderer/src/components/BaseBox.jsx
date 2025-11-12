@@ -13,7 +13,7 @@ function BaseCutBox({
   notchWidth = 180,
   notchDepth = 26,
   notchOffset = 'center', // number px atau 'center'
-  notchChamfer = 14,      // panjang sisi miring pada bibir notch
+  notchChamfer = 14, // panjang sisi miring pada bibir notch
   // padding isi
   contentPadding = 24,
   contentPaddingTop // default = contentPadding
@@ -32,10 +32,16 @@ function BaseCutBox({
   }, [])
 
   const path = getPathByType(size.w, size.h, cut, type, {
-    notchWidth, notchDepth, notchOffset, notchChamfer
+    notchWidth,
+    notchDepth,
+    notchOffset,
+    notchChamfer
   })
   const clipPath = getInnerClipPath(size.w, size.h, cut, type, borderW, {
-    notchWidth, notchDepth, notchOffset, notchChamfer
+    notchWidth,
+    notchDepth,
+    notchOffset,
+    notchChamfer
   })
 
   const padTop = contentPaddingTop ?? contentPadding
@@ -85,12 +91,7 @@ function getPathByType(w, h, c, type, extra = {}) {
   const cut = Math.max(0, c)
 
   const withTopNotchChamfered = () => {
-    const {
-      notchWidth = 180,
-      notchDepth = 26,
-      notchOffset = 'center',
-      notchChamfer = 14
-    } = extra
+    const { notchWidth = 180, notchDepth = 26, notchOffset = 'center', notchChamfer = 14 } = extra
 
     const nW = Math.max(2 * notchChamfer + 2, Math.min(notchWidth, w - 2 * cut - 4))
     const nD = Math.max(2, Math.min(notchDepth, h - cut - 2))
@@ -108,17 +109,17 @@ function getPathByType(w, h, c, type, extra = {}) {
     // serong naik (nC) → top ke kanan → chamfer kanan → sisi lain → tutup
     return [
       `M ${cut + o} 0`,
-      `H ${L}`,                 // ke awal notch
-      `L ${L + nC} ${nD}`,     // serong turun
-      `H ${R - nC}`,           // dasar notch
-      `L ${R} 0`,              // serong naik
-      `H ${w - cut - o}`,      // lanjut top kanan
-      `L ${w} ${cut}`,         // chamfer kanan-atas
-      `V ${h - cut}`,          // sisi kanan
-      `L ${w - cut} ${h}`,     // chamfer kanan-bawah
-      `H ${cut}`,              // sisi bawah
-      `L 0 ${h - cut}`,        // chamfer kiri-bawah
-      `V ${cut}`,              // sisi kiri
+      `H ${L}`, // ke awal notch
+      `L ${L + nC} ${nD}`, // serong turun
+      `H ${R - nC}`, // dasar notch
+      `L ${R} 0`, // serong naik
+      `H ${w - cut - o}`, // lanjut top kanan
+      `L ${w} ${cut}`, // chamfer kanan-atas
+      `V ${h - cut}`, // sisi kanan
+      `L ${w - cut} ${h}`, // chamfer kanan-bawah
+      `H ${cut}`, // sisi bawah
+      `L 0 ${h - cut}`, // chamfer kiri-bawah
+      `V ${cut}`, // sisi kiri
       'Z'
     ].join(' ')
   }
@@ -130,29 +131,47 @@ function getPathByType(w, h, c, type, extra = {}) {
     // tipe-tipe lain yang sudah ada
     case 'topRight':
       return [
-        `M ${o} ${o}`, `H ${w - cut - o}`, `L ${w - o} ${cut + o}`,
-        `V ${h - o}`, `H ${o}`, 'Z'
+        `M ${o} ${o}`,
+        `H ${w - cut - o}`,
+        `L ${w - o} ${cut + o}`,
+        `V ${h - o}`,
+        `H ${o}`,
+        'Z'
       ].join(' ')
     case 'bottomRight':
       return [
-        `M ${o} ${o}`, `H ${w - o}`, `V ${h - cut - o}`,
-        `L ${w - cut - o} ${h - o}`, `H ${o}`, 'Z'
+        `M ${o} ${o}`,
+        `H ${w - o}`,
+        `V ${h - cut - o}`,
+        `L ${w - cut - o} ${h - o}`,
+        `H ${o}`,
+        'Z'
       ].join(' ')
     case 'topLeft':
-      return [
-        `M ${cut + o} ${o}`, `H ${w - o}`, `V ${h - o}`,
-        `H ${o}`, `V ${cut + o}`, 'Z'
-      ].join(' ')
+      return [`M ${cut + o} ${o}`, `H ${w - o}`, `V ${h - o}`, `H ${o}`, `V ${cut + o}`, 'Z'].join(
+        ' '
+      )
     case 'topLeftBottomRight':
       return [
-        `M ${cut + o} ${o}`, `H ${w - o}`, `V ${h - cut - o}`,
-        `L ${w - cut - o} ${h - o}`, `H ${o}`, `V ${cut + o}`, 'Z'
+        `M ${cut + o} ${o}`,
+        `H ${w - o}`,
+        `V ${h - cut - o}`,
+        `L ${w - cut - o} ${h - o}`,
+        `H ${o}`,
+        `V ${cut + o}`,
+        'Z'
       ].join(' ')
     case 'allSide':
       return [
-        `M ${cut + o} ${o}`, `H ${w - cut - o}`, `L ${w - o} ${cut + o}`,
-        `V ${h - cut - o}`, `L ${w - cut - o} ${h - o}`, `H ${cut + o}`,
-        `L ${o} ${h - cut - o}`, `V ${cut + o}`, 'Z'
+        `M ${cut + o} ${o}`,
+        `H ${w - cut - o}`,
+        `L ${w - o} ${cut + o}`,
+        `V ${h - cut - o}`,
+        `L ${w - cut - o} ${h - o}`,
+        `H ${cut + o}`,
+        `L ${o} ${h - cut - o}`,
+        `V ${cut + o}`,
+        'Z'
       ].join(' ')
     default:
       return `M${o},${o} H${w - o} V${h - o} H${o} Z`
@@ -162,18 +181,15 @@ function getPathByType(w, h, c, type, extra = {}) {
 /* ================= CLIP-PATH (ISI) ================= */
 function getInnerClipPath(w, h, c, type, borderW, extra = {}) {
   if (!w || !h) return 'none'
-  const x0 = borderW, y0 = borderW
-  const x1 = w - borderW, y1 = h - borderW
+  const x0 = borderW,
+    y0 = borderW
+  const x1 = w - borderW,
+    y1 = h - borderW
   const c2 = Math.max(0, c - borderW)
   const pct = (x, y) => `${(x / w) * 100}% ${(y / h) * 100}%`
 
   if (type === 'allSideWithTopNotchChamfered') {
-    const {
-      notchWidth = 180,
-      notchDepth = 26,
-      notchOffset = 'center',
-      notchChamfer = 14
-    } = extra
+    const { notchWidth = 180, notchDepth = 26, notchOffset = 'center', notchChamfer = 14 } = extra
 
     const nW = Math.max(2, Math.min(notchWidth - 2 * borderW, w - 2 * c2 - 4))
     const nD = Math.max(1, Math.min(notchDepth - borderW, h - c2 - 2))
@@ -188,13 +204,13 @@ function getInnerClipPath(w, h, c, type, borderW, extra = {}) {
     const R = startX + nW
 
     const pts = [
-      [x0 + c2, y0],       // top-left inner setelah chamfer
-      [L, y0],             // ke awal notch
-      [L + nC, y0 + nD],   // serong turun
-      [R - nC, y0 + nD],   // dasar notch
-      [R, y0],             // serong naik
-      [x1 - c2, y0],       // top ke kanan
-      [x1, y0 + c2],       // chamfer kanan-atas (inner)
+      [x0 + c2, y0], // top-left inner setelah chamfer
+      [L, y0], // ke awal notch
+      [L + nC, y0 + nD], // serong turun
+      [R - nC, y0 + nD], // dasar notch
+      [R, y0], // serong naik
+      [x1 - c2, y0], // top ke kanan
+      [x1, y0 + c2], // chamfer kanan-atas (inner)
       [x1, y1 - c2],
       [x1 - c2, y1],
       [x0 + c2, y1],
@@ -209,21 +225,56 @@ function getInnerClipPath(w, h, c, type, borderW, extra = {}) {
 
   switch (type) {
     case 'topRight':
-      return make([[x0,y0],[x1 - c2,y0],[x1,y0 + c2],[x1,y1],[x0,y1]])
+      return make([
+        [x0, y0],
+        [x1 - c2, y0],
+        [x1, y0 + c2],
+        [x1, y1],
+        [x0, y1]
+      ])
     case 'bottomRight':
-      return make([[x0,y0],[x1,y0],[x1,y1 - c2],[x1 - c2,y1],[x0,y1]])
+      return make([
+        [x0, y0],
+        [x1, y0],
+        [x1, y1 - c2],
+        [x1 - c2, y1],
+        [x0, y1]
+      ])
     case 'topLeft':
-      return make([[x0 + c2,y0],[x1,y0],[x1,y1],[x0,y1],[x0,y0 + c2]])
+      return make([
+        [x0 + c2, y0],
+        [x1, y0],
+        [x1, y1],
+        [x0, y1],
+        [x0, y0 + c2]
+      ])
     case 'topLeftBottomRight':
-      return make([[x0 + c2,y0],[x1,y0],[x1,y1 - c2],[x1 - c2,y1],[x0,y1],[x0,y0 + c2]])
+      return make([
+        [x0 + c2, y0],
+        [x1, y0],
+        [x1, y1 - c2],
+        [x1 - c2, y1],
+        [x0, y1],
+        [x0, y0 + c2]
+      ])
     case 'allSide':
       return make([
-        [x0 + c2,y0],[x1 - c2,y0],[x1,y0 + c2],
-        [x1,y1 - c2],[x1 - c2,y1],[x0 + c2,y1],
-        [x0,y1 - c2],[x0,y0 + c2]
+        [x0 + c2, y0],
+        [x1 - c2, y0],
+        [x1, y0 + c2],
+        [x1, y1 - c2],
+        [x1 - c2, y1],
+        [x0 + c2, y1],
+        [x0, y1 - c2],
+        [x0, y0 + c2]
       ])
     default:
-      return make([[x0,y0],[x1,y0],[x1,y1],[x0,y1]])
+      return make([
+        [x0, y0],
+        [x1, y0],
+        [x1, y1],
+        [x0, y1]
+      ])
   }
 }
 

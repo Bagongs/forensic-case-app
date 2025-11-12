@@ -17,7 +17,7 @@ export const useEvidenceChain = create((set, get) => ({
     const enriched = {
       ...payload,
       id: payload?.id || crypto.randomUUID(),
-      type: stage,
+      stage: stage,
       createdAt: payload?.createdAt || new Date().toISOString()
     }
 
