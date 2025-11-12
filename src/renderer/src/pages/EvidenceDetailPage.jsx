@@ -75,6 +75,7 @@ export default function EvidenceDetailPage() {
   const chain = evidence.chain || { acquisition: [], preparation: [], extraction: [], analysis: [] }
   const contents = chain?.[active] ?? []
   const latest = Array.isArray(contents) ? contents[contents.length - 1] || null : contents || null
+  console.log(latest)
 
   const headerMeta = useMemo(() => {
     const d = new Date(evidence.createdAt || Date.now())
@@ -141,6 +142,29 @@ export default function EvidenceDetailPage() {
       savingRef.current = false
     }
   }
+
+  const showContent =
+    latest &&
+    typeof latest === 'object' &&
+    !Array.isArray(latest) &&
+    Object.keys(latest ?? {}).length > 0
+
+  // urutan stage (pastikan sesuai STAGES)
+  const stageOrder = ['acquisition', 'preparation', 'extraction', 'analysis']
+
+  // cek apakah stage sebelumnya sudah punya data
+  const canAddContent = (() => {
+    const currentIndex = stageOrder.indexOf(active)
+    if (currentIndex === 0) return true // stage pertama selalu bisa diisi
+
+    const prevStage = stageOrder[currentIndex - 1]
+    const prevContent = chain?.[prevStage]
+
+    if (!prevContent) return false
+    if (Array.isArray(prevContent) && prevContent.length === 0) return false
+    if (typeof prevContent === 'object' && Object.keys(prevContent).length === 0) return false
+    return true
+  })()
 
   return (
     <CaseLayout title="Evidence Management" showBack={true}>
@@ -311,36 +335,33 @@ export default function EvidenceDetailPage() {
           <HorizontalLine color="#C3CFE0" />
 
           <div>
-            {latest &&
-              typeof latest === 'object' &&
-              !Array.isArray(latest) &&
-              Object.keys(latest ?? {}).length > 0 && (
-                <>
-                  <div className="flex items-center justify-between">
-                    <div className="text-[18px] font-semibold">
-                      {panelLocation || 'Unknown Location'}
-                    </div>
-                    <div className="text-right">
-                      {panelDatetime && <div className="text-[18px]">{panelDatetime}</div>}
-                      {panelInvestigator && (
-                        <div className="text-[18px] opacity-80">{panelInvestigator}</div>
-                      )}
-                    </div>
+            {showContent && (
+              <>
+                <div className="flex items-center justify-between">
+                  <div className="text-[18px] font-semibold">
+                    {panelLocation || 'Unknown Location'}
                   </div>
-                  <HorizontalLine />
-                  <div className="flex flex-row gap-5 mb-3">
-                    <div>Evidence Source : {latest.source || '-'}</div>
-                    <div>Evidence Type : {latest.type || '-'}</div>
-                    <div>Evidence Detail : {latest.detail || '-'}</div>
+                  <div className="text-right">
+                    {panelDatetime && <div className="text-[18px]">{panelDatetime}</div>}
+                    {panelInvestigator && (
+                      <div className="text-[18px] opacity-80">{panelInvestigator}</div>
+                    )}
                   </div>
-                </>
-              )}
+                </div>
+                <HorizontalLine />
+                <div className="flex flex-row gap-5 mb-3">
+                  <div>Evidence Source : {latest.source || '-'}</div>
+                  <div>Evidence Type : {latest.type || '-'}</div>
+                  <div>Evidence Detail : {latest.detail || '-'}</div>
+                </div>
+              </>
+            )}
 
             {!latest ? (
-              <div className="text-sm opacity-70 py-8 text-center" />
+              <div className="text-sm opacity-70 text-center" />
             ) : (
               <div className="grid gap-6">
-                {active === 'acquisition' && (
+                {active === 'acquisition' && showContent && (
                   <div className="grid grid-cols-1 md:grid-cols-[1fr_380px] gap-8">
                     <div>
                       <div className="text-lg font-semibold mb-2">
@@ -374,7 +395,7 @@ export default function EvidenceDetailPage() {
                   </div>
                 )}
 
-                {active === 'preparation' && (
+                {active === 'preparation' && showContent && (
                   <div className="overflow-x-auto">
                     <table className="w-full border-collapse text-base">
                       <thead>
@@ -404,7 +425,7 @@ export default function EvidenceDetailPage() {
                   </div>
                 )}
 
-                {active === 'extraction' && (
+                {active === 'extraction' && showContent && (
                   <div className="flex justify-center items-center my-5 relative">
                     <img src={bgExtranctionResult} width={180} />
                     <div className="absolute -mt-8 text-center">
@@ -417,7 +438,7 @@ export default function EvidenceDetailPage() {
                   </div>
                 )}
 
-                {active === 'analysis' && (
+                {active === 'analysis' && showContent && (
                   <div className="grid grid-cols-1 md:grid-cols-[1fr_300px] place-items-center gap-8">
                     <div>
                       <div className="text-lg font-semibold mb-3">Analysis Result:</div>
@@ -448,20 +469,21 @@ export default function EvidenceDetailPage() {
                   </div>
                 )}
 
-                {/* NotesBox menggantikan note preview/summary */}
-                <NotesBox
-                  title="Notes"
-                  value={notesValue}
-                  onChange={setNotesValue}
-                  placeholder="Click Add to write notes"
-                  editable={isEditingNotes}
-                  actionLabel={notesActionLabel}
-                  actionIcon={notesActionIcon}
-                  actionBgImage={editBg}
-                  actionSize={{ w: 70, h: 27 }}
-                  actionOffset={{ top: 15, right: 24 }}
-                  onAction={onNotesAction}
-                />
+                {showContent && (
+                  <NotesBox
+                    title="Notes"
+                    value={notesValue}
+                    onChange={setNotesValue}
+                    placeholder="Click Add to write notes"
+                    editable={isEditingNotes}
+                    actionLabel={notesActionLabel}
+                    actionIcon={notesActionIcon}
+                    actionBgImage={editBg}
+                    actionSize={{ w: 70, h: 27 }}
+                    actionOffset={{ top: 15, right: 24 }}
+                    onAction={onNotesAction}
+                  />
+                )}
               </div>
             )}
 
@@ -470,9 +492,18 @@ export default function EvidenceDetailPage() {
               (typeof latest === 'object' &&
                 !Array.isArray(latest) &&
                 Object.keys(latest ?? {}).length === 0)) && (
-              <div className="mt-6 flex justify-center">
-                <div className="inline-block bg-[#394F6F] rounded-md">
-                  <MiniButton onClick={() => setOpenStage(active)}>+ Add content</MiniButton>
+              <div className="my-32 flex justify-center">
+                <div
+                  className={`inline-block rounded-md ${
+                    canAddContent ? 'bg-[#394F6F]' : 'bg-[#1f2937] opacity-50 cursor-not-allowed'
+                  }`}
+                >
+                  <MiniButton
+                    onClick={() => canAddContent && setOpenStage(active)}
+                    disabled={!canAddContent}
+                  >
+                    + Add content
+                  </MiniButton>
                 </div>
               </div>
             )}

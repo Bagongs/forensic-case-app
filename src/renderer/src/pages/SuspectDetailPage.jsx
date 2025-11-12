@@ -8,7 +8,7 @@ import bgButtonTransparent from '../assets/image/bg-button-transparent.svg'
 import { useRef, useState } from 'react'
 import { FaEdit, FaRegSave } from 'react-icons/fa'
 import iconAddEvidance from '../assets/icons/icon-add-evidance.svg'
-import SummaryBox from '../components/SummaryBox'
+import NotesBox from '../components/NotesBox'
 import { LiaEditSolid } from 'react-icons/lia'
 import editBg from '../assets/image/edit.svg'
 import EditPersonModal from '../components/EditPersonModal'
@@ -176,7 +176,7 @@ export default function SuspectDetailPage() {
 
       {/* SUMMARY */}
       <div className="mt-6">
-        <SummaryBox
+        <NotesBox
           title="Summary"
           value={summary}
           onChange={setSummary}

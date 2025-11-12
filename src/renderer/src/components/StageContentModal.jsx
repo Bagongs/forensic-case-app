@@ -19,6 +19,9 @@ export const STAGES = {
   ANALYSIS: 'analysis'
 }
 
+const DEVICE_SOURCES = ['Hp', 'Ssd', 'HardDisk', 'Pc', 'Laptop', 'DVR']
+
+
 /* =============== PRIMITIVES =============== */
 const Label = ({ children }) => (
   <div className="text-sm mb-2" style={{ color: TOKENS.dim }}>
@@ -220,7 +223,7 @@ function AcquisitionPanel({ registerCollector }) {
         ...v,
         steps: stepsObj,
         id: crypto.randomUUID(),
-        type: STAGES.ACQUISITION,
+        stage: STAGES.ACQUISITION,
         createdAt: new Date().toISOString()
       }
       setStageData(STAGES.ACQUISITION, payload)
@@ -288,12 +291,7 @@ function AcquisitionPanel({ registerCollector }) {
           <Select
             value={v.source}
             onChange={(e) => setV({ ...v, source: e.target.value })}
-            options={[
-              { label: 'Select Source', value: '' },
-              { label: 'Handphone', value: 'Handphone' },
-              { label: 'Laptop', value: 'Laptop' },
-              { label: 'Cloud', value: 'Cloud' }
-            ]}
+            options={DEVICE_SOURCES}
           />
         </Field>
         <Field label="Evidence Type">
@@ -389,7 +387,7 @@ function PreparationPanel({ registerCollector }) {
       const payload = {
         ...v,
         id: crypto.randomUUID(),
-        type: STAGES.PREPARATION,
+        stage: STAGES.PREPARATION,
         createdAt: new Date().toISOString()
       }
       setStageData(STAGES.PREPARATION, payload)
@@ -422,12 +420,7 @@ function PreparationPanel({ registerCollector }) {
           <Select
             value={v.source}
             onChange={(e) => setV({ ...v, source: e.target.value })}
-            options={[
-              { label: 'Select source', value: '' },
-              { label: 'Handphone', value: 'Handphone' },
-              { label: 'Laptop', value: 'Laptop' },
-              { label: 'Cloud', value: 'Cloud' }
-            ]}
+            options={DEVICE_SOURCES}
           />
         </Field>
         <Field label="Evidence Type">
@@ -504,7 +497,7 @@ function ExtractionPanel({ registerCollector }) {
       const payload = {
         ...v,
         id: crypto.randomUUID(),
-        type: STAGES.EXTRACTION,
+        stage: STAGES.EXTRACTION,
         createdAt: new Date().toISOString()
       }
       setStageData(STAGES.EXTRACTION, payload)
@@ -531,12 +524,7 @@ function ExtractionPanel({ registerCollector }) {
           <Select
             value={v.source}
             onChange={(e) => setV({ ...v, source: e.target.value })}
-            options={[
-              { label: 'Select source', value: '' },
-              { label: 'Handphone', value: 'Handphone' },
-              { label: 'Laptop', value: 'Laptop' },
-              { label: 'Cloud', value: 'Cloud' }
-            ]}
+            options={DEVICE_SOURCES}
           />
         </Field>
         <Field label="Evidence Type">
@@ -602,7 +590,7 @@ function AnalysisPanel({ registerCollector }) {
       const payload = {
         ...v,
         id: crypto.randomUUID(),
-        type: STAGES.ANALYSIS,
+        stage: STAGES.ANALYSIS,
         createdAt: new Date().toISOString()
       }
       setStageData(STAGES.ANALYSIS, payload)
@@ -635,11 +623,7 @@ function AnalysisPanel({ registerCollector }) {
           <Select
             value={v.source}
             onChange={(e) => setV({ ...v, source: e.target.value })}
-            options={[
-              { label: 'Handphone', value: 'Handphone' },
-              { label: 'Laptop', value: 'Laptop' },
-              { label: 'Cloud', value: 'Cloud' }
-            ]}
+            options={DEVICE_SOURCES}
           />
         </Field>
         <Field label="Evidence Type">

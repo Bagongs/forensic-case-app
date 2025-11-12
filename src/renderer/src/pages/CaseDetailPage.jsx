@@ -10,7 +10,7 @@ import CaseLayout from './CaseLayout'
 import MiniButton, { MiniButtonContent } from '../components/MiniButton'
 import bgButton from '../assets/image/bg-button.svg'
 import bgButtonTransparent from '../assets/image/bg-button-transparent.svg'
-import SummaryBox from '../components/SummaryBox'
+import NotesBox from '../components/NotesBox'
 import CaseLogBox from '../components/CaseLogBox'
 import { PersonSectionBox } from '../components/PersonSectionBox'
 import { PersonBox } from '../components/PersonBox'
@@ -252,7 +252,7 @@ Z`.trim()
         </aside>
 
         {/* SUMMARY */}
-        <SummaryBox
+        <NotesBox
           title="Summary"
           value={summary}
           onChange={setSummary}
