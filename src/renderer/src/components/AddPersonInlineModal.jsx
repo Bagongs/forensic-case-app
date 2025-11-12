@@ -204,8 +204,8 @@ export default function AddPersonInlineModal({ caseId, open, onClose }) {
             value={source}
             onChange={(e) => setSource(e.target.value)}
           >
-            <option value="" disabled>
-              Select source
+            <option value="" selected disabled>
+              Select device
             </option>
             {DEVICE_SOURCES.map((s) => (
               <option key={s} value={s}>

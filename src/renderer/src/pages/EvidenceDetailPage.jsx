@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/rules-of-hooks */
-import { Fragment, useMemo, useRef, useState } from 'react'
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useCases } from '../store/cases'
 import MiniButton, { MiniButtonContent } from '../components/MiniButton'
@@ -166,6 +166,12 @@ export default function EvidenceDetailPage() {
 
   const currentImg = totalPages > 0 ? latest?.photos[page - 1] : null
 
+  const [investigationTools, setInvestigationTools] = useState(null)
+  useEffect(() => {
+    setInvestigationTools(ref.evidence.chain.preparation)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   return (
     <CaseLayout title="Evidence Management" showBack={true}>
       <div className="mx-auto py-6">
@@ -212,6 +218,7 @@ export default function EvidenceDetailPage() {
           caseTitle={caseRef?.name || 'Untitled Case'}
           onClose={() => setOpenStage(null)}
           onSubmitStage={handleSubmitStage}
+          investigationTools={investigationTools}
         />
       </div>
 
@@ -358,7 +365,9 @@ export default function EvidenceDetailPage() {
             )}
 
             {!latest ? (
-              <div className="" />
+              // <div className=""></div>
+              // <div className='hidden my-5'>pppp</div>
+              <></>
             ) : (
               <div className="grid gap-6">
                 {active === 'acquisition' && showContent && (

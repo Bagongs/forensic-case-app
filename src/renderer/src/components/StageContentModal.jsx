@@ -84,13 +84,13 @@ export default function StageContentModal({
   caseTitle,
   initialStage = STAGES.ACQUISITION,
   onClose,
-  onSubmitStage
+  onSubmitStage,
+  investigationTools
 }) {
   const [stage, setStage] = useState(initialStage)
   const [submitting, setSubmitting] = useState(false)
   const collectorRef = useRef(null)
   const { preparation } = useEvidenceChain()
-  const [investigationTools, setInvestigationTools] = useState(null)
 
   useEffect(() => {
     if (open) setStage(initialStage)
@@ -121,7 +121,7 @@ export default function StageContentModal({
   }
 
   return (
-    <div className="fixed inset-0 z-[1000] flex items-center justify-center">
+    <div className="fixed inset-0 z-1000 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/60" onClick={onClose} />
       <div
         className="relative w-[min(920px,95vw)] max-h-[92vh] rounded-xl overflow-hidden flex flex-col"
@@ -155,7 +155,10 @@ export default function StageContentModal({
             <ExtractionPanel registerCollector={(fn) => (collectorRef.current = fn)} />
           )}
           {stage === STAGES.ANALYSIS && (
-            <AnalysisPanel registerCollector={(fn) => (collectorRef.current = fn)} />
+            <AnalysisPanel
+              investigationTools={investigationTools}
+              registerCollector={(fn) => (collectorRef.current = fn)}
+            />
           )}
         </div>
 
@@ -389,16 +392,18 @@ function PreparationPanel({ registerCollector }) {
         </Field>
       </Row>
 
-      <Label>Investigation Hypothesis &amp; Tools Used</Label>
+      <div className="grid grid-cols-2 gap-3 mb-0 items-start">
+        <Label>Investigation Hypothesis</Label>
+        <Label>Tool Used</Label>
+      </div>
       {v.pairs.map((p, i) => (
         <div key={i} className="grid grid-cols-2 gap-3 mb-3 items-start">
-          <Textarea
+          <Input
             placeholder="Investigation Hypothesis"
             value={p.investigation}
             onChange={(e) => setPair(i, 'investigation', e.target.value)}
           />
           <div>
-            <Label>Tool Used</Label>
             <Select
               value={p.tools}
               onChange={(e) => setPair(i, 'tools', e.target.value)}
@@ -518,7 +523,7 @@ function ExtractionPanel({ registerCollector }) {
 }
 
 /* =============== ANALYSIS =============== */
-function AnalysisPanel({ registerCollector }) {
+function AnalysisPanel({ registerCollector, investigationTools }) {
   const { analysis, preparation, setStageData } = useEvidenceChain()
 
   const prepPairs =
@@ -527,6 +532,7 @@ function AnalysisPanel({ registerCollector }) {
       investigation: h,
       tools: preparation.tool[i] ?? ''
     })) ??
+    investigationTools.pairs ??
     []
 
   const [v, setV] = useState({
@@ -611,13 +617,12 @@ function AnalysisPanel({ registerCollector }) {
 
       <Label>Analysis Result</Label>
       {v.analysisPairs.map((p, i) => (
-        <Textarea
+        <Input
           key={i}
-          rows={2}
           placeholder={`${i + 1}.`}
           value={p.result}
           onChange={(e) => setResult(i, e.target.value)}
-          className="mb-3"
+          className="mb-0"
         />
       ))}
 
