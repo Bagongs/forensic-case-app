@@ -146,6 +146,13 @@ export default function EvidenceDetailPage() {
 
   // urutan stage (pastikan sesuai STAGES)
   const stageOrder = ['acquisition', 'preparation', 'extraction', 'analysis']
+  const firstEmptyStage = stageOrder.find((s) => {
+    const content = chain?.[s]
+    if (!content) return true
+    if (Array.isArray(content) && content.length === 0) return true
+    if (typeof content === 'object' && Object.keys(content).length === 0) return true
+    return false
+  })
 
   // cek apakah stage sebelumnya sudah punya data
   const canAddContent = (() => {
@@ -270,19 +277,15 @@ export default function EvidenceDetailPage() {
               {stageMeta.map((m, idx) => {
                 const style = STAGE_STYLE[m.key] || NODE_DEFAULT
                 const isActive = active === m.key
-                const filled = m.has
+
                 return (
                   <Fragment key={m.key}>
                     <button
                       onClick={() => setActive(m.key)}
                       className="relative w-5 h-5 rounded-full transition-colors"
                       style={{
-                        background: isActive
-                          ? style.fill
-                          : filled
-                            ? style.fill + '33'
-                            : NODE_DEFAULT.fill,
-                        border: `${1.5}px solid ${isActive || filled ? style.border : NODE_DEFAULT.border}`
+                        background: isActive ? style.fill : NODE_DEFAULT.fill,
+                        border: `${1.5}px solid ${isActive ? style.border : NODE_DEFAULT.border}`
                       }}
                       title={m.label}
                     />
@@ -309,6 +312,14 @@ export default function EvidenceDetailPage() {
                   <div className="text-lg font-semibold mb-1">{m.label}</div>
                   {m.date && <div className="text-sm opacity-60">{m.date}</div>}
                   {m.investigator && <div className="text-sm opacity-60">{m.investigator}</div>}
+                  {!(m.date || m.investigator) && <div>Not Recorded</div>}
+                  {m.key === firstEmptyStage && (
+                    <div className="flex justify-center mt-2">
+                      <div className="inline-block rounded-md bg-[#394F6F]">
+                        <MiniButton onClick={() => setOpenStage(m.key)}>+ Add content</MiniButton>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
