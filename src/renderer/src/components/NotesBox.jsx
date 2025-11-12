@@ -2,8 +2,8 @@
 /* eslint-disable react/prop-types */
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 
-export default function SummaryBox({
-  title = 'Summary',
+export default function NotesBox({
+  title = 'Notes',
   value = '',
   onChange,
   placeholder = 'Click Add to write summary',

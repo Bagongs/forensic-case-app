@@ -3,8 +3,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { IoClose } from 'react-icons/io5'
 import { useEvidenceChain } from '../store/evidenceChain'
-import { useCases } from '../store/cases'
-import SummaryBox from './SummaryBox'
 
 const TOKENS = {
   modalBg: '#151D28',
@@ -40,15 +38,19 @@ const Select = ({ options = [], ...p }) => (
     className="w-full h-11 rounded-md bg-transparent px-3 text-sm outline-none appearance-none"
     style={{ color: TOKENS.text, border: `1px solid ${TOKENS.ring}` }}
   >
-    {options.map((o) => (
-      <option
-        key={o.value ?? o}
-        value={o.value ?? o}
-        style={{ background: '#0F1621', color: TOKENS.text }}
-      >
-        {o.label ?? o}
-      </option>
-    ))}
+    {options.map((o) => {
+      const val = typeof o === 'object' ? o.value : o
+      const label = typeof o === 'object' ? o.label : o
+      return (
+        <option
+          key={val ?? label}
+          value={val ?? label}
+          style={{ background: '#0F1621', color: TOKENS.text }}
+        >
+          {label}
+        </option>
+      )
+    })}
   </select>
 )
 const Textarea = (p) => (
@@ -79,14 +81,12 @@ export default function StageContentModal({
   caseNumber,
   caseTitle,
   initialStage = STAGES.ACQUISITION,
-  evidenceId,
   onClose,
   onSubmitStage
 }) {
   const [stage, setStage] = useState(initialStage)
   const [submitting, setSubmitting] = useState(false)
   const collectorRef = useRef(null)
-  const { addChainContent } = useCases()
   const { preparation } = useEvidenceChain()
 
   useEffect(() => {
@@ -107,11 +107,10 @@ export default function StageContentModal({
   if (!open) return null
 
   async function handleSubmit() {
+    setSubmitting(true)
     try {
-      setSubmitting(true)
       const payload = (await collectorRef.current?.()) ?? {}
       await onSubmitStage?.(stage, payload)
-      if (evidenceId) addChainContent(evidenceId, stage, payload)
       onClose?.()
     } finally {
       setSubmitting(false)
@@ -120,7 +119,7 @@ export default function StageContentModal({
 
   return (
     <div className="fixed inset-0 z-[1000] flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/60" onClick={onClose}></div>
+      <div className="absolute inset-0 bg-black/60" onClick={onClose} />
       <div
         className="relative w-[min(920px,95vw)] max-h-[92vh] rounded-xl overflow-hidden flex flex-col"
         style={{ background: TOKENS.modalBg }}
@@ -153,10 +152,7 @@ export default function StageContentModal({
             <ExtractionPanel registerCollector={(fn) => (collectorRef.current = fn)} />
           )}
           {stage === STAGES.ANALYSIS && (
-            <AnalysisPanel
-              registerCollector={(fn) => (collectorRef.current = fn)}
-              preparationData={preparation}
-            />
+            <AnalysisPanel registerCollector={(fn) => (collectorRef.current = fn)} />
           )}
         </div>
 
@@ -194,6 +190,7 @@ function AcquisitionPanel({ registerCollector }) {
     notes: '',
     ...acquisition
   })
+  const [currentPhotoIdx, setCurrentPhotoIdx] = useState(0)
 
   const addStep = () => setV({ ...v, steps: [...v.steps, ''], photos: [...v.photos, null] })
 
@@ -203,16 +200,27 @@ function AcquisitionPanel({ registerCollector }) {
       const next = [...v.photos]
       next[i] = reader.result
       setV({ ...v, photos: next })
+      setCurrentPhotoIdx(i)
     }
     reader.readAsDataURL(file)
   }
 
+  const uploadedPhotos = (v.photos || []).map((p, idx) => ({ src: p, idx })).filter((p) => !!p.src)
+  const activePhoto =
+    uploadedPhotos.find((p) => p.idx === currentPhotoIdx) || uploadedPhotos[0] || null
+
   useEffect(() => {
     registerCollector(async () => {
+      const stepsObj = (v.steps || []).map((desc, i) => ({
+        no: i + 1,
+        desc,
+        previewDataUrl: v.photos?.[i] || null
+      }))
       const payload = {
         ...v,
+        steps: stepsObj,
         id: crypto.randomUUID(),
-        // type: STAGES.ACQUISITION,
+        type: STAGES.ACQUISITION,
         createdAt: new Date().toISOString()
       }
       setStageData(STAGES.ACQUISITION, payload)
@@ -222,6 +230,47 @@ function AcquisitionPanel({ registerCollector }) {
 
   return (
     <>
+      {/* GALLERY + DOTS */}
+      {uploadedPhotos.length > 0 && (
+        <div className="mb-6">
+          <div
+            className="w-full max-w-[720px] aspect-[4/3] mx-auto rounded-lg overflow-hidden grid place-items-center"
+            style={{ border: `1px solid ${TOKENS.ring}`, background: '#0F1621' }}
+          >
+            {activePhoto ? (
+              <img
+                src={activePhoto.src}
+                alt="acquisition-main"
+                className="w-full h-full object-contain"
+              />
+            ) : (
+              <div className="text-sm" style={{ color: TOKENS.dim }}>
+                No Photo
+              </div>
+            )}
+          </div>
+          <div className="flex items-center justify-center gap-2 mt-3">
+            {uploadedPhotos.map((p, i) => {
+              const isActive = p.idx === (activePhoto?.idx ?? -1)
+              return (
+                <button
+                  key={p.idx}
+                  onClick={() => setCurrentPhotoIdx(p.idx)}
+                  title={`Photo ${i + 1}`}
+                  className="rounded-full"
+                  style={{
+                    width: 10,
+                    height: 10,
+                    border: `1px solid ${TOKENS.ring}`,
+                    background: isActive ? TOKENS.gold : 'transparent'
+                  }}
+                />
+              )
+            })}
+          </div>
+        </div>
+      )}
+
       <Row>
         <Field label="Investigator">
           <Input
@@ -233,12 +282,18 @@ function AcquisitionPanel({ registerCollector }) {
           <Input value={v.location} onChange={(e) => setV({ ...v, location: e.target.value })} />
         </Field>
       </Row>
+
       <Row cols={3}>
         <Field label="Evidence Source">
           <Select
             value={v.source}
             onChange={(e) => setV({ ...v, source: e.target.value })}
-            options={['Select Source', 'Handphone', 'Laptop', 'Cloud']}
+            options={[
+              { label: 'Select Source', value: '' },
+              { label: 'Handphone', value: 'Handphone' },
+              { label: 'Laptop', value: 'Laptop' },
+              { label: 'Cloud', value: 'Cloud' }
+            ]}
           />
         </Field>
         <Field label="Evidence Type">
@@ -261,20 +316,47 @@ function AcquisitionPanel({ registerCollector }) {
               setV({ ...v, steps: next })
             }}
           />
-          <label className="cursor-pointer px-4 py-2 border border-gray-500 rounded-md">
-            Upload Photo
-            <input
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => e.target.files?.[0] && setPhoto(i, e.target.files[0])}
-            />
-          </label>
+          {v.photos?.[i] ? (
+            <div className="flex flex-col items-center gap-2">
+              <img
+                src={v.photos[i]}
+                alt={`step-${i + 1}`}
+                className="w-28 h-20 object-cover rounded-md"
+                style={{ border: `1px solid ${TOKENS.ring}` }}
+              />
+              <label
+                className="cursor-pointer px-3 py-1 border rounded-md text-sm"
+                style={{ borderColor: TOKENS.ring, color: TOKENS.text }}
+              >
+                Change Photo
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => e.target.files?.[0] && setPhoto(i, e.target.files[0])}
+                />
+              </label>
+            </div>
+          ) : (
+            <label
+              className="cursor-pointer px-4 py-2 border rounded-md"
+              style={{ borderColor: TOKENS.ring, color: TOKENS.text }}
+            >
+              Upload Photo
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => e.target.files?.[0] && setPhoto(i, e.target.files[0])}
+              />
+            </label>
+          )}
         </div>
       ))}
       <button
         onClick={addStep}
-        className="h-10 px-4 border border-gray-500 rounded-md text-sm text-gray-200 mt-2"
+        className="h-10 px-4 rounded-md text-sm mt-2"
+        style={{ border: `1px solid ${TOKENS.ring}`, color: TOKENS.text }}
       >
         + Add
       </button>
@@ -285,6 +367,7 @@ function AcquisitionPanel({ registerCollector }) {
     </>
   )
 }
+
 /* =============== PREPARATION =============== */
 function PreparationPanel({ registerCollector }) {
   const { preparation, setStageData } = useEvidenceChain()
@@ -306,7 +389,7 @@ function PreparationPanel({ registerCollector }) {
       const payload = {
         ...v,
         id: crypto.randomUUID(),
-        // type: STAGES.PREPARATION,
+        type: STAGES.PREPARATION,
         createdAt: new Date().toISOString()
       }
       setStageData(STAGES.PREPARATION, payload)
@@ -339,7 +422,12 @@ function PreparationPanel({ registerCollector }) {
           <Select
             value={v.source}
             onChange={(e) => setV({ ...v, source: e.target.value })}
-            options={['Select source', 'Handphone', 'Laptop', 'Cloud']}
+            options={[
+              { label: 'Select source', value: '' },
+              { label: 'Handphone', value: 'Handphone' },
+              { label: 'Laptop', value: 'Laptop' },
+              { label: 'Cloud', value: 'Cloud' }
+            ]}
           />
         </Field>
         <Field label="Evidence Type">
@@ -350,7 +438,7 @@ function PreparationPanel({ registerCollector }) {
         </Field>
       </Row>
 
-      <Label>Investigation Hypothesis & Tools Used</Label>
+      <Label>Investigation Hypothesis &amp; Tools Used</Label>
       {v.pairs.map((p, i) => (
         <div key={i} className="grid grid-cols-2 gap-3 mb-3 items-start">
           <Textarea
@@ -363,7 +451,13 @@ function PreparationPanel({ registerCollector }) {
             <Select
               value={p.tools}
               onChange={(e) => setPair(i, 'tools', e.target.value)}
-              options={['Select tools', 'Magnet Axiom', 'Oxygen', 'Cellebrite', 'Encase']}
+              options={[
+                { label: 'Select tools', value: '' },
+                { label: 'Magnet Axiom', value: 'Magnet Axiom' },
+                { label: 'Oxygen', value: 'Oxygen' },
+                { label: 'Cellebrite', value: 'Cellebrite' },
+                { label: 'Encase', value: 'Encase' }
+              ]}
             />
           </div>
         </div>
@@ -371,7 +465,8 @@ function PreparationPanel({ registerCollector }) {
 
       <button
         onClick={addPair}
-        className="h-10 px-4 border border-gray-500 rounded-md text-sm text-gray-200"
+        className="h-10 px-4 border rounded-md text-sm text-gray-200"
+        style={{ borderColor: TOKENS.ring }}
       >
         + Add
       </button>
@@ -409,7 +504,7 @@ function ExtractionPanel({ registerCollector }) {
       const payload = {
         ...v,
         id: crypto.randomUUID(),
-        // type: STAGES.EXTRACTION,
+        type: STAGES.EXTRACTION,
         createdAt: new Date().toISOString()
       }
       setStageData(STAGES.EXTRACTION, payload)
@@ -430,12 +525,18 @@ function ExtractionPanel({ registerCollector }) {
           <Input value={v.location} onChange={(e) => setV({ ...v, location: e.target.value })} />
         </Field>
       </Row>
+
       <Row cols={3}>
         <Field label="Evidence Source">
           <Select
             value={v.source}
             onChange={(e) => setV({ ...v, source: e.target.value })}
-            options={['Select source', 'Handphone', 'Laptop', 'Cloud']}
+            options={[
+              { label: 'Select source', value: '' },
+              { label: 'Handphone', value: 'Handphone' },
+              { label: 'Laptop', value: 'Laptop' },
+              { label: 'Cloud', value: 'Cloud' }
+            ]}
           />
         </Field>
         <Field label="Evidence Type">
@@ -451,7 +552,6 @@ function ExtractionPanel({ registerCollector }) {
           Upload File
           <input
             type="file"
-            accept="*"
             className="hidden"
             onChange={(e) => e.target.files?.[0] && addFile(e.target.files[0])}
           />
@@ -471,13 +571,14 @@ function ExtractionPanel({ registerCollector }) {
 }
 
 /* =============== ANALYSIS =============== */
-function AnalysisPanel({ registerCollector, preparationData }) {
-  const { analysis, setStageData } = useEvidenceChain()
+function AnalysisPanel({ registerCollector }) {
+  const { analysis, preparation, setStageData } = useEvidenceChain()
+
   const prepPairs =
-    preparationData?.pairs ??
-    preparationData?.hypothesis?.map((h, i) => ({
+    preparation?.pairs ??
+    preparation?.hypothesis?.map((h, i) => ({
       investigation: h,
-      tools: preparationData.tool[i] ?? ''
+      tools: preparation.tool[i] ?? ''
     })) ??
     []
 
@@ -487,7 +588,6 @@ function AnalysisPanel({ registerCollector, preparationData }) {
     source: '',
     type: '',
     detail: '',
-    analystName: '',
     analysisPairs: prepPairs.map((p) => ({
       investigation: p.investigation || '',
       tools: p.tools || '',
@@ -502,7 +602,7 @@ function AnalysisPanel({ registerCollector, preparationData }) {
       const payload = {
         ...v,
         id: crypto.randomUUID(),
-        // type: STAGES.ANALYSIS,
+        type: STAGES.ANALYSIS,
         createdAt: new Date().toISOString()
       }
       setStageData(STAGES.ANALYSIS, payload)
@@ -535,7 +635,11 @@ function AnalysisPanel({ registerCollector, preparationData }) {
           <Select
             value={v.source}
             onChange={(e) => setV({ ...v, source: e.target.value })}
-            options={['Handphone', 'Laptop', 'Cloud']}
+            options={[
+              { label: 'Handphone', value: 'Handphone' },
+              { label: 'Laptop', value: 'Laptop' },
+              { label: 'Cloud', value: 'Cloud' }
+            ]}
           />
         </Field>
         <Field label="Evidence Type">
@@ -546,22 +650,13 @@ function AnalysisPanel({ registerCollector, preparationData }) {
         </Field>
       </Row>
 
-      {/* <Field label="Analyst Name">
-        <Input
-          value={v.analystName}
-          onChange={(e) => setV({ ...v, analystName: e.target.value })}
-        />
-      </Field> */}
-
-      {/* Investigation Hypothesis & Tool Used */}
       <div className="flex flex-row gap-5 w-full">
         <div className="flex flex-col gap-2 w-full">
-          <Label>Investigation Hypotesis</Label>
+          <Label>Investigation Hypothesis</Label>
           {v.analysisPairs.map((p, i) => (
             <Input key={i} readOnly value={p.investigation} className="mb-3" />
           ))}
         </div>
-
         <div className="flex flex-col gap-2">
           <Label>Tool Used</Label>
           {v.analysisPairs.map((p, i) => (
@@ -570,7 +665,6 @@ function AnalysisPanel({ registerCollector, preparationData }) {
         </div>
       </div>
 
-      {/* Analysis Result */}
       <Label>Analysis Result</Label>
       {v.analysisPairs.map((p, i) => (
         <Textarea
