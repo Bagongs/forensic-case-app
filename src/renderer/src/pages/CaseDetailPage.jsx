@@ -57,6 +57,7 @@ export default function CaseDetailPage() {
 
   // case data (akan re-render tiap store berubah)
   const item = getCaseById?.(id)
+  console.log('item : ', item)
 
   // local states
   const [selectedPersonId, setSelectedPersonId] = useState(null)
@@ -64,7 +65,7 @@ export default function CaseDetailPage() {
   const [statusOpen, setStatusOpen] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
-  const [summary, setSummary] = useState(item?.summary || '')
+  const [notes, setNotes] = useState(item?.notes || '')
   const [openAddEv, setOpenAddEv] = useState(false)
   const [personForEvidence, setPersonForEvidence] = useState(null)
   const [noteOpen, setNoteOpen] = useState(false)
@@ -138,14 +139,14 @@ L14.875 0.75
 H368.22
 Z`.trim()
 
-  const actionLabel = isEditing ? 'Save' : summary.trim() ? 'Edit' : 'Add'
+  const actionLabel = isEditing ? 'Save' : notes.trim() ? 'Edit' : 'Add'
   const actionIcon = isEditing ? (
     <FaRegSave className="text-[16px]" />
   ) : (
     <LiaEditSolid className="text-[18px]" />
   )
 
-  const onSummaryAction = async () => {
+  const onNotesAction = async () => {
     if (!isEditing) {
       setIsEditing(true)
       return
@@ -154,7 +155,7 @@ Z`.trim()
     savingRef.current = true
     try {
       setIsEditing(false)
-      updateCase(item.id, { summary })
+      updateCase(item.id, { notes: notes.trim() })
     } finally {
       savingRef.current = false
     }
@@ -222,7 +223,7 @@ Z`.trim()
                 >
                   Case description
                 </div>
-                <p className="text-3xl leading-relaxed text-[#CFCFCF]">
+                <p className="text-2xl pt-5 pb-0 leading-relaxed text-[#CFCFCF]">
                   {item.description || 'No description.'}
                 </p>
               </>
@@ -265,6 +266,7 @@ Z`.trim()
                 )}
               </PersonBox>
             ))}
+            {item.persons.length == 0 && <span className="text-center">No Person Interest</span>}
           </PersonSectionBox>
         </div>
 
@@ -290,17 +292,17 @@ Z`.trim()
       {/* SUMMARY */}
       <div className="flex w-full mt-5">
         <NotesBox
-          title="Summary"
-          value={summary}
-          onChange={setSummary}
-          placeholder="Click Add to write summary"
+          title="Notes"
+          value={notes}
+          onChange={setNotes}
+          placeholder="Click Add to write notes"
           editable={isEditing}
           actionLabel={actionLabel}
           actionIcon={actionIcon}
           actionBgImage={editBg}
           actionSize={{ w: 70, h: 27 }}
           actionOffset={{ top: 22, right: 24 }}
-          onAction={onSummaryAction}
+          onAction={onNotesAction}
         />
       </div>
 

@@ -79,6 +79,7 @@ export default function AddPersonModal({ open, onClose, onSave, caseOptions = []
           caseName: caseOptions.find((c) => c.value === caseId)?.label,
           name: poiMode === 'unknown' ? 'Unknown' : name.trim(),
           status,
+          notes: notes.trim(),
           evidence: {
             idMode,
             id: idMode === 'gen' ? undefined : evidenceId.trim(),
@@ -220,7 +221,7 @@ export default function AddPersonModal({ open, onClose, onSave, caseOptions = []
           rows={4}
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
-          placeholder="Enter Evidence summary"
+          placeholder="Enter Notes"
         />
       </div>
     </Modal>

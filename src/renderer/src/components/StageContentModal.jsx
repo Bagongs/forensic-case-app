@@ -314,7 +314,7 @@ function AcquisitionPanel({ registerCollector }) {
       ))}
       <button
         onClick={() => setV({ ...v, steps: [...v.steps, ''], photos: [...v.photos, null] })}
-        className="h-10 px-4 rounded-md text-sm mt-2"
+        className="h-10 px-4 rounded-md text-sm mt-2 bg-[#394F6F]"
         style={{ border: `1px solid ${TOKENS.ring}`, color: TOKENS.text }}
       >
         + Add
@@ -422,7 +422,7 @@ function PreparationPanel({ registerCollector }) {
 
       <button
         onClick={addPair}
-        className="h-10 px-4 border rounded-md text-sm text-gray-200"
+        className="h-10 px-4 border rounded-md text-sm bg-[#394F6F] text-gray-200"
         style={{ borderColor: TOKENS.ring }}
       >
         + Add
@@ -548,7 +548,7 @@ function AnalysisPanel({ open, registerCollector, investigationTools }) {
       result: ''
     })),
     reports: [], // ⬅️ selalu kosong saat mulai
-    summary: ''
+    notes: ''
   })
 
   const [v, setV] = useState(buildDefaults)
@@ -642,7 +642,7 @@ function AnalysisPanel({ open, registerCollector, investigationTools }) {
           placeholder={`${i + 1}.`}
           value={p.result}
           onChange={(e) => setResult(i, e.target.value)}
-          className="mb-0"
+          className="mb-2"
         />
       ))}
 
@@ -698,8 +698,8 @@ function AnalysisPanel({ open, registerCollector, investigationTools }) {
       <Field label="Notes (Optional)">
         <Textarea
           rows={3}
-          value={v.summary}
-          onChange={(e) => setV({ ...v, summary: e.target.value })}
+          value={v.notes}
+          onChange={(e) => setV({ ...v, notes: e.target.value })}
         />
       </Field>
     </>

@@ -135,7 +135,8 @@ export default function EvidenceDetailPage() {
     if (savingRef.current) return
     savingRef.current = true
     try {
-      // await updateEvidence(evidence.id, { notes: notesValue })
+      const text = notesValue.trim()
+      useCases.getState().updateChainNotes(evidence.id, active, text)
       setIsEditingNotes(false)
     } finally {
       savingRef.current = false
@@ -212,6 +213,17 @@ export default function EvidenceDetailPage() {
     const mb = bytes / (1024 * 1024)
     return mb >= 0.5 ? `${mb.toFixed(0)} Mb` : `${(bytes / 1024).toFixed(0)} Kb`
   }
+
+  useEffect(() => {
+    if (!latest) {
+      setNotesValue('')
+      return
+    }
+
+    let stageNotes = ''
+    stageNotes = latest?.notes || latest?.[active]?.notes || ''
+    setNotesValue(stageNotes)
+  }, [active, latest])
 
   return (
     <CaseLayout title="Evidence Management" showBack={true}>

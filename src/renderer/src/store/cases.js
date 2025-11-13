@@ -53,7 +53,7 @@ function loadFromStorage() {
 
 /* ===== Struktur default chain (baru) ===== */
 const defaultChain = {
-  acquisition: [], // array
+  acquisition: {},
   preparation: {},
   extraction: {},
   analysis: {}
@@ -81,7 +81,7 @@ export const useCases = create((set, get) => ({
       investigator: payload.investigator || '',
       createdAt: new Date().toISOString(),
       persons: [],
-      notes: [],
+      notes: '',
       logs: [
         { id: newId(), at: new Date().toISOString(), type: 'Open', by: payload.investigator || '' }
       ]
@@ -102,6 +102,9 @@ export const useCases = create((set, get) => ({
           name: patch.name ?? c.name,
           description: patch.description ?? c.description,
           investigator: patch.investigator ?? c.investigator,
+
+          notes: patch.notes ?? c.notes,
+
           logs: [
             ...c.logs,
             {
@@ -113,7 +116,8 @@ export const useCases = create((set, get) => ({
                 [
                   patch.name !== undefined ? 'name' : null,
                   patch.description !== undefined ? 'description' : null,
-                  patch.investigator !== undefined ? 'investigator' : null
+                  patch.investigator !== undefined ? 'investigator' : null,
+                  patch.notes !== undefined ? 'notes' : null // 🆕 catat kalau notes diubah
                 ]
                   .filter(Boolean)
                   .join(', ') || 'case updated'
@@ -124,7 +128,6 @@ export const useCases = create((set, get) => ({
     })
     get()._rebuildEvidences()
   },
-
   addNote: (caseId, text, author = '') => {
     set({
       cases: (get().cases || []).map((c) =>
@@ -158,7 +161,7 @@ export const useCases = create((set, get) => ({
   },
 
   /* ================== PERSON ================== */
-  addPersonToCase: (caseId, { name, status = 'Unknown', evidence }) => {
+  addPersonToCase: (caseId, { name, status = 'Unknown', notes, evidence }) => {
     const pid = newId()
     set({
       cases: (get().cases || []).map((c) => {
@@ -167,6 +170,7 @@ export const useCases = create((set, get) => ({
           id: pid,
           name: name || 'Unknown',
           status,
+          notes,
           evidences: evidence
             ? [
                 {
@@ -295,15 +299,11 @@ export const useCases = create((set, get) => ({
             if (e.id !== evidenceId) return e
             const chain = e.chain || structuredClone(defaultChain)
 
-            if (stage === 'acquisition') {
-              // ⬇️ simpan sebagai array
-              chain.acquisition = [
-                ...(chain.acquisition || []),
-                { id: newIdVal, createdAt: new Date().toISOString(), ...item }
-              ]
-            } else {
-              // ⬇️ stage lain cukup object tunggal
-              chain[stage] = { createdAt: new Date().toISOString(), ...item }
+            // semua stage sekarang object tunggal
+            chain[stage] = {
+              id: newIdVal,
+              createdAt: new Date().toISOString(),
+              ...item
             }
 
             return { ...e, chain }
@@ -334,6 +334,32 @@ export const useCases = create((set, get) => ({
           ]
         }
       })
+    })
+    get()._rebuildEvidences()
+  },
+
+  updateChainNotes: (evidenceId, stage, text) => {
+    set({
+      cases: (get().cases || []).map((c) => ({
+        ...c,
+        persons: (c.persons || []).map((p) => ({
+          ...p,
+          evidences: (p.evidences || []).map((e) => {
+            if (e.id !== evidenceId) return e
+
+            const chain = e.chain || structuredClone(defaultChain)
+            const now = new Date().toISOString()
+
+            // karena semua stage object tunggal sekarang
+            const target = chain[stage] || {}
+            target.notes = text
+            target.updatedAt = now
+            chain[stage] = target
+
+            return { ...e, chain }
+          })
+        }))
+      }))
     })
     get()._rebuildEvidences()
   }

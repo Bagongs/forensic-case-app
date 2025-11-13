@@ -122,6 +122,7 @@ export default function SuspectListPage() {
     const newId = addPersonToCase(payload.caseId, {
       name: payload.name,
       status: payload.status,
+      notes: payload.notes,
       evidence: payload.evidence
     })
 
@@ -130,9 +131,8 @@ export default function SuspectListPage() {
   }
 
   const badgeStatus = (status = 'Unknown') => {
-    status = status ?? 'Unknown'
     const s = STATUS_OPTIONS.find((opt) => opt.name.toLowerCase() === status.toLowerCase())
-
+    if (!s) return
     return (
       <div
         className="px-4 py-1 text-[13px] font-semibold text-center rounded-full"

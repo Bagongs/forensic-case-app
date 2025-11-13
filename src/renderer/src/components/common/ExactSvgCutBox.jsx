@@ -71,14 +71,12 @@ export default function ExactSvgCutBox({
 
       // 🔹 tinggi konten aktual (SUDAH termasuk padding top & bottom) dalam px
       const contentPx = meas.scrollHeight
-
       // 🔹 kita ingin tinggi kartu persis mengikuti tinggi konten + padding,
       // jadi hitung tinggi viewBox yang dibutuhkan dalam "unit" SVG
       const desiredUnits = contentPx / pxPerUnit
-
       // ekstra tinggi (bisa positif = tambah, bisa negatif = dipendekkan)
-      const extraUnits = desiredUnits - baseH
-
+      const divide = desiredUnits > 4000 ? 2.1 : 2.3
+      const extraUnits = (desiredUnits - baseH) / divide
       const rounded = Math.round(extraUnits * 100) / 100
       setExtraV(rounded)
     }

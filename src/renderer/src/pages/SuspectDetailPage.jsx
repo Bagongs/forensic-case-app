@@ -31,21 +31,21 @@ export default function SuspectDetailPage() {
     }
   }
 
-  const [summary, setSummary] = useState(person?.summary || '')
+  const [notes, setNotes] = useState(person?.notes || '')
   const [isEditing, setIsEditing] = useState(false)
   const [openModalEdit, setOpenModalEdit] = useState(false)
   const [openAddEv, setOpenAddEv] = useState(false)
   const savingRef = useRef(false)
   const evidences = person?.evidences ?? []
 
-  const actionLabel = isEditing ? 'Save' : summary.trim() ? 'Edit' : 'Add'
+  const actionLabel = isEditing ? 'Save' : notes.trim() ? 'Edit' : 'Add'
   const actionIcon = isEditing ? (
     <FaRegSave className="text-[16px]" />
   ) : (
     <LiaEditSolid className="text-[18px]" />
   )
 
-  const onSummaryAction = async () => {
+  const onNotesAction = async () => {
     if (!person || !caseData) return
     if (!isEditing) {
       setIsEditing(true)
@@ -54,7 +54,7 @@ export default function SuspectDetailPage() {
     if (savingRef.current) return
     savingRef.current = true
     try {
-      updatePerson(caseData.id, person.id, { summary })
+      updatePerson(caseData.id, person.id, { notes })
       setIsEditing(false)
     } catch (e) {
       console.error('Failed to save summary:', e)
@@ -219,17 +219,17 @@ export default function SuspectDetailPage() {
       {/* SUMMARY */}
       <div className="mt-6">
         <NotesBox
-          title="Summary"
-          value={summary}
-          onChange={setSummary}
-          placeholder="Click Add to write summary"
+          title="Notes"
+          value={notes}
+          onChange={setNotes}
+          placeholder="Click Add to write notes"
           editable={isEditing}
           actionLabel={actionLabel}
           actionIcon={actionIcon}
           actionBgImage={editBg}
           actionSize={{ w: 70, h: 27 }}
           actionOffset={{ top: 22, right: 24 }}
-          onAction={onSummaryAction}
+          onAction={onNotesAction}
         />
       </div>
 

@@ -50,9 +50,9 @@ export default function LoginPage() {
         >
           <img src={iconApp} alt="App Logo" className="w-44 h-44 object-contain select-none" />
           <h1
-            className="text-4xl tracking-wider"
+            className="text-4xl tracking-wider font-bold"
             style={{
-              color: 'var(--gold)',
+              color: 'var(--dim-yellow)',
               fontFamily: 'Aldrich, sans-serif',
               letterSpacing: '.04em'
             }}
@@ -107,10 +107,10 @@ export default function LoginPage() {
                 <button
                   type="submit"
                   // disabled={busy}
-                  className="h-11 px-10 rounded-md transition disabled:opacity-60"
+                  className="h-11 px-10 font-bold transition disabled:opacity-60"
                   style={{
                     background: '#1C2635',
-                    color: 'var(--text)',
+                    color: 'var(--dim-yellow)',
                     borderStyle: 'solid',
                     borderColor: '#394F6F',
                     borderTopWidth: '1.5px',

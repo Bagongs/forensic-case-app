@@ -20,7 +20,7 @@ import ConfirmDeleteModal from '../components/ConfirmDeleteModal'
 /* ===== Tokens & Const ===== */
 const COLORS = {
   border: 'var(--border)',
-  dim: 'var(--dim)',
+  dim: 'var(--dim-yellow)',
   theadBg: 'var(--panel)',
   tableBodyBg: '#111720',
 
