@@ -19,6 +19,9 @@ import editBg from '../assets/image/edit.svg'
 import NotesBox from '../components/NotesBox'
 import Pagination from '../components/Pagination'
 
+// ⬇️ ikon report lokal (untuk panel Analysis)
+import iconReport from '@renderer/assets/icons/icon_report.svg'
+
 const STAGES = [
   { key: 'acquisition', label: 'Acquisition' },
   { key: 'preparation', label: 'Preparation' },
@@ -76,11 +79,13 @@ export default function EvidenceDetailPage() {
   const chain = evidence.chain || { acquisition: [], preparation: [], extraction: [], analysis: [] }
   const contents = chain?.[active] ?? []
   const latest = Array.isArray(contents) ? contents[contents.length - 1] || null : contents || null
-  console.log(latest)
 
   const headerMeta = useMemo(() => {
     const d = new Date(evidence.createdAt || Date.now())
-    const date = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getFullYear()).slice(-2)}`
+    const date = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(
+      2,
+      '0'
+    )}/${String(d.getFullYear()).slice(-2)}`
     return { date }
   }, [evidence.createdAt])
 
@@ -94,11 +99,8 @@ export default function EvidenceDetailPage() {
 
   const stageMeta = STAGES.map(({ key, label }) => {
     const list = chain?.[key]
-    const last = Array.isArray(list)
-      ? list[list.length - 1]
-      : list && typeof list === 'object'
-        ? list
-        : null
+    const last =
+      Array.isArray(list) ? list[list.length - 1] : list && typeof list === 'object' ? list : null
     return {
       key,
       label,
@@ -130,7 +132,6 @@ export default function EvidenceDetailPage() {
     if (savingRef.current) return
     savingRef.current = true
     try {
-      // simpan ke evidence (opsional, aktifkan jika ingin persist di header evidence)
       // await updateEvidence(evidence.id, { notes: notesValue })
       setIsEditingNotes(false)
     } finally {
@@ -168,16 +169,48 @@ export default function EvidenceDetailPage() {
     return true
   })()
 
+  // ===== Pagination Acquisition Photos =====
   const [page, setPage] = useState(1)
   const totalPages = latest?.photos?.length || 0
-
   const currentImg = totalPages > 0 ? latest?.photos[page - 1] : null
+
+  // ===== Pagination Analysis Reports (baru) =====
+  const [reportPage, setReportPage] = useState(1)
+  const totalReports = Array.isArray(latest?.reports) ? latest.reports.length : 0
+  const currentReport = totalReports > 0 ? latest.reports[reportPage - 1] : null
+
+  // reset pagination saat berpindah tab agar aman
+  useEffect(() => {
+    setPage(1)
+    setReportPage(1)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active])
 
   const [investigationTools, setInvestigationTools] = useState(null)
   useEffect(() => {
     setInvestigationTools(ref.evidence.chain.preparation)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // ===== Helpers untuk report (download & ukuran) =====
+  function downloadReport(rep) {
+    if (!rep?.base64) return
+    const a = document.createElement('a')
+    a.href = rep.base64 // dataURL dari FileReader
+    a.download = rep.name || 'report.pdf'
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+  }
+  function approxSizeLabel(dataUrl) {
+    if (!dataUrl) return '-'
+    const b64 = dataUrl.split(',')[1] || ''
+    const bytes =
+      Math.ceil((b64.length * 3) / 4) -
+      (b64.endsWith('==') ? 2 : b64.endsWith('=') ? 1 : 0)
+    const mb = bytes / (1024 * 1024)
+    return mb >= 0.5 ? `${mb.toFixed(0)} Mb` : `${(bytes / 1024).toFixed(0)} Kb`
+  }
 
   return (
     <CaseLayout title="Evidence Management" showBack={true}>
@@ -376,8 +409,6 @@ export default function EvidenceDetailPage() {
             )}
 
             {!latest ? (
-              // <div className=""></div>
-              // <div className='hidden my-5'>pppp</div>
               <></>
             ) : (
               <div className="grid gap-6">
@@ -465,6 +496,7 @@ export default function EvidenceDetailPage() {
 
                 {active === 'analysis' && showContent && (
                   <div className="flex flex-row justify-between gap-8">
+                    {/* KIRI: hasil analisis */}
                     <div>
                       <div className="text-lg font-semibold mb-3">Analysis Result:</div>
                       <ol className="list-decimal pl-6 text-base leading-relaxed space-y-3">
@@ -475,21 +507,41 @@ export default function EvidenceDetailPage() {
                         ))}
                       </ol>
                     </div>
+
+                    {/* KANAN: Card file (tampilan tetap), isi & pagination dinamis */}
                     <div className="md:justify-self-end">
                       <BoxAllSide>
                         <BoxAllSide>
                           <div className="flex flex-row justify-center items-center gap-5">
-                            <FaFile size={30} />
+                            {/* ikon lokal */}
+                            <img src={iconReport} alt="report" className="w-[30px] h-[30px]" />
                             <div className="flex flex-col">
-                              <p className="font-bold">Handphone A</p>
-                              <p>Size : 67gb</p>
+                              <p className="font-bold truncate max-w-[220px]">
+                                {currentReport?.name || 'No Report'}
+                              </p>
+                              <p>Size : {currentReport ? approxSizeLabel(currentReport.base64) : '-'}</p>
                             </div>
                           </div>
                         </BoxAllSide>
-                        <button className="bg-[#2A3A51] px-5 mt-5 border-y-black border border-x-0 flex justify-self-center">
+                        <button
+                          className="bg-[#2A3A51] px-5 mt-5 border-y-black border border-x-0 flex justify-self-center disabled:opacity-60"
+                          onClick={() => currentReport && downloadReport(currentReport)}
+                          disabled={!currentReport}
+                        >
                           Download
                         </button>
                       </BoxAllSide>
+
+                      {/* Pagination khusus report di bawah card */}
+                      <div className="flex justify-center my-3">
+                        {totalReports > 1 && (
+                          <Pagination
+                            page={reportPage}
+                            totalPages={totalReports}
+                            onChange={setReportPage}
+                          />
+                        )}
+                      </div>
                     </div>
                   </div>
                 )}

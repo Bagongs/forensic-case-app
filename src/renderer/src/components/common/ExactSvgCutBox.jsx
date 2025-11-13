@@ -1,94 +1,109 @@
 /* eslint-disable react/prop-types */
-import { useId } from 'react'
 import upperCard from '../../assets/image/upper-card.svg'
 
-export default function ExactSvgCutBox({
+/**
+ * 3-slice cut box:
+ * - Top cap: SVG (punya notch & border atas)
+ * - Body: HTML biasa (auto-height) dengan border kiri/kanan/bawah
+ *   => konten bebas setinggi apapun tanpa foreignObject
+ */
+export default function ExactSvgCutBoxAuto({
   children,
-  viewBoxW = 1291,
-  viewBoxH = 319,
-  pathD,
+  className = '',
+
+  // warna & garis
   fill = '#111720',
   stroke = '#C3CFE0',
   strokeWidth = 1.5,
-  className = '',
-  height = 220,
 
-  // spacing internal
+  // layout & spacing
   paddingX = 40,
   titlePaddingTop = 41,
   contentSpacing = 20,
   titleFontSize = 30,
 
-  // overlay asset atas
+  // ukuran top cap (tinggi harus cukup buat notch + border atas)
+  capWidth = 1291,
+  capHeight = 86,
+
+  // ornamen atas
   showUpperAsset = true,
   upperAsset = upperCard,
   upperAssetHeight = 23,
-  upperAssetOffset = 25
+  upperAssetOffset = 25,
+
+  // path cap atas (notch). Kalau tidak butuh custom, biarkan default.
+  pathD = `
+M368.22 0.75
+L429.666 56.8008
+L429.881 56.9961
+H1276.12
+L1290.25 70.9805
+V85.25
+H14.875
+L0.75 71.265
+V14.7344
+L14.875 0.75
+H368.22
+Z`.trim()
 }) {
-  const clipId = useId()
+  // paddingTop efektif = jarak dari bagian bawah cap ke area judul
+  const effectiveTopPadding = Math.max(0, titlePaddingTop - (capHeight - strokeWidth))
 
   return (
-    <div className={`relative w-full ${className}`} style={{ height }}>
-      {/* Overlay asset atas */}
-      {showUpperAsset && (
-        <img
-          src={upperAsset}
-          alt=""
-          draggable="false"
-          className="absolute left-1/2 -translate-x-1/2 select-none pointer-events-none"
-          style={{
-            top: upperAssetOffset, // tidak diubah
-            height: upperAssetHeight, // tidak diubah
-            objectFit: 'contain'
-          }}
-        />
-      )}
-
-      {/* SVG utama */}
-      <svg
-        className="absolute inset-0 w-full h-full"
-        viewBox={`0 0 ${viewBoxW} ${viewBoxH}`}
-        preserveAspectRatio="none"
-        shapeRendering="crispEdges"
-        aria-hidden={false}
-      >
-        {/* background */}
-        <path d={pathD} fill={fill} />
-        {/* border */}
-        <path
-          d={pathD}
-          fill="none"
-          stroke={stroke}
-          strokeWidth={strokeWidth}
-          vectorEffect="non-scaling-stroke"
-          strokeLinejoin="miter"
-          strokeMiterlimit={2}
-        />
-
-        {/* definisi clipPath untuk konten */}
-        <clipPath id={clipId}>
-          <path d={pathD} />
-        </clipPath>
-
-        {/* konten di dalam clip */}
-        <foreignObject x="0" y="0" width={viewBoxW} height={viewBoxH} clipPath={`url(#${clipId})`}>
-          <div
-            xmlns="http://www.w3.org/1999/xhtml"
+    <div className={`relative w-full ${className}`}>
+      {/* ===== Top Cap (SVG) ===== */}
+      <div className="relative" style={{ height: capHeight }}>
+        {showUpperAsset && (
+          <img
+            src={upperAsset}
+            alt=""
+            draggable="false"
+            className="absolute left-1/2 -translate-x-1/2 select-none pointer-events-none"
             style={{
-              width: '100%',
-              height: '100%',
-              boxSizing: 'border-box',
-              padding: `${titlePaddingTop}px ${paddingX}px ${paddingX}px ${paddingX}px`,
-              color: '#E7E9EE',
-              fontFamily: 'Noto Sans, sans-serif'
+              top: upperAssetOffset,
+              height: upperAssetHeight,
+              objectFit: 'contain'
             }}
-          >
-            {typeof children === 'function'
-              ? children({ titleFontSize, contentSpacing })
-              : children}
-          </div>
-        </foreignObject>
-      </svg>
+          />
+        )}
+
+        <svg
+          className="absolute inset-0 w-full h-full"
+          viewBox={`0 0 ${capWidth} ${capHeight}`}
+          preserveAspectRatio="none"
+          shapeRendering="crispEdges"
+          aria-hidden="true"
+        >
+          {/* background */}
+          <path d={pathD} fill={fill} />
+          {/* border top & sisi miring */}
+          <path
+            d={pathD}
+            fill="none"
+            stroke={stroke}
+            strokeWidth={strokeWidth}
+            vectorEffect="non-scaling-stroke"
+            strokeLinejoin="miter"
+            strokeMiterlimit={2}
+          />
+        </svg>
+      </div>
+
+      {/* ===== Body (HTML auto-height) ===== */}
+      <div
+        className="border-x border-b"
+        style={{
+          backgroundColor: fill,
+          borderColor: stroke,
+          borderWidth: strokeWidth,
+          padding: `${effectiveTopPadding}px ${paddingX}px ${paddingX}px ${paddingX}px`,
+          color: '#E7E9EE',
+          fontFamily: 'Noto Sans, sans-serif'
+        }}
+      >
+        {typeof children === 'function' ? children({ titleFontSize, contentSpacing }) : children}
+      </div>
     </div>
   )
 }

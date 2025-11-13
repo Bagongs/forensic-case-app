@@ -2,6 +2,7 @@
 /* eslint-disable react/prop-types */
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { IoClose } from 'react-icons/io5'
+import { FaFilePdf } from 'react-icons/fa6'
 import { useEvidenceChain } from '../store/evidenceChain'
 
 const TOKENS = {
@@ -9,7 +10,8 @@ const TOKENS = {
   ring: '#394F6F',
   text: '#F4F6F8',
   dim: '#A8B3C4',
-  gold: '#EDC702'
+  gold: '#EDC702',
+  statusBg: '#2C3C53'
 }
 
 export const STAGES = {
@@ -30,7 +32,7 @@ const Label = ({ children }) => (
 const Input = (p) => (
   <input
     {...p}
-    className="w-full h-11 rounded-md bg-transparent px-3 text-sm outline-none"
+    className={`w-full h-11 rounded-md bg-transparent px-3 text-sm outline-none ${p.className || ''}`}
     style={{ color: TOKENS.text, border: `1px solid ${TOKENS.ring}` }}
   />
 )
@@ -90,7 +92,6 @@ export default function StageContentModal({
   const [stage, setStage] = useState(initialStage)
   const [submitting, setSubmitting] = useState(false)
   const collectorRef = useRef(null)
-  const { preparation } = useEvidenceChain()
 
   useEffect(() => {
     if (open) setStage(initialStage)
@@ -121,7 +122,7 @@ export default function StageContentModal({
   }
 
   return (
-    <div className="fixed inset-0 z-1000 flex items-center justify-center">
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center">
       <div className="absolute inset-0 bg-black/60" onClick={onClose} />
       <div
         className="relative w-[min(920px,95vw)] max-h-[92vh] rounded-xl overflow-hidden flex flex-col"
@@ -156,6 +157,7 @@ export default function StageContentModal({
           )}
           {stage === STAGES.ANALYSIS && (
             <AnalysisPanel
+              open={open} // ⬅️ penting untuk reset
               investigationTools={investigationTools}
               registerCollector={(fn) => (collectorRef.current = fn)}
             />
@@ -197,7 +199,6 @@ function AcquisitionPanel({ registerCollector }) {
     notes: '',
     ...acquisition
   })
-  // const [currentPhotoIdx, setCurrentPhotoIdx] = useState(0)
 
   const addStep = () => setV({ ...v, steps: [...v.steps, ''], photos: [...v.photos, null] })
 
@@ -207,12 +208,9 @@ function AcquisitionPanel({ registerCollector }) {
       const next = [...v.photos]
       next[i] = reader.result
       setV({ ...v, photos: next })
-      // setCurrentPhotoIdx(i)
     }
     reader.readAsDataURL(file)
   }
-
-  // const uploadedPhotos = (v.photos || []).map((p, idx) => ({ src: p, idx })).filter((p) => !!p.src)
 
   useEffect(() => {
     registerCollector(async () => {
@@ -312,7 +310,7 @@ function AcquisitionPanel({ registerCollector }) {
         </div>
       ))}
       <button
-        onClick={addStep}
+        onClick={() => setV({ ...v, steps: [...v.steps, ''], photos: [...v.photos, null] })}
         className="h-10 px-4 rounded-md text-sm mt-2"
         style={{ border: `1px solid ${TOKENS.ring}`, color: TOKENS.text }}
       >
@@ -522,9 +520,9 @@ function ExtractionPanel({ registerCollector }) {
   )
 }
 
-/* =============== ANALYSIS =============== */
-function AnalysisPanel({ registerCollector, investigationTools }) {
-  const { analysis, preparation, setStageData } = useEvidenceChain()
+/* =============== ANALYSIS (RESET SETIAP OPEN) =============== */
+function AnalysisPanel({ open, registerCollector, investigationTools }) {
+  const { preparation, setStageData } = useEvidenceChain()
 
   const prepPairs =
     preparation?.pairs ??
@@ -532,10 +530,10 @@ function AnalysisPanel({ registerCollector, investigationTools }) {
       investigation: h,
       tools: preparation.tool[i] ?? ''
     })) ??
-    investigationTools.pairs ??
+    investigationTools?.pairs ??
     []
 
-  const [v, setV] = useState({
+  const buildDefaults = () => ({
     investigator: '',
     location: '',
     source: '',
@@ -547,9 +545,29 @@ function AnalysisPanel({ registerCollector, investigationTools }) {
       tools: p.tools || '',
       result: ''
     })),
-    summary: '',
-    ...analysis
+    reports: [], // ⬅️ selalu kosong saat mulai
+    summary: ''
   })
+
+  const [v, setV] = useState(buildDefaults)
+
+  // Reset setiap kali modal dibuka / pasangan preparation berubah
+  useEffect(() => {
+    if (open) setV(buildDefaults())
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, preparation])
+
+  // helper upload
+  const addReport = (file) => {
+    const reader = new FileReader()
+    reader.onload = () =>
+      setV((prev) => ({
+        ...prev,
+        reports: [...(prev.reports || []), { name: file.name, mime: file.type, base64: reader.result }]
+      }))
+    reader.readAsDataURL(file)
+  }
+  const addReports = (files) => Array.from(files || []).forEach(addReport)
 
   useEffect(() => {
     registerCollector(async () => {
@@ -626,7 +644,56 @@ function AnalysisPanel({ registerCollector, investigationTools }) {
         />
       ))}
 
-      <Field label="Summary">
+      {/* ===== Upload Report (container border + tombol center) ===== */}
+      <Field label={`Upload Report (${v.reports?.length || 0})`}>
+        <div
+          className="w-full rounded-md flex items-center justify-center"
+          style={{ border: `1px solid ${TOKENS.ring}`, background: 'transparent', minHeight: 88 }}
+        >
+          <label
+            className="cursor-pointer h-11 px-6 rounded-md flex items-center justify-center text-sm font-medium"
+            style={{ background: '#394F6F', color: TOKENS.text }}
+          >
+            Upload
+            <input
+              type="file"
+              accept="application/pdf"
+              multiple
+              className="hidden"
+              onChange={(e) => {
+                addReports(e.target.files)
+                e.target.value = null // reset agar bisa pilih file yang sama
+              }}
+            />
+          </label>
+        </div>
+
+        {/* List file di bawah container */}
+        <div className="mt-3 space-y-3">
+          {(v.reports || []).map((f, i) => (
+            <div
+              key={`${f.name}-${i}`}
+              className="flex items-center justify-between rounded-md px-4 py-3"
+              style={{ border: `1px solid ${TOKENS.ring}` }}
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <FaFilePdf size={18} color={TOKENS.text} />
+                <span className="text-sm truncate" style={{ color: TOKENS.text }}>
+                  {f.name}
+                </span>
+              </div>
+              <span
+                className="text-xs px-3 py-1 rounded-md"
+                style={{ background: TOKENS.statusBg, color: TOKENS.text }}
+              >
+                Uploaded
+              </span>
+            </div>
+          ))}
+        </div>
+      </Field>
+
+      <Field label="Notes (Optional)">
         <Textarea
           rows={3}
           value={v.summary}
