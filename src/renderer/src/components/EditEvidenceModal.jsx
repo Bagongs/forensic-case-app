@@ -3,16 +3,19 @@ import { useEffect, useRef, useState } from 'react'
 import Modal from './Modal'
 
 const DEVICE_SOURCES = ['Handphone', 'Laptop', 'PC', 'SSD', 'HDD', 'DVR', 'Flashdisk']
+const STATUS_OPTIONS = ['Witness', 'Reported', 'Suspected', 'Suspect', 'Defendant']
 
 export default function EditEvidenceModal({
   open,
   onClose,
   onSave,
   evidenceData = {}, // full object dari evidence
-  caseName = ''
+  caseName = '',
+  personData = {}
 }) {
   const [source, setSource] = useState('')
   const [summary, setSummary] = useState('')
+  const [status, setStatus] = useState(null)
   const [investigator, setInvestigator] = useState('')
   const [poiMode, setPoiMode] = useState('unknown')
   const [personName, setPersonName] = useState('')
@@ -26,13 +29,16 @@ export default function EditEvidenceModal({
       setSource(evidenceData.source || '')
       setSummary(evidenceData.summary || '')
       setInvestigator(evidenceData.investigator || '')
-      if (evidenceData.personOfInterest) {
-        setPoiMode('known')
-        setPersonName(evidenceData.personOfInterest)
-      } else {
-        setPoiMode('unknown')
-        setPersonName('')
-      }
+      setPersonName(personData.name)
+      setStatus(personData.status)
+      // if (evidenceData.personOfInterest) {
+      //   setPoiMode('known')
+      //   setPersonName(evidenceData.personOfInterest)
+      // } else {
+      //   setPoiMode('unknown')
+      //   setPersonName('')
+      // }
+      setPoiMode(personData.name != 'Unknown' ? 'known' : 'unknown')
       setPreviewDataUrl(evidenceData.previewDataUrl || evidenceData.previewUrl || null)
     }
   }, [open, evidenceData])
@@ -80,7 +86,10 @@ export default function EditEvidenceModal({
           fileName: file?.name || evidenceData.fileName,
           fileSize: file?.size || evidenceData.fileSize,
           fileMime: file?.type || evidenceData.fileMime,
-          previewDataUrl
+          previewDataUrl,
+          poiMode,
+          personName,
+          status
         })
         cleanup()
       }}
@@ -116,7 +125,7 @@ export default function EditEvidenceModal({
         >
           <div className="flex items-center gap-3">
             <button
-              className="px-4 py-1.5 rounded-lg border text-sm hover:bg-white/10"
+              className="px-4 py-1.5 rounded-lg border text-sm bg-[#394F6F]"
               style={{ borderColor: 'var(--border)' }}
               onClick={() => fileRef.current?.click()}
             >
@@ -177,6 +186,27 @@ export default function EditEvidenceModal({
               onChange={(e) => setPersonName(e.target.value)}
               placeholder="Input person name"
             />
+
+            <div>
+              <div className="text-xs font-semibold mb-1" style={{ color: 'var(--dim)' }}>
+                Suspect Status
+              </div>
+              <select
+                className="w-full px-3 py-2 rounded-lg border bg-transparent"
+                style={{ borderColor: 'var(--border)' }}
+                value={status}
+                onChange={(e) => setStatus(e.target.value)}
+              >
+                <option selected disabled>
+                  Select Suspect Status
+                </option>
+                {STATUS_OPTIONS.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </select>
+            </div>
           </>
         )}
       </div>

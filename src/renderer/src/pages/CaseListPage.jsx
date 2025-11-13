@@ -25,7 +25,7 @@ const COLORS = {
   tableBody: '#111720',
   theadBg: 'var(--panel)',
   border: 'var(--border)',
-  dim: 'var(--dim)',
+  dim: 'var(--dim-yellow)',
   detailBtn: '#2A3A51',
   pageActive: '#273549',
   gold: '#EDC702',

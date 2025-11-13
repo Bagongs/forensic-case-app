@@ -18,9 +18,9 @@ const COLORS = {
   tableBody: '#111720',
   theadBg: 'var(--panel)',
   border: 'var(--border)',
-  dim: 'var(--dim)',
+  dim: 'var(--dim-yellow)',
   detailBtn: '#2A3A51',
-  pageActive: '#273549',
+  pageActive: '#273549'
 }
 
 const STATUS_OPTIONS = [
@@ -57,7 +57,7 @@ export default function SuspectListPage() {
         out.push({
           id: p.id,
           name: p.name,
-          status: p.status || 'Suspect',
+          status: p.status,
           caseId: c.id,
           caseName: c.name,
           investigator: c.investigator || '-',
@@ -129,12 +129,9 @@ export default function SuspectListPage() {
     if (newId) setTimeout(() => nav(`/suspects/${newId}`), 150)
   }
 
-  const badgeStatus = (status = 'Suspect') => {
+  const badgeStatus = (status = 'Unknown') => {
+    status = status ?? 'Unknown'
     const s = STATUS_OPTIONS.find((opt) => opt.name.toLowerCase() === status.toLowerCase())
-    if (!s)
-      return (
-        <div className="px-4 py-1 text-[13px] font-semibold text-center rounded-full">{status}</div>
-      )
 
     return (
       <div
@@ -185,7 +182,7 @@ export default function SuspectListPage() {
         </div>
 
         <MiniButton onClick={() => setModal(true)} className="ml-auto">
-          <MiniButtonContent bg={bgButton} text="+ Add Person" textColor="text-black" />
+          <MiniButtonContent bg={bgButton} text="+ Add Suspect" textColor="text-black" />
         </MiniButton>
       </div>
 
@@ -230,7 +227,7 @@ export default function SuspectListPage() {
                   {row.investigator}
                 </td>
                 <td className="px-4 py-3 border-b" style={{ borderColor: COLORS.border }}>
-                  {badgeStatus(row.status)}
+                  {row.status ? badgeStatus(row.status) : ''}
                 </td>
                 <td className="px-4 py-3 border-b" style={{ borderColor: COLORS.border }}>
                   <button

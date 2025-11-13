@@ -10,13 +10,14 @@ export default function AddPersonModal({ open, onClose, onSave, caseOptions = []
   const [caseId, setCaseId] = useState(caseOptions[0]?.value || '')
   const [poiMode, setPoiMode] = useState('known') // known | unknown
   const [name, setName] = useState('')
-  const [status, setStatus] = useState(STATUS_OPTIONS[0])
+  const [status, setStatus] = useState(null)
 
   // evidence data
   const [idMode, setIdMode] = useState('gen')
   const [evidenceId, setEvidenceId] = useState('')
   const [source, setSource] = useState('')
   const [summary, setSummary] = useState('')
+  const [notes, setNotes] = useState('')
   const [file, setFile] = useState(null)
   const [previewUrl, setPreviewUrl] = useState(null)
   const fileRef = useRef(null)
@@ -28,7 +29,7 @@ export default function AddPersonModal({ open, onClose, onSave, caseOptions = []
       setCaseId(caseOptions[0]?.value || '')
       setPoiMode('known')
       setName('')
-      setStatus(STATUS_OPTIONS[0])
+      setStatus(null)
       setIdMode('gen')
       setEvidenceId('')
       setSource('')
@@ -59,7 +60,7 @@ export default function AddPersonModal({ open, onClose, onSave, caseOptions = []
   return (
     <Modal
       open={open}
-      title="Add Person"
+      title="Add Suspect"
       onCancel={() => {
         cleanupPreview()
         onClose()
@@ -76,7 +77,7 @@ export default function AddPersonModal({ open, onClose, onSave, caseOptions = []
         onSave({
           caseId,
           caseName: caseOptions.find((c) => c.value === caseId)?.label,
-          name: poiMode === 'unknown' ? 'Unknown Person' : name.trim(),
+          name: poiMode === 'unknown' ? 'Unknown' : name.trim(),
           status,
           evidence: {
             idMode,
@@ -128,18 +129,19 @@ export default function AddPersonModal({ open, onClose, onSave, caseOptions = []
               onChange={(e) => setName(e.target.value)}
               placeholder="Enter name"
             />
+            <FormLabel>Status</FormLabel>
+            <Select value={status} onChange={(e) => setStatus(e.target.value)}>
+              <option selected disabled>
+                Select Status
+              </option>
+              {STATUS_OPTIONS.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </Select>
           </>
         )}
-
-        {/* STATUS */}
-        <FormLabel>Status</FormLabel>
-        <Select value={status} onChange={(e) => setStatus(e.target.value)}>
-          {STATUS_OPTIONS.map((s) => (
-            <option key={s} value={s}>
-              {s}
-            </option>
-          ))}
-        </Select>
 
         {/* EVIDENCE SECTION */}
         <FormLabel>Evidence ID Mode</FormLabel>
@@ -163,15 +165,6 @@ export default function AddPersonModal({ open, onClose, onSave, caseOptions = []
           </>
         )}
 
-        {/* Evidence summary */}
-        <FormLabel>Evidence Summary</FormLabel>
-        <Textarea
-          rows={4}
-          value={summary}
-          onChange={(e) => setSummary(e.target.value)}
-          placeholder="Enter Evidence summary"
-        />
-
         {/* Evidence source */}
         <FormLabel>Evidence Source</FormLabel>
         <Select value={source} onChange={(e) => setSource(e.target.value)}>
@@ -192,7 +185,7 @@ export default function AddPersonModal({ open, onClose, onSave, caseOptions = []
           style={{ borderColor: 'var(--border)' }}
         >
           <button
-            className="px-4 py-1.5 rounded-lg border text-sm hover:bg-white/10"
+            className="px-4 py-1.5 rounded-lg border text-sm bg-[#394F6F]"
             style={{ borderColor: 'var(--border)' }}
             onClick={() => fileRef.current?.click()}
           >
@@ -213,6 +206,22 @@ export default function AddPersonModal({ open, onClose, onSave, caseOptions = []
             />
           </div>
         )}
+
+        {/* Evidence summary */}
+        <FormLabel>Evidence Summary</FormLabel>
+        <Textarea
+          rows={4}
+          value={summary}
+          onChange={(e) => setSummary(e.target.value)}
+          placeholder="Enter Evidence summary"
+        />
+        <FormLabel>Notes (Opsional) </FormLabel>
+        <Textarea
+          rows={4}
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          placeholder="Enter Evidence summary"
+        />
       </div>
     </Modal>
   )

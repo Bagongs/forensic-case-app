@@ -16,9 +16,10 @@
 :root {
   --bg:     #0b0d11;   /* kanvas gelap */
   --panel:  #395070;   /* panel/tile */
-  --border: #1c2230;   /* garis tipis */
+  --border: #394F6F;   /* garis tipis */
   --text:   #e7e9ee;   /* teks utama */
-  --dim:    #EDC702;   /* teks sekunder */
+  --dim:    #F4F6F8;   /* teks sekunder */
+  --dim-yellow:    #EDC702;   /* teks sekunder */
   --radius: 16px;      /* radius tile & button */
   --shadow: 0 10px 30px rgba(0,0,0,.35); /* soft shadow */
   --border-1_5: 1.5px;

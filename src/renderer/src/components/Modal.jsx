@@ -91,7 +91,7 @@ export default function Modal({
         {/* Header */}
         <div
           className="flex items-center justify-between px-6 py-4"
-          style={{ background: '#2A3A51', borderBottom: '2px solid var(--dim)' }}
+          style={{ background: '#2A3A51', borderBottom: '2px solid var(--dim-yellow)' }}
         >
           {title ? (
             <h2 id={titleId} className="app-title text-[18px]">

@@ -19,6 +19,8 @@ import ExactSvgCutBox from '../components/common/ExactSvgCutBox'
 import { FaEdit, FaRegSave } from 'react-icons/fa'
 import { LiaEditSolid } from 'react-icons/lia'
 import editBg from '../assets/image/edit.svg'
+import NotesModal from '../components/NotesModal'
+import ConfirmDeleteModal from '../components/ConfirmDeleteModal'
 
 const fmtDate = (iso) => {
   if (!iso) return '-'
@@ -47,19 +49,17 @@ export default function CaseDetailPage() {
   const { id } = useParams()
   const nav = useNavigate()
 
-  // store selectors
+  // store
   const getCaseById = useCases((s) => s.getCaseById)
-  const addNote = useCases((s) => s.addNote)
   const updateCase = useCases((s) => s.updateCase)
-  const updatePerson = useCases((s) => s.updatePerson)
   const addEvidenceToPerson = useCases((s) => s.addEvidenceToPerson)
+  const deletePerson = useCases((s) => s.deletePerson)
 
-  // ambil data case
+  // case data (akan re-render tiap store berubah)
   const item = getCaseById?.(id)
 
-  // local state
-  const [editPersonOpen, setEditPersonOpen] = useState(false)
-  const [selectedPerson, setSelectedPerson] = useState(null)
+  // local states
+  const [selectedPersonId, setSelectedPersonId] = useState(null)
   const [addPersonOpen, setAddPersonOpen] = useState(false)
   const [statusOpen, setStatusOpen] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
@@ -67,6 +67,16 @@ export default function CaseDetailPage() {
   const [summary, setSummary] = useState(item?.summary || '')
   const [openAddEv, setOpenAddEv] = useState(false)
   const [personForEvidence, setPersonForEvidence] = useState(null)
+  const [noteOpen, setNoteOpen] = useState(false)
+  const [selectedNote, setSelectedNote] = useState('')
+  const [editPersonOpen, setEditPersonOpen] = useState(false)
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
+
+  // ambil fresh selected person langsung dari store
+  const selectedPerson = useCases((s) =>
+    s.getCaseById(id)?.persons?.find((p) => p.id === selectedPersonId)
+  )
+
   const savingRef = useRef(false)
 
   const logs = useMemo(() => mapLogs(item?.logs || []), [item?.logs])
@@ -145,8 +155,6 @@ Z`.trim()
     try {
       setIsEditing(false)
       updateCase(item.id, { summary })
-    } catch (e) {
-      console.log(e)
     } finally {
       savingRef.current = false
     }
@@ -158,6 +166,7 @@ Z`.trim()
       <div className="flex mt-8 items-start justify-between">
         <div className="flex flex-col gap-2">
           <div className="text-xs opacity-70">{item.id}</div>
+
           <div>
             <div className="text-3xl font-semibold flex items-center gap-3">
               {item.name} {statChip}
@@ -167,10 +176,12 @@ Z`.trim()
               {fmtDate(item.createdAt)}
             </div>
           </div>
+
           <div className="text-sm opacity-70 mt-1">
             Agency: {item.agency || '-'} &nbsp;&nbsp; Work Unit: {item.workUnit || '-'}
           </div>
         </div>
+
         <div className="flex items-center gap-2">
           <MiniButton onClick={() => setEditOpen(true)}>
             <MiniButtonContent
@@ -218,7 +229,7 @@ Z`.trim()
             )}
           </ExactSvgCutBox>
 
-          {/* PERSONS SECTION */}
+          {/* PERSON SECTION */}
           <PersonSectionBox
             title="Person of Interest"
             total={item.persons.length}
@@ -226,14 +237,14 @@ Z`.trim()
             actionBgImage={bgButtonTransparent}
             onAddPerson={() => setAddPersonOpen(true)}
           >
-            {item.persons.map((person, i) => (
+            {item.persons.map((person) => (
               <PersonBox
-                key={i}
+                key={person.id}
                 name={person.name}
                 roleLabel={person.status}
                 actionBgImage={bgButton}
                 onEdit={() => {
-                  setSelectedPerson(person)
+                  setSelectedPersonId(person.id)
                   setEditPersonOpen(true)
                 }}
                 onAddEvidence={() => {
@@ -241,9 +252,9 @@ Z`.trim()
                   setOpenAddEv(true)
                 }}
               >
-                {person.evidences.map((ev, j) => (
+                {person.evidences.map((ev) => (
                   <EvidenceCard
-                    key={j}
+                    key={ev.id}
                     image={ev.previewDataUrl || ev.image}
                     code={ev.fileName || ev.id}
                     summary={ev.summary}
@@ -264,10 +275,20 @@ Z`.trim()
             logs={logs}
             actionLabel="Change"
             onAction={() => setStatusOpen(true)}
+            onViewNotes={(log) => {
+              setSelectedNote(log.note || log.change || 'No notes found')
+              setNoteOpen(true)
+            }}
           />
-        </aside>
 
-        {/* SUMMARY */}
+          {noteOpen && (
+            <NotesModal open={noteOpen} onClose={() => setNoteOpen(false)} notes={selectedNote} />
+          )}
+        </aside>
+      </div>
+
+      {/* SUMMARY */}
+      <div className="flex w-full mt-5">
         <NotesBox
           title="Summary"
           value={summary}
@@ -283,38 +304,67 @@ Z`.trim()
         />
       </div>
 
-      {/* MODALS */}
-      <AddPersonInlineModal
-        caseId={item.id}
-        open={addPersonOpen}
-        onClose={() => setAddPersonOpen(false)}
-      />
+      {/* ============= MODALS (conditionally rendered) ============= */}
 
-      <ChangeStatusModal
-        open={statusOpen}
-        onClose={() => setStatusOpen(false)}
-        caseId={item.id}
-        currentStatus={item.status}
-        author={item.investigator || ''}
-      />
+      {addPersonOpen && (
+        <AddPersonInlineModal
+          caseId={item.id}
+          open={addPersonOpen}
+          onClose={() => setAddPersonOpen(false)}
+        />
+      )}
 
-      <EditCaseModal
-        open={editOpen}
-        onClose={() => setEditOpen(false)}
-        initial={item}
-        onSave={(patch) => {
-          updateCase(item.id, patch, item.investigator || '')
-          setEditOpen(false)
-        }}
-      />
+      {statusOpen && (
+        <ChangeStatusModal
+          open={statusOpen}
+          onClose={() => setStatusOpen(false)}
+          caseId={item.id}
+          currentStatus={item.status}
+          author={item.investigator || ''}
+        />
+      )}
 
-      <EditPersonModal
-        open={editPersonOpen}
-        onClose={() => setEditPersonOpen(false)}
-        caseId={item.id}
-        person={selectedPerson}
-        author={item.investigator || ''}
-      />
+      {editOpen && (
+        <EditCaseModal
+          open={editOpen}
+          onClose={() => setEditOpen(false)}
+          initial={item}
+          onSave={(patch) => {
+            updateCase(item.id, patch, item.investigator || '')
+            setEditOpen(false)
+          }}
+        />
+      )}
+
+      {editPersonOpen && selectedPerson && (
+        <EditPersonModal
+          open={editPersonOpen}
+          onClose={() => setEditPersonOpen(false)}
+          caseId={item.id}
+          person={selectedPerson}
+          author={item.investigator || ''}
+          showDelete={true}
+          onRequestDelete={() => {
+            setConfirmDeleteOpen(true)
+            setEditPersonOpen(false)
+          }}
+        />
+      )}
+
+      {confirmDeleteOpen && selectedPerson && (
+        <ConfirmDeleteModal
+          open={confirmDeleteOpen}
+          onClose={() => setConfirmDeleteOpen(false)}
+          name={selectedPerson?.name}
+          onConfirm={() => {
+            deletePerson(item.id, selectedPersonId, item.investigator)
+            setConfirmDeleteOpen(false)
+            setEditPersonOpen(false)
+            setSelectedPersonId(null)
+          }}
+          colorIcon="red"
+        />
+      )}
 
       {openAddEv && personForEvidence && (
         <AddEvidenceModal

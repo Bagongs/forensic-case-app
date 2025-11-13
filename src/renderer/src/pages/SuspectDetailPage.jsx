@@ -1,4 +1,3 @@
-/* eslint-disable react/prop-types */
 import { useParams } from 'react-router-dom'
 import CaseLayout from './CaseLayout'
 import MiniButton, { MiniButtonContent } from '../components/MiniButton'
@@ -73,27 +72,70 @@ export default function SuspectDetailPage() {
       </CaseLayout>
     )
   }
+  const badgeStatus = (status = 'Unknown') => {
+    if (!status) {
+      return
+    }
+    const s = status.toLowerCase()
+    let bg = '#222',
+      color = '#fff',
+      border = '#fff'
+
+    if (s === 'witness') {
+      bg = '#004166'
+      border = '#9FDCFF'
+      color = '#9FDCFF'
+    } else if (s === 'reported') {
+      bg = '#332E00'
+      border = '#D2BA00'
+      color = '#D2BA00'
+    } else if (s === 'suspected') {
+      bg = '#332400'
+      border = '#FF7402'
+      color = '#FF7402'
+    } else if (s === 'suspect') {
+      bg = '#511600'
+      border = '#FF6551'
+      color = '#FF6551'
+    } else if (s === 'defendant') {
+      bg = '#330006'
+      border = '#FF0221'
+      color = '#FF0221'
+    }
+
+    return (
+      <div
+        className="py-1 text-[13px] font-semibold text-center rounded-full"
+        style={{
+          background: bg,
+          color,
+          border: `2px solid ${border}`,
+          width: 'fit-content',
+          minWidth: 120
+        }}
+      >
+        {status}
+      </div>
+    )
+  }
 
   return (
     <CaseLayout title="Suspect Management" showBack={true}>
       {/* HEADER */}
       <div className="flex mt-8 items-start justify-between">
         <div>
-          <h1 className="font-[Aldrich] text-[26px] text-[#F4F6F8] mb-1">
-            {person.name || 'Unknown'}
-          </h1>
-          <div className="text-[#DDE3ED] text-[14px]">
-            {caseData?.investigator || '-'} -{' '}
-            {caseData?.date ||
-              new Date(caseData?.createdAt || Date.now()).toLocaleDateString('id-ID')}
-          </div>
-          <div className="mt-2 flex items-center gap-3">
-            <span
-              className="px-3 py-0.5 text-[13px] rounded-full"
-              style={{ background: '#531313', color: '#FBEAEA' }}
-            >
-              {person.status || 'Defendant'}
-            </span>
+          <div className="flex flex-row gap-5">
+            <div>
+              <h1 className="font-[Aldrich] text-[26px] text-[#F4F6F8] mb-1">
+                {person.name || 'Unknown'}
+              </h1>
+              <div className="text-[#DDE3ED] text-[14px]">
+                {caseData?.investigator || '-'} -{' '}
+                {caseData?.date ||
+                  new Date(caseData?.createdAt || Date.now()).toLocaleDateString('id-ID')}
+              </div>
+            </div>
+            <div className="mt-2 flex items-center gap-3">{badgeStatus(person.status)}</div>
           </div>
 
           <div className="mt-3 text-[14px] text-[#C7D2E1]">

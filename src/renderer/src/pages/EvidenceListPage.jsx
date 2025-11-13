@@ -17,7 +17,7 @@ const COLORS = {
   tableBody: '#111720',
   theadBg: 'var(--panel)',
   border: 'var(--border)',
-  dim: 'var(--dim)',
+  dim: 'var(--dim-yellow)',
   detailBtn: '#2A3A51',
   pageActive: '#273549',
   gold: '#EDC702',
@@ -98,6 +98,7 @@ export default function EvidenceListPage() {
       previewUrl,
       ...rest
     } = payload
+    console.log('PAYLOAD ADD EVIDENCE : ', payload)
     if (!caseId) {
       console.error('Missing caseId/personId from AddEvidenceModal payload')
       return
@@ -112,7 +113,11 @@ export default function EvidenceListPage() {
         : null
 
       if (existing) personId = existing.id
-      else personId = addPersonToCase(caseId, { name: nameToFind || 'Unknown', status: 'Suspect' })
+      else
+        personId = addPersonToCase(caseId, {
+          name: nameToFind || 'Unknown',
+          status: payload.status
+        })
     }
 
     const ev = {

@@ -174,7 +174,10 @@ export default function StageContentModal({
           <button
             onClick={handleSubmit}
             disabled={submitting}
-            className="h-11 px-6 rounded-md text-sm bg-yellow-400 text-black font-semibold"
+            className="h-11 px-6 rounded-md text-sm text-black font-semibold"
+            style={{
+              background: 'radial-gradient(circle, #EDC702 0%, #B89E02 100%)'
+            }}
           >
             {submitting ? 'Saving...' : 'Submit'}
           </button>
@@ -449,8 +452,7 @@ function ExtractionPanel({ registerCollector }) {
 
   const addFile = (file) => {
     const reader = new FileReader()
-    reader.onload = () =>
-      setV({ ...v, files: [...v.files, { name: file.name, base64: reader.result }] })
+    reader.onload = () => setV({ ...v, files: [{ name: file.name, base64: reader.result }] }) // ⬅️ timpa array
     reader.readAsDataURL(file)
   }
 
@@ -497,19 +499,19 @@ function ExtractionPanel({ registerCollector }) {
         </Field>
       </Row>
 
-      <Field label="Extraction Files">
-        <label className="cursor-pointer h-11 px-5 rounded-md flex items-center justify-center border border-gray-500 w-fit text-sm text-gray-200">
-          Upload File
-          <input
-            type="file"
-            className="hidden"
-            onChange={(e) => e.target.files?.[0] && addFile(e.target.files[0])}
-          />
-        </label>
+      <Field label="Extraction Result">
+        <div className="border border-[#394F6F] flex justify-center py-10">
+          <label className="cursor-pointer h-11 px-5 rounded-md flex items-center justify-center w-fit text-sm text-gray-200 bg-[#394F6F]">
+            Upload
+            <input
+              type="file"
+              className="hidden"
+              onChange={(e) => e.target.files?.[0] && addFile(e.target.files[0])}
+            />
+          </label>
+        </div>
         <ul className="mt-3 space-y-1 text-sm text-gray-400">
-          {v.files.map((f, i) => (
-            <li key={i}>📄 {f.name}</li>
-          ))}
+          {v.files.length > 0 && <li>📄 {v.files[0].name}</li>}
         </ul>
       </Field>
 

@@ -99,8 +99,11 @@ export default function EvidenceDetailPage() {
 
   const stageMeta = STAGES.map(({ key, label }) => {
     const list = chain?.[key]
-    const last =
-      Array.isArray(list) ? list[list.length - 1] : list && typeof list === 'object' ? list : null
+    const last = Array.isArray(list)
+      ? list[list.length - 1]
+      : list && typeof list === 'object'
+        ? list
+        : null
     return {
       key,
       label,
@@ -183,7 +186,6 @@ export default function EvidenceDetailPage() {
   useEffect(() => {
     setPage(1)
     setReportPage(1)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active])
 
   const [investigationTools, setInvestigationTools] = useState(null)
@@ -206,8 +208,7 @@ export default function EvidenceDetailPage() {
     if (!dataUrl) return '-'
     const b64 = dataUrl.split(',')[1] || ''
     const bytes =
-      Math.ceil((b64.length * 3) / 4) -
-      (b64.endsWith('==') ? 2 : b64.endsWith('=') ? 1 : 0)
+      Math.ceil((b64.length * 3) / 4) - (b64.endsWith('==') ? 2 : b64.endsWith('=') ? 1 : 0)
     const mb = bytes / (1024 * 1024)
     return mb >= 0.5 ? `${mb.toFixed(0)} Mb` : `${(bytes / 1024).toFixed(0)} Kb`
   }
@@ -519,7 +520,9 @@ export default function EvidenceDetailPage() {
                               <p className="font-bold truncate max-w-[220px]">
                                 {currentReport?.name || 'No Report'}
                               </p>
-                              <p>Size : {currentReport ? approxSizeLabel(currentReport.base64) : '-'}</p>
+                              <p>
+                                Size : {currentReport ? approxSizeLabel(currentReport.base64) : '-'}
+                              </p>
                             </div>
                           </div>
                         </BoxAllSide>
@@ -591,20 +594,32 @@ export default function EvidenceDetailPage() {
           open={editOpen}
           onClose={() => setEditOpen(false)}
           onSave={(updated) => {
-            updateEvidence(updated.id, {
-              summary: updated.summary,
-              source: updated.source,
-              investigator: updated.investigator,
-              personOfInterest: updated.personOfInterest,
-              fileName: updated.fileName,
-              fileSize: updated.fileSize,
-              fileMime: updated.fileMime,
-              previewDataUrl: updated.previewDataUrl
-            })
+            updateEvidence(
+              updated.id,
+              {
+                summary: updated.summary,
+                source: updated.source,
+                investigator: updated.investigator,
+                personOfInterest: updated.personOfInterest,
+                fileName: updated.fileName,
+                fileSize: updated.fileSize,
+                fileMime: updated.fileMime,
+                previewDataUrl: updated.previewDataUrl
+              },
+              {
+                // personPatch
+                name:
+                  updated.poiMode === 'unknown'
+                    ? 'Unknown'
+                    : updated.personName?.trim() || 'Unknown',
+                status: updated.poiMode === 'unknown' ? null : updated.status || null
+              }
+            )
             setEditOpen(false)
           }}
           evidenceData={evidence}
           caseName={caseRef?.name}
+          personData={personRef}
         />
       </div>
     </CaseLayout>

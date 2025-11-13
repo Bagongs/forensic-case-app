@@ -2,17 +2,26 @@
 import { useEffect, useRef, useState } from 'react'
 import Modal from './Modal'
 import { useCases } from '../store/cases'
+import { FaTrashAlt } from 'react-icons/fa'
 
 const STATUS_OPTIONS = ['Witness', 'Reported', 'Suspected', 'Suspect', 'Defendant']
-const DEVICE_SOURCES = ['Hp', 'Ssd', 'HardDisk', 'Pc', 'Laptop', 'DVR']
 
-export default function EditPersonModal({ open, onClose, caseId, person, author = '' }) {
+export default function EditPersonModal({
+  open,
+  onClose,
+  caseId,
+  person,
+  author = '',
+  showDelete = false,
+  onRequestDelete = () => {} // ← NEW
+}) {
   const updatePerson = useCases((s) => s.updatePerson)
   const addEvidenceToPerson = useCases((s) => s.addEvidenceToPerson)
 
   // person core
   const [name, setName] = useState('')
-  const [status, setStatus] = useState('Suspect')
+  const [status, setStatus] = useState(null)
+  const [poiMode, setPoiMode] = useState('known')
 
   // optional new evidence
   const [addEv, setAddEv] = useState(false)
@@ -29,14 +38,17 @@ export default function EditPersonModal({ open, onClose, caseId, person, author 
   useEffect(() => {
     if (open) {
       setName(person?.name || '')
-      setStatus(person?.status || 'Suspect')
+      setStatus(person?.status || null)
+
+      const mode = person?.name === 'Unknown' && person?.status == null ? 'unknown' : 'known'
+      setPoiMode(mode)
+
       setAddEv(false)
       setEvIdMode('gen')
       setEvId('')
       setSource('')
       setSummary('')
       setFile(null)
-      if (previewBlobUrl) URL.revokeObjectURL(previewBlobUrl)
       setPreviewBlobUrl(null)
       setPreviewDataUrl(null)
     } else {
@@ -65,6 +77,11 @@ export default function EditPersonModal({ open, onClose, caseId, person, author 
     }
   }
 
+  // 🔧 Ganti mode POI (Person of Interest)
+  const changePoiMode = (mode) => {
+    setPoiMode(mode)
+  }
+
   const canSubmit = name.trim().length > 0
 
   return (
@@ -79,10 +96,16 @@ export default function EditPersonModal({ open, onClose, caseId, person, author 
       confirmText="Save"
       disableConfirm={!canSubmit}
       onConfirm={() => {
-        // 1️⃣ Update core person data
-        updatePerson(caseId, person.id, { name: name.trim(), status }, author)
+        let finalName = name.trim()
+        let finalStatus = status
 
-        // 2️⃣ Optional: add new evidence
+        if (poiMode === 'unknown') {
+          finalName = 'Unknown'
+          finalStatus = null
+        }
+
+        updatePerson(caseId, person.id, { name: finalName, status: finalStatus }, author)
+
         if (addEv && (file || summary.trim())) {
           addEvidenceToPerson(caseId, person.id, {
             id: evIdMode === 'gen' ? undefined : evId.trim(),
@@ -90,7 +113,7 @@ export default function EditPersonModal({ open, onClose, caseId, person, author 
             summary: summary.trim(),
             fileName: file?.name,
             fileSize: file?.size,
-            fileMime: file?.type, // ✅ pakai fileMime, bukan mime
+            fileMime: file?.type,
             previewDataUrl
           })
         }
@@ -102,163 +125,86 @@ export default function EditPersonModal({ open, onClose, caseId, person, author 
       size="lg"
     >
       <div className="grid gap-4">
-        {/* Person core */}
-        <div>
-          <div className="text-xs font-semibold mb-1" style={{ color: 'var(--dim)' }}>
-            Person Name
-          </div>
-          <input
-            className="w-full px-3 py-2 rounded-lg border bg-transparent"
-            style={{ borderColor: 'var(--border)' }}
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Enter name"
-          />
+        <div className="flex justify-between gap-2 items-center">
+          <FormLabel>Person of Interest</FormLabel>
+          {showDelete && (
+            <div
+              onClick={onRequestDelete}
+              className="bg-[#59120C] border border-[#9D120F] p-2 flex items-center justify-center"
+            >
+              <FaTrashAlt />
+            </div>
+          )}
+        </div>
+        {/* 🔘 Radio Buttons */}
+        <div className="flex items-center gap-6">
+          <Radio checked={poiMode === 'known'} onChange={() => changePoiMode('known')}>
+            Person name
+          </Radio>
+          <Radio checked={poiMode === 'unknown'} onChange={() => changePoiMode('unknown')}>
+            Unknown Person
+          </Radio>
         </div>
 
-        {/* STATUS FIELD */}
-        <div>
-          <div className="text-xs font-semibold mb-1" style={{ color: 'var(--dim)' }}>
-            Status
-          </div>
-          <select
-            className="w-full px-3 py-2 rounded-lg border bg-transparent"
-            style={{ borderColor: 'var(--border)' }}
-            value={status} // ✅ status terkontrol
-            onChange={(e) => setStatus(e.target.value)}
-          >
-            {STATUS_OPTIONS.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Optional Evidence Section */}
-        {/* <div className="border-t my-2" style={{ borderColor: 'var(--border)' }} />
-
-        <label className="inline-flex items-center gap-2 cursor-pointer">
-          <input
-            type="checkbox"
-            className="accent-indigo-400"
-            checked={addEv}
-            onChange={(e) => setAddEv(e.target.checked)}
-          />
-          <span className="text-sm">Add evidence (optional)</span>
-        </label> */}
-
-        {/* {addEv && (
+        {poiMode == 'known' && (
           <>
+            {/* 🧍 Person Name */}
             <div>
               <div className="text-xs font-semibold mb-1" style={{ color: 'var(--dim)' }}>
-                Evidence ID
+                Person Name
               </div>
-              <div className="flex flex-wrap items-center gap-4 mb-2">
-                <label className="inline-flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    className="accent-indigo-400"
-                    checked={evIdMode === 'gen'}
-                    onChange={() => setEvIdMode('gen')}
-                  />
-                  Generating
-                </label>
-                <label className="inline-flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    className="accent-indigo-400"
-                    checked={evIdMode === 'manual'}
-                    onChange={() => setEvIdMode('manual')}
-                  />
-                  Manual input
-                </label>
-              </div>
-              {evIdMode === 'manual' && (
-                <input
-                  className="w-full px-3 py-2 rounded-lg border bg-transparent"
-                  style={{ borderColor: 'var(--border)' }}
-                  placeholder="Enter evidence ID"
-                  value={evId}
-                  onChange={(e) => setEvId(e.target.value)}
-                />
-              )}
+              <input
+                className="w-full px-3 py-2 rounded-lg border bg-transparent"
+                style={{ borderColor: 'var(--border)' }}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Enter name"
+                disabled={poiMode === 'unknown'}
+              />
             </div>
 
+            {/* 🏷️ Status Field */}
             <div>
               <div className="text-xs font-semibold mb-1" style={{ color: 'var(--dim)' }}>
-                Evidence Source
+                Status
               </div>
               <select
                 className="w-full px-3 py-2 rounded-lg border bg-transparent"
                 style={{ borderColor: 'var(--border)' }}
-                value={source}
-                onChange={(e) => setSource(e.target.value)}
+                value={status || ''}
+                onChange={(e) => setStatus(e.target.value)}
+                disabled={poiMode === 'unknown'}
               >
                 <option value="" disabled>
-                  Select source
+                  Select Status
                 </option>
-                {DEVICE_SOURCES.map((s) => (
+                {STATUS_OPTIONS.map((s) => (
                   <option key={s} value={s}>
                     {s}
                   </option>
                 ))}
               </select>
             </div>
-
-            <div>
-              <div className="text-xs font-semibold mb-1" style={{ color: 'var(--dim)' }}>
-                Evidence Summary
-              </div>
-              <textarea
-                rows={3}
-                className="w-full px-3 py-2 rounded-lg border bg-transparent resize-none"
-                style={{ borderColor: 'var(--border)' }}
-                placeholder="Write evidence summary"
-                value={summary}
-                onChange={(e) => setSummary(e.target.value)}
-              />
-            </div>
-
-            <div>
-              <div className="text-xs font-semibold mb-1" style={{ color: 'var(--dim)' }}>
-                Evidence File
-              </div>
-              <div
-                className="rounded-lg border p-4 flex items-center justify-center"
-                style={{ borderColor: 'var(--border)' }}
-              >
-                <button
-                  className="px-4 py-1.5 rounded-lg border text-sm hover:bg-white/10"
-                  style={{ borderColor: 'var(--border)' }}
-                  onClick={() => fileRef.current?.click()}
-                >
-                  Upload
-                </button>
-                <input ref={fileRef} type="file" className="hidden" onChange={onPickFile} />
-                {file && !previewBlobUrl && (
-                  <span className="ml-3 text-xs opacity-70 truncate max-w-[240px] sm:max-w-[360px]">
-                    {file.name}
-                  </span>
-                )}
-              </div>
-
-              {previewBlobUrl && (
-                <div
-                  className="rounded-lg border p-3 mt-2"
-                  style={{ borderColor: 'var(--border)' }}
-                >
-                  <img
-                    src={previewBlobUrl}
-                    alt="preview"
-                    className="max-h-56 rounded-lg object-contain mx-auto"
-                  />
-                </div>
-              )}
-            </div>
           </>
-        )} */}
+        )}
       </div>
     </Modal>
+  )
+}
+
+function FormLabel({ children }) {
+  return (
+    <div className="text-xs font-semibold" style={{ color: 'var(--dim)' }}>
+      {children}
+    </div>
+  )
+}
+
+function Radio({ checked, onChange, children }) {
+  return (
+    <label className="inline-flex items-center gap-2 cursor-pointer">
+      <input type="radio" className="accent-indigo-400" checked={checked} onChange={onChange} />
+      {children}
+    </label>
   )
 }

@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import Modal from './Modal'
 
 const DEVICE_SOURCES = ['Hp', 'Ssd', 'HardDisk', 'Pc', 'Laptop', 'DVR']
+const STATUS_OPTIONS = ['Witness', 'Reported', 'Suspected', 'Suspect', 'Defendant']
 
 export default function AddEvidenceModal({
   open,
@@ -12,10 +13,11 @@ export default function AddEvidenceModal({
   defaultCaseId = '',
   defaultCaseName = '',
   defaultInvestigator = '',
-  defaultPerson = null // { id, name }
+  defaultPerson = null
 }) {
+  const [status, setStatus] = useState(null)
   const [caseId, setCaseId] = useState(defaultCaseId)
-  const [idMode, setIdMode] = useState('manual')
+  const [idMode, setIdMode] = useState('gen')
   const [evidenceId, setEvidenceId] = useState('')
   const [source, setSource] = useState('')
   const [summary, setSummary] = useState('')
@@ -34,6 +36,7 @@ export default function AddEvidenceModal({
       setInvestigator(defaultInvestigator || '')
       setPersonName(defaultPerson?.name || '')
       setPoiMode(defaultPerson ? 'known' : 'unknown')
+      setStatus(defaultPerson?.status)
     } else {
       cleanup()
     }
@@ -93,7 +96,8 @@ export default function AddEvidenceModal({
           fileName: file?.name,
           fileSize: file?.size,
           fileMime: file?.type,
-          previewDataUrl
+          previewDataUrl,
+          status
         })
         cleanup()
       }}
@@ -128,11 +132,14 @@ export default function AddEvidenceModal({
           </Radio>
         </div>
         {idMode === 'manual' && (
-          <Input
-            value={evidenceId}
-            onChange={(e) => setEvidenceId(e.target.value)}
-            placeholder="ID"
-          />
+          <>
+            <FormLabel>Evidence ID</FormLabel>
+            <Input
+              value={evidenceId}
+              onChange={(e) => setEvidenceId(e.target.value)}
+              placeholder="Input Evidence ID"
+            />
+          </>
         )}
 
         {/* Evidence Source */}
@@ -156,7 +163,7 @@ export default function AddEvidenceModal({
         >
           <div className="flex items-center gap-3">
             <button
-              className="px-4 py-1.5 rounded-lg border text-sm hover:bg-white/10"
+              className="px-4 py-1.5 rounded-lg border text-sm bg-[#394F6F]"
               style={{ borderColor: 'var(--border)' }}
               onClick={() => fileRef.current?.click()}
             >
@@ -187,19 +194,6 @@ export default function AddEvidenceModal({
           onChange={(e) => setSummary(e.target.value)}
           placeholder="Write evidence summary"
         />
-
-        {/* Type */}
-        <FormLabel>Type</FormLabel>
-        <Select value={etype} onChange={(e) => setEtype(e.target.value)}>
-          <option value="" disabled>
-            Select type
-          </option>
-          {['Image', 'Video', 'Document', 'Log', 'APK'].map((t) => (
-            <option key={t} value={t}>
-              {t}
-            </option>
-          ))}
-        </Select>
 
         {/* Investigator */}
         <FormLabel>Investigator</FormLabel>
@@ -238,6 +232,27 @@ export default function AddEvidenceModal({
               disabled={!!defaultPerson}
               readOnly={!!defaultPerson}
             />
+            <div>
+              <div className="text-xs font-semibold mb-1" style={{ color: 'var(--dim)' }}>
+                Suspect Status
+              </div>
+              <select
+                className="w-full px-3 py-2 rounded-lg border bg-transparent"
+                style={{ borderColor: 'var(--border)' }}
+                value={status}
+                disabled={defaultPerson}
+                onChange={(e) => setStatus(e.target.value)}
+              >
+                <option selected disabled>
+                  Select Suspect Status
+                </option>
+                {STATUS_OPTIONS.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </select>
+            </div>
           </>
         )}
       </div>
@@ -248,7 +263,7 @@ export default function AddEvidenceModal({
 /* atomic ui components */
 function FormLabel({ children }) {
   return (
-    <div className="text-xs font-semibold mb-1" style={{ color: 'var(--dim)' }}>
+    <div className="text-xs font-semibold" style={{ color: 'var(--dim)' }}>
       {children}
     </div>
   )

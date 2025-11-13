@@ -158,7 +158,7 @@ export const useCases = create((set, get) => ({
   },
 
   /* ================== PERSON ================== */
-  addPersonToCase: (caseId, { name, status = 'Suspect', evidence }) => {
+  addPersonToCase: (caseId, { name, status = 'Unknown', evidence }) => {
     const pid = newId()
     set({
       cases: (get().cases || []).map((c) => {
@@ -249,20 +249,21 @@ export const useCases = create((set, get) => ({
   },
 
   addEvidence: (caseId, personId, ev) => get().addEvidenceToPerson(caseId, personId, ev),
-  updateEvidence: (evidenceId, patch) => {
+  updateEvidence: (evidenceId, patch, personPatch = null) => {
     set({
       cases: (get().cases || []).map((c) => ({
         ...c,
-        persons: (c.persons || []).map((p) => ({
-          ...p,
-          evidences: (p.evidences || []).map((e) => {
-            if (e.id !== evidenceId) return e
-            return {
-              ...e,
-              ...patch // overwrite field yg diubah
-            }
-          })
-        }))
+        persons: (c.persons || []).map((p) => {
+          const hasEvidence = (p.evidences || []).some((e) => e.id === evidenceId)
+          return {
+            ...p,
+            ...(hasEvidence && personPatch ? personPatch : {}),
+            evidences: (p.evidences || []).map((e) => {
+              if (e.id !== evidenceId) return e
+              return { ...e, ...patch }
+            })
+          }
+        })
       }))
     })
     get()._rebuildEvidences()
@@ -309,6 +310,30 @@ export const useCases = create((set, get) => ({
           })
         }))
       }))
+    })
+    get()._rebuildEvidences()
+  },
+
+  deletePerson: (caseId, personId, by = '') => {
+    set({
+      cases: (get().cases || []).map((c) => {
+        if (c.id !== caseId) return c
+
+        return {
+          ...c,
+          persons: (c.persons || []).filter((p) => p.id !== personId),
+          logs: [
+            ...(c.logs || []),
+            {
+              id: newId(),
+              at: new Date().toISOString(),
+              type: 'Deleted Person',
+              by,
+              note: `Person removed: ${personId}`
+            }
+          ]
+        }
+      })
     })
     get()._rebuildEvidences()
   }

@@ -9,7 +9,8 @@ export default function CaseLogBox({
   bg = 'linear-gradient(180deg, #1C2737 -94.25%, #1B2533 100%)',
   borderColor = '#4C607D',
   borderW = 1.5,
-  cut = 18
+  cut = 18,
+  onViewNotes
 }) {
   return (
     <BoxAllSide className="w-full" cut={cut} borderColor={borderColor} borderW={borderW} bg={bg}>
@@ -65,6 +66,7 @@ export default function CaseLogBox({
                     borderRight: 'none',
                     padding: '2px 18px'
                   }}
+                  onClick={() => onViewNotes && onViewNotes(log)} // ⬅️ tambahkan ini
                 >
                   Notes
                 </button>
@@ -73,6 +75,7 @@ export default function CaseLogBox({
           </div>
         ))}
       </div>
+      {logs.length == 0 && <div className="text-center"> No Case Log </div>}
     </BoxAllSide>
   )
 }

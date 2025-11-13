@@ -15,7 +15,7 @@ export default function AddPersonInlineModal({ caseId, open, onClose }) {
   const [name, setName] = useState('')
 
   // 🆕 status person
-  const [status, setStatus] = useState('Suspect')
+  const [status, setStatus] = useState(null)
 
   const [evIdMode, setEvIdMode] = useState('gen') // gen | manual
   const [evId, setEvId] = useState('')
@@ -36,7 +36,7 @@ export default function AddPersonInlineModal({ caseId, open, onClose }) {
     if (previewBlobUrl) URL.revokeObjectURL(previewBlobUrl)
     setMode('known')
     setName('')
-    setStatus('Suspect') // reset status
+    setStatus(null) // reset status
     setEvIdMode('gen')
     setEvId('')
     setSource('')
@@ -69,7 +69,7 @@ export default function AddPersonInlineModal({ caseId, open, onClose }) {
   return (
     <Modal
       open={open}
-      title="Add Person"
+      title="Add Person of Interest"
       onCancel={() => {
         reset()
         onClose?.()
@@ -78,7 +78,7 @@ export default function AddPersonInlineModal({ caseId, open, onClose }) {
       disableConfirm={!canSubmit}
       onConfirm={() => {
         addPersonToCase(caseId, {
-          name: mode === 'unknown' ? 'Unknown Person' : name.trim(),
+          name: mode === 'unknown' ? 'Unknown' : name.trim(),
           status, // ✅ kirim status yang dipilih
           evidence: file
             ? {
@@ -124,38 +124,45 @@ export default function AddPersonInlineModal({ caseId, open, onClose }) {
         </div>
 
         {mode === 'known' && (
-          <div>
-            <div className="text-xs font-semibold mb-1" style={{ color: 'var(--dim)' }}>
-              Person Name
+          <>
+            <div>
+              <div className="text-xs font-semibold mb-1" style={{ color: 'var(--dim)' }}>
+                Person Name
+              </div>
+              <input
+                className="w-full px-3 py-2 rounded-lg border bg-transparent"
+                style={{ borderColor: 'var(--border)' }}
+                placeholder="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
             </div>
-            <input
-              className="w-full px-3 py-2 rounded-lg border bg-transparent"
-              style={{ borderColor: 'var(--border)' }}
-              placeholder="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-          </div>
+            <div>
+              <div>
+                <div className="text-xs font-semibold mb-1" style={{ color: 'var(--dim)' }}>
+                  Suspect Status
+                </div>
+                <select
+                  className="w-full px-3 py-2 rounded-lg border bg-transparent"
+                  style={{ borderColor: 'var(--border)' }}
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value)}
+                >
+                  <option selected disabled>
+                    Select Suspect Status
+                  </option >
+                  {STATUS_OPTIONS.map((s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </>
         )}
 
         {/* 🆕 STATUS */}
-        <div>
-          <div className="text-xs font-semibold mb-1" style={{ color: 'var(--dim)' }}>
-            Suspect Status
-          </div>
-          <select
-            className="w-full px-3 py-2 rounded-lg border bg-transparent"
-            style={{ borderColor: 'var(--border)' }}
-            value={status}
-            onChange={(e) => setStatus(e.target.value)}
-          >
-            {STATUS_OPTIONS.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
-        </div>
 
         {/* EVIDENCE ID */}
         <div>
@@ -215,21 +222,6 @@ export default function AddPersonInlineModal({ caseId, open, onClose }) {
           </select>
         </div>
 
-        {/* EVIDENCE SUMMARY */}
-        <div>
-          <div className="text-xs font-semibold mb-1" style={{ color: 'var(--dim)' }}>
-            Evidence Summary
-          </div>
-          <textarea
-            value={summary}
-            onChange={(e) => setSummary(e.target.value)}
-            placeholder="Write evidence summary"
-            className="w-full px-3 py-2 rounded-lg border bg-transparent resize-none"
-            rows={3}
-            style={{ borderColor: 'var(--border)' }}
-          />
-        </div>
-
         {/* FILE */}
         <div>
           <div className="text-xs font-semibold mb-1" style={{ color: 'var(--dim)' }}>
@@ -240,7 +232,7 @@ export default function AddPersonInlineModal({ caseId, open, onClose }) {
             style={{ borderColor: 'var(--border)' }}
           >
             <button
-              className="px-4 py-1.5 rounded-lg border text-sm hover:bg-white/10"
+              className="px-4 py-1.5 rounded-lg border text-sm bg-[#394F6F]"
               style={{ borderColor: 'var(--border)' }}
               onClick={() => fileRef.current?.click()}
             >
@@ -262,6 +254,20 @@ export default function AddPersonInlineModal({ caseId, open, onClose }) {
               />
             </div>
           )}
+        </div>
+        {/* EVIDENCE SUMMARY */}
+        <div>
+          <div className="text-xs font-semibold mb-1" style={{ color: 'var(--dim)' }}>
+            Evidence Summary
+          </div>
+          <textarea
+            value={summary}
+            onChange={(e) => setSummary(e.target.value)}
+            placeholder="Write evidence summary"
+            className="w-full px-3 py-2 rounded-lg border bg-transparent resize-none"
+            rows={3}
+            style={{ borderColor: 'var(--border)' }}
+          />
         </div>
       </div>
     </Modal>
