@@ -15,8 +15,7 @@ import CaseLogBox from '../components/CaseLogBox'
 import { PersonSectionBox } from '../components/PersonSectionBox'
 import { PersonBox } from '../components/PersonBox'
 import { EvidenceCard } from '../components/EvidanceCard'
-// ⬇️ GANTI: pakai versi auto-height (3-slice)
-import ExactSvgCutBoxAuto from '../components/common/ExactSvgCutBoxAuto'
+import ExactSvgCutBox from '../components/common/ExactSvgCutBox'
 import { FaEdit, FaRegSave } from 'react-icons/fa'
 import { LiaEditSolid } from 'react-icons/lia'
 import editBg from '../assets/image/edit.svg'
@@ -114,9 +113,20 @@ export default function CaseDetailPage() {
     )
   }
 
-  // NOTE: Tidak perlu PATH_D penuh lagi di halaman ini.
-  // Top-cap path sudah disediakan default di ExactSvgCutBoxAuto.
-  // Jika ingin custom bentuk cap, bisa pass prop `pathD`.
+  const PATH_D = `
+M368.22 0.75
+L429.666 56.8008
+L429.881 56.9961
+H1276.12
+L1290.25 70.9805
+V304.737
+L1276.13 318.25
+H14.875
+L0.75 304.265
+V14.7344
+L14.875 0.75
+H368.22
+Z`.trim()
 
   const actionLabel = isEditing ? 'Save' : summary.trim() ? 'Edit' : 'Add'
   const actionIcon = isEditing ? (
@@ -182,24 +192,18 @@ export default function CaseDetailPage() {
       {/* MAIN GRID */}
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6">
         <div className="space-y-6">
-          {/* ===== Case Description (auto-height) ===== */}
-          <ExactSvgCutBoxAuto
+          <ExactSvgCutBox
+            pathD={PATH_D}
             paddingX={40}
             titlePaddingTop={41}
             contentSpacing={20}
             titleFontSize={30}
-            // Kamu bisa atur warna/border di sini kalau perlu:
-            // fill="#111720"
-            // stroke="#C3CFE0"
-            // strokeWidth={1.5}
-            // capHeight={86}
           >
             {({ titleFontSize, contentSpacing }) => (
               <>
                 <div
                   className="font-[Aldrich]"
                   style={{
-                    color: '#C3CFE0',
                     fontSize: titleFontSize,
                     fontWeight: 600,
                     marginBottom: contentSpacing
@@ -207,12 +211,12 @@ export default function CaseDetailPage() {
                 >
                   Case description
                 </div>
-                <p className="text-base leading-relaxed text-[#E7E9EE] whitespace-pre-wrap">
+                <p className="text-3xl leading-relaxed text-[#CFCFCF]">
                   {item.description || 'No description.'}
                 </p>
               </>
             )}
-          </ExactSvgCutBoxAuto>
+          </ExactSvgCutBox>
 
           {/* PERSONS SECTION */}
           <PersonSectionBox
