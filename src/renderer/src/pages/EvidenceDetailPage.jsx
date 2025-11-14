@@ -2,22 +2,22 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useCases } from '../store/cases'
-import MiniButton, { MiniButtonContent } from '../components/MiniButton'
-import StageContentModal from '../components/StageContentModal'
+import MiniButton, { MiniButtonContent } from '../components/common/MiniButton'
+import StageContentModal from '../components/modals/evidence/StageContentModal'
 import CaseLayout from './CaseLayout'
-import { BoxAllSide, BoxNone, BoxTopLeftBottomRight, BoxTopRight } from '../components/BaseBox'
+import { BoxAllSide, BoxNone, BoxTopLeftBottomRight, BoxTopRight } from '../components/box/BaseBox'
 import stageOn from '../assets/image/stage-on.svg'
 import stageOff from '../assets/image/stage-off.svg'
 import bgButton from '../assets/image/bg-button.svg'
 import bgButtonTransparent from '../assets/image/bg-button-transparent.svg'
-import { FaEdit, FaFile, FaRegSave } from 'react-icons/fa'
+import { FaEdit, FaRegSave } from 'react-icons/fa'
 import HorizontalLine from '../components/common/HorizontalLine'
-import EditEvidenceModal from '../components/EditEvidenceModal'
+import EditEvidenceModal from '../components/modals/evidence/EditEvidenceModal'
 import bgExtranctionResult from '../assets/image/bg-extraction-result.svg'
 import { LiaEditSolid } from 'react-icons/lia'
 import editBg from '../assets/image/edit.svg'
-import NotesBox from '../components/NotesBox'
-import Pagination from '../components/Pagination'
+import NotesBox from '../components/box/NotesBox'
+import Pagination from '../components/common/Pagination'
 
 // ⬇️ ikon report lokal (untuk panel Analysis)
 import iconReport from '@renderer/assets/icons/icon_report.svg'
@@ -414,9 +414,9 @@ export default function EvidenceDetailPage() {
                 </div>
                 <HorizontalLine />
                 <div className="flex flex-row gap-5 mb-3">
-                  <div>Evidence Source : {latest.source || '-'}</div>
-                  <div>Evidence Type : {latest.type || '-'}</div>
-                  <div>Evidence Detail : {latest.detail || '-'}</div>
+                  <div>Evidence Source : {latest?.source || '-'}</div>
+                  <div>Evidence Type : {latest?.type || '-'}</div>
+                  <div>Evidence Detail : {latest?.detail || '-'}</div>
                 </div>
               </>
             )}
@@ -429,10 +429,10 @@ export default function EvidenceDetailPage() {
                   <div className="grid grid-cols-1 md:grid-cols-[1fr_380px] gap-8">
                     <div>
                       <div className="text-lg font-semibold mb-2">
-                        {latest.title || 'Steps for Confiscating Evidence : '}
+                        {latest?.title || 'Steps for Confiscating Evidence : '}
                       </div>
                       <ol className="list-decimal pl-6 text-base leading-relaxed space-y-2">
-                        {(latest.steps || []).map((s, i) => (
+                        {(latest?.steps || []).map((s, i) => (
                           <li key={i} className="whitespace-pre-wrap">
                             {s?.desc || s}
                           </li>

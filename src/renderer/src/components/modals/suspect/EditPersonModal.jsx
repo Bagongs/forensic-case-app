@@ -1,8 +1,10 @@
 /* eslint-disable react/prop-types */
 import { useEffect, useRef, useState } from 'react'
-import Modal from './Modal'
-import { useCases } from '../store/cases'
+import Modal from '../Modal'
+import { useCases } from '../../../store/cases'
 import { FaTrashAlt } from 'react-icons/fa'
+import FormLabel from '../../atoms/FormLabel'
+import Radio from '../../atoms/Radio'
 
 const STATUS_OPTIONS = ['Witness', 'Reported', 'Suspected', 'Suspect', 'Defendant']
 
@@ -189,22 +191,5 @@ export default function EditPersonModal({
         )}
       </div>
     </Modal>
-  )
-}
-
-function FormLabel({ children }) {
-  return (
-    <div className="text-sm font-semibold" style={{ color: 'var(--dim)' }}>
-      {children}
-    </div>
-  )
-}
-
-function Radio({ checked, onChange, children }) {
-  return (
-    <label className="inline-flex items-center gap-2 cursor-pointer">
-      <input type="radio" className="accent-indigo-400" checked={checked} onChange={onChange} />
-      {children}
-    </label>
   )
 }

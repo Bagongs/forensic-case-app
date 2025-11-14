@@ -1,7 +1,7 @@
 /* eslint-disable react/prop-types */
 import { FaUserPlus } from 'react-icons/fa'
 import { BoxAllSide } from './BaseBox'
-import MiniButton, { MiniButtonContent } from './MiniButton'
+import MiniButton, { MiniButtonContent } from '../common/MiniButton'
 
 export function PersonSectionBox({
   title = 'Person of Interest',

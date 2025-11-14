@@ -1,17 +1,17 @@
 import { useParams } from 'react-router-dom'
 import CaseLayout from './CaseLayout'
-import MiniButton, { MiniButtonContent } from '../components/MiniButton'
+import MiniButton, { MiniButtonContent } from '../components/common/MiniButton'
 import { useCases } from '../store/cases'
 import bgButton from '../assets/image/bg-button.svg'
 import bgButtonTransparent from '../assets/image/bg-button-transparent.svg'
 import { useRef, useState } from 'react'
 import { FaEdit, FaRegSave } from 'react-icons/fa'
 import iconAddEvidance from '../assets/icons/icon-add-evidance.svg'
-import NotesBox from '../components/NotesBox'
+import NotesBox from '../components/box/NotesBox'
 import { LiaEditSolid } from 'react-icons/lia'
 import editBg from '../assets/image/edit.svg'
-import EditPersonModal from '../components/EditPersonModal'
-import AddEvidenceModal from '../components/AddEvidenceModal'
+import EditPersonModal from '../components/modals/suspect/EditPersonModal'
+import AddEvidenceModal from '../components/modals/evidence/AddEvidenceModal'
 
 export default function SuspectDetailPage() {
   const { suspectId } = useParams()

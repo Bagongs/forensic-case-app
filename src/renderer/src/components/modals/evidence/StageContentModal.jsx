@@ -1,9 +1,9 @@
 /* eslint-disable react-refresh/only-export-components */
 /* eslint-disable react/prop-types */
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { IoClose } from 'react-icons/io5'
 import { FaFilePdf } from 'react-icons/fa6'
-import { useEvidenceChain } from '../store/evidenceChain'
+import { useEvidenceChain } from '../../../store/evidenceChain'
+import Modal from '../Modal'
 
 const TOKENS = {
   modalBg: '#151D28',
@@ -79,7 +79,7 @@ const Row = ({ children, cols = 2 }) => (
   </div>
 )
 
-/* =============== MAIN MODAL =============== */
+/* =============== MAIN COMPONENT =============== */
 export default function StageContentModal({
   open,
   caseNumber,
@@ -108,8 +108,6 @@ export default function StageContentModal({
     [stage]
   )
 
-  if (!open) return null
-
   async function handleSubmit() {
     setSubmitting(true)
     try {
@@ -121,69 +119,43 @@ export default function StageContentModal({
     }
   }
 
-  return (
-    <div className="fixed inset-0 z-1000 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/60" onClick={onClose} />
-      <div
-        className="relative w-[min(920px,95vw)] max-h-[92vh] rounded-xl overflow-hidden flex flex-col"
-        style={{ background: TOKENS.modalBg }}
-      >
-        <header className="px-6 pt-6 pb-5 border-b" style={{ borderColor: TOKENS.ring }}>
-          <div className="flex justify-between">
-            <div>
-              <h1 className="text-2xl font-semibold" style={{ color: TOKENS.text }}>
-                {title}
-              </h1>
-              <div className="flex items-baseline gap-3 mt-1">
-                <span className="text-2xl font-bold text-yellow-400">{caseNumber}</span>
-                <span className="text-lg text-gray-200">{caseTitle}</span>
-              </div>
-            </div>
-            <button onClick={onClose} className="p-2">
-              <IoClose size={28} color={TOKENS.text} />
-            </button>
-          </div>
-        </header>
-
-        <div className="p-6 overflow-auto space-y-6">
-          {stage === STAGES.ACQUISITION && (
-            <AcquisitionPanel registerCollector={(fn) => (collectorRef.current = fn)} />
-          )}
-          {stage === STAGES.PREPARATION && (
-            <PreparationPanel registerCollector={(fn) => (collectorRef.current = fn)} />
-          )}
-          {stage === STAGES.EXTRACTION && (
-            <ExtractionPanel registerCollector={(fn) => (collectorRef.current = fn)} />
-          )}
-          {stage === STAGES.ANALYSIS && (
-            <AnalysisPanel
-              open={open} // ⬅️ penting untuk reset
-              investigationTools={investigationTools}
-              registerCollector={(fn) => (collectorRef.current = fn)}
-            />
-          )}
-        </div>
-
-        <footer className="flex justify-end gap-3 px-6 pb-6">
-          <button
-            onClick={onClose}
-            className="h-11 px-6 rounded-md text-sm border border-yellow-400 text-gray-200"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={submitting}
-            className="h-11 px-6 rounded-md text-sm text-black font-semibold"
-            style={{
-              background: 'radial-gradient(circle, #EDC702 0%, #B89E02 100%)'
-            }}
-          >
-            {submitting ? 'Saving...' : 'Submit'}
-          </button>
-        </footer>
-      </div>
+  const header = (
+    <div className="flex flex-col p-5 justify-center items-center gap-2">
+      <h1 className="text-xl font-semibold text-white">{title}</h1>
+      <span className="text-xl font-bold text-yellow-400">{caseNumber}</span>
+      <span className="text-sm text-gray-200">{caseTitle}</span>
     </div>
+  )
+
+  return (
+    <Modal
+      open={open}
+      header={header}
+      size="xl"
+      onCancel={onClose}
+      onConfirm={handleSubmit}
+      confirmText={submitting ? 'Saving...' : 'Submit'}
+      disableConfirm={submitting}
+    >
+      <div className="space-y-6">
+        {stage === STAGES.ACQUISITION && (
+          <AcquisitionPanel registerCollector={(fn) => (collectorRef.current = fn)} />
+        )}
+        {stage === STAGES.PREPARATION && (
+          <PreparationPanel registerCollector={(fn) => (collectorRef.current = fn)} />
+        )}
+        {stage === STAGES.EXTRACTION && (
+          <ExtractionPanel registerCollector={(fn) => (collectorRef.current = fn)} />
+        )}
+        {stage === STAGES.ANALYSIS && (
+          <AnalysisPanel
+            open={open}
+            investigationTools={investigationTools}
+            registerCollector={(fn) => (collectorRef.current = fn)}
+          />
+        )}
+      </div>
+    </Modal>
   )
 }
 
@@ -337,6 +309,7 @@ function AcquisitionPanel({ registerCollector }) {
           value={v.notes}
           onChange={(e) => setV({ ...v, notes: e.target.value })}
           placeholder="Evidence notes"
+          data-optional="true"
         />
       </Field>
     </>
@@ -462,6 +435,7 @@ function PreparationPanel({ registerCollector }) {
           value={v.notes}
           onChange={(e) => setV({ ...v, notes: e.target.value })}
           placeholder="Evidence notes"
+          data-optional="true"
         />
       </Field>
     </>
@@ -566,6 +540,7 @@ function ExtractionPanel({ registerCollector }) {
           value={v.notes}
           onChange={(e) => setV({ ...v, notes: e.target.value })}
           placeholder="Evidence Notes"
+          data-optional="true"
         />
       </Field>
     </>
@@ -767,6 +742,7 @@ function AnalysisPanel({ open, registerCollector, investigationTools }) {
           value={v.notes}
           onChange={(e) => setV({ ...v, notes: e.target.value })}
           placeholder="Evidence Notes"
+          data-optional="true"
         />
       </Field>
     </>

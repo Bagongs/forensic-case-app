@@ -2,8 +2,12 @@
 /* eslint-disable react/prop-types */
 // src/renderer/src/components/AddCaseModal.jsx
 import { useEffect, useRef, useState } from 'react'
-import Modal from './Modal'
-import HorizontalLine from './common/HorizontalLine'
+import Modal from '../Modal'
+import HorizontalLine from '../../common/HorizontalLine'
+import FormLabel from '../../atoms/FormLabel'
+import Radio from '../../atoms/Radio'
+import Input from '../../atoms/Input'
+import Textarea from '../../atoms/Textarea'
 
 export default function AddCaseModal({ open, onClose, onSave }) {
   const [name, setName] = useState('')
@@ -114,40 +118,5 @@ export default function AddCaseModal({ open, onClose, onSave }) {
         </div>
       </div>
     </Modal>
-  )
-}
-
-/* ——— helpers (mini UI atoms monokrom) ——— */
-function FormLabel({ children }) {
-  return (
-    <div className="text-sm font-semibold" style={{ color: 'var(--dim)' }}>
-      {children}
-    </div>
-  )
-}
-function Input(props) {
-  return (
-    <input
-      {...props}
-      className="w-full px-3 py-2 rounded-lg border bg-transparent"
-      style={{ borderColor: 'var(--border)' }}
-    />
-  )
-}
-function Textarea(props) {
-  return (
-    <textarea
-      {...props}
-      className="w-full px-3 py-2 rounded-lg border bg-transparent"
-      style={{ borderColor: 'var(--border)' }}
-    />
-  )
-}
-function Radio({ checked, onChange, children }) {
-  return (
-    <label className="inline-flex items-center gap-2 cursor-pointer">
-      <input type="radio" className="accent-indigo-400" checked={checked} onChange={onChange} />
-      {children}
-    </label>
   )
 }

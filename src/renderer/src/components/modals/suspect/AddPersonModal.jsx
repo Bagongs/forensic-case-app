@@ -1,12 +1,17 @@
 /* eslint-disable react/prop-types */
 import { useEffect, useRef, useState } from 'react'
-import Modal from './Modal'
+import Modal from '../Modal'
+import FormLabel from '../../atoms/FormLabel'
+import Radio from '../../atoms/Radio'
+import Input from '../../atoms/Input'
+import Textarea from '../../atoms/Textarea'
+import Select from '../../atoms/Select'
 
 const DEVICE_SOURCES = ['Hp', 'Ssd', 'HardDisk', 'Pc', 'Laptop', 'DVR']
 const STATUS_OPTIONS = ['Witness', 'Reported', 'Suspected', 'Suspect', 'Defendant']
 
 export default function AddPersonModal({ open, onClose, onSave, caseOptions = [] }) {
-  const [caseId, setCaseId] = useState(caseOptions[0]?.value || '')
+  const [caseId, setCaseId] = useState('')
   const [poiMode, setPoiMode] = useState('known')
   const [name, setName] = useState('')
   const [status, setStatus] = useState(null)
@@ -25,7 +30,7 @@ export default function AddPersonModal({ open, onClose, onSave, caseOptions = []
 
   function reset() {
     if (previewUrl) URL.revokeObjectURL(previewUrl)
-    setCaseId(caseOptions[0]?.value || '')
+    setCaseId('')
     setPoiMode('known')
     setName('')
     setStatus(null)
@@ -94,7 +99,7 @@ export default function AddPersonModal({ open, onClose, onSave, caseOptions = []
       <div className="grid gap-3">
         <FormLabel>Case Name</FormLabel>
         <Select value={caseId} onChange={(e) => setCaseId(e.target.value)}>
-          <option value="" disabled>
+          <option value="" selected disabled>
             Select case
           </option>
           {caseOptions.map((c) => (
@@ -106,10 +111,23 @@ export default function AddPersonModal({ open, onClose, onSave, caseOptions = []
 
         <FormLabel>Person of Interest</FormLabel>
         <div className="flex items-center gap-6">
-          <Radio checked={poiMode === 'known'} onChange={() => setPoiMode('known')}>
+          <Radio
+            checked={poiMode === 'known'}
+            onChange={() => {
+              setPoiMode('known')
+              setStatus('') // reset status kalau sebelumnya unknown
+            }}
+          >
             Person name
           </Radio>
-          <Radio checked={poiMode === 'unknown'} onChange={() => setPoiMode('unknown')}>
+
+          <Radio
+            checked={poiMode === 'unknown'}
+            onChange={() => {
+              setPoiMode('unknown')
+              setStatus(null) // 🔥 otomatis null saat unknown
+            }}
+          >
             Unknown Person
           </Radio>
         </div>
@@ -215,52 +233,9 @@ export default function AddPersonModal({ open, onClose, onSave, caseOptions = []
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           placeholder="Enter notes"
+          data-optional="true"
         />
       </div>
     </Modal>
-  )
-}
-
-/* atoms */
-function FormLabel({ children }) {
-  return (
-    <div className="text-sm font-semibold" style={{ color: 'var(--dim)' }}>
-      {children}
-    </div>
-  )
-}
-function Input(props) {
-  return (
-    <input
-      {...props}
-      className="w-full px-3 py-2 rounded-lg border bg-transparent"
-      style={{ borderColor: 'var(--border)' }}
-    />
-  )
-}
-function Select(props) {
-  return (
-    <select
-      {...props}
-      className="w-full px-3 py-2 rounded-lg border bg-transparent"
-      style={{ borderColor: 'var(--border)' }}
-    />
-  )
-}
-function Radio({ checked, onChange, children }) {
-  return (
-    <label className="inline-flex items-center gap-2 cursor-pointer">
-      <input type="radio" className="accent-indigo-400" checked={checked} onChange={onChange} />
-      {children}
-    </label>
-  )
-}
-function Textarea(props) {
-  return (
-    <textarea
-      {...props}
-      className="w-full px-3 py-2 rounded-lg border bg-transparent resize-none"
-      style={{ borderColor: 'var(--border)' }}
-    />
   )
 }

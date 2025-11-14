@@ -1,8 +1,8 @@
 // src/renderer/src/components/EditCaseModal.jsx
 /* eslint-disable react/prop-types */
 import { useEffect, useState } from 'react'
-import Modal from './Modal'
-import HorizontalLine from './common/HorizontalLine'
+import Modal from '../Modal'
+import HorizontalLine from '../../common/HorizontalLine'
 
 export default function EditCaseModal({ open, onClose, initial, onSave }) {
   const [name, setName] = useState(initial?.name || '')

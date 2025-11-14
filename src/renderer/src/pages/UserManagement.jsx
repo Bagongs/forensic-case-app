@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 
 import CaseLayout from './CaseLayout'
-import MiniButton, { MiniButtonContent } from '../components/MiniButton'
+import MiniButton, { MiniButtonContent } from '../components/common/MiniButton'
 import { useUsers } from '../store/users'
 import bgButton from '../assets/image/bg-button.svg'
 import iconSearch from '../assets/icons/icon-search.svg'
@@ -13,9 +13,9 @@ import dropdownIcon from '../assets/icons/dropdown-icon.svg'
 
 import { LuPencil, LuTrash2 } from 'react-icons/lu'
 import { IoChevronForwardSharp, IoChevronBackSharp } from 'react-icons/io5'
-import AddUserModal from '../components/AddUserModal'
-import EditUserModal from '../components/EditUserModal'
-import ConfirmDeleteModal from '../components/ConfirmDeleteModal'
+import AddUserModal from '../components/modals/user/AddUserModal'
+import EditUserModal from '../components/modals/user/EditUserModal'
+import ConfirmDeleteModal from '../components/modals/ConfirmDeleteModal'
 
 /* ===== Tokens & Const ===== */
 const COLORS = {

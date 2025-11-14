@@ -1,54 +1,69 @@
 /* eslint-disable react/prop-types */
 import { useEffect, useState } from 'react'
 import { FaEye, FaEyeSlash } from 'react-icons/fa'
-import Modal from './Modal'
+import Modal from '../Modal'
+import FormLabel from '../../atoms/FormLabel'
+import Input from '../../atoms/Input'
 
-export default function EditUserModal({ open, onClose, onSave, user }) {
+export default function AddUserModal({ open, onClose, onSave }) {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
-  const [tag, setTag] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [tag, setTag] = useState('')
   const [showPass, setShowPass] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
 
+  // Reset form setiap kali modal ditutup
   useEffect(() => {
-    if (user) {
-      setName(user.name)
-      setEmail(user.email)
-      setTag(user.tag || '')
+    if (!open) {
+      setName('')
+      setEmail('')
       setPassword('')
       setConfirmPassword('')
+      setTag('')
+      setShowPass(false)
+      setShowConfirm(false)
     }
-  }, [user])
+  }, [open])
 
   const handleSave = () => {
-    if (!name || !email) return alert('Name & Email required')
-    if (password && password !== confirmPassword)
-      return alert('Passwords do not match')
+    if (!name || !email || !password || !confirmPassword) {
+      alert('Please fill all required fields')
+      return
+    }
+    if (password !== confirmPassword) {
+      alert('Passwords do not match!')
+      return
+    }
 
-    const patch = { name, email, tag }
-    if (password) patch.password = password
-
-    onSave(user.id, patch)
+    onSave({ name, email, password, tag })
     onClose()
   }
 
   return (
     <Modal
       open={open}
-      title="Edit User"
+      title="Add User"
       onCancel={onClose}
-      confirmText="Save Changes"
+      confirmText="Add User"
       onConfirm={handleSave}
     >
       <div className="grid gap-3">
+        {/* Name */}
         <FormLabel>Name</FormLabel>
         <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Name" />
 
+        {/* Email */}
         <FormLabel>Email</FormLabel>
-        <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" />
+        <Input
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="Email"
+          type="email"
+        />
 
+        {/* Password */}
         <FormLabel>Password</FormLabel>
         <div className="relative">
           <Input
@@ -66,13 +81,14 @@ export default function EditUserModal({ open, onClose, onSave, user }) {
           </button>
         </div>
 
+        {/* Confirm Password */}
         <FormLabel>Confirm Password</FormLabel>
         <div className="relative">
           <Input
             type={showConfirm ? 'text' : 'password'}
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
-            placeholder="Re-enter Password"
+            placeholder="Re-enter password"
           />
           <button
             type="button"
@@ -83,27 +99,10 @@ export default function EditUserModal({ open, onClose, onSave, user }) {
           </button>
         </div>
 
+        {/* Tag */}
         <FormLabel>Tag</FormLabel>
         <Input value={tag} onChange={(e) => setTag(e.target.value)} placeholder="Input tag" />
       </div>
     </Modal>
-  )
-}
-
-function FormLabel({ children }) {
-  return (
-    <div className="text-sm font-semibold" style={{ color: 'var(--dim)' }}>
-      {children}
-    </div>
-  )
-}
-
-function Input(props) {
-  return (
-    <input
-      {...props}
-      className="w-full px-3 py-2 rounded border bg-transparent text-white placeholder-[#9AA3B2] text-sm"
-      style={{ borderColor: 'var(--border)' }}
-    />
   )
 }

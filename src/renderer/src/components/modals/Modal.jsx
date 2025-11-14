@@ -2,6 +2,7 @@
 import { useEffect, useRef, useId, useState } from 'react'
 import clsx from 'clsx'
 import UnsavedChangesModal from './UnsavedChangesModal'
+import IncompleteFormModal from './IncompleteFormModal'
 
 // 🔐 Global counter untuk scroll-lock
 let openModalCount = 0
@@ -10,6 +11,7 @@ let bodyOverflowBeforeLock = ''
 export default function Modal({
   open,
   title,
+  header,
   children,
   onCancel,
   onConfirm,
@@ -25,10 +27,13 @@ export default function Modal({
   const dialogRef = useRef(null)
   const didFocusRef = useRef(false)
   const titleId = useId()
+
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
   const [initialFormSnapshot, setInitialFormSnapshot] = useState(null)
   const [showUnsavedModal, setShowUnsavedModal] = useState(false)
+  const [showIncompleteModal, setShowIncompleteModal] = useState(false)
 
+  /* ===== Focus ===== */
   useEffect(() => {
     if (!open) {
       didFocusRef.current = false
@@ -59,7 +64,7 @@ export default function Modal({
     didFocusRef.current = true
   }, [open, initialFocusSelector])
 
-  /* ============ Save initial snapshot ============ */
+  /* ===== Save initial snapshot ===== */
   useEffect(() => {
     if (open && dialogRef.current) {
       const formValues = collectFormValues(dialogRef.current)
@@ -68,7 +73,7 @@ export default function Modal({
     }
   }, [open])
 
-  /* ============ Detect form changes ============ */
+  /* ===== Detect form changes ===== */
   useEffect(() => {
     if (!open || !dialogRef.current) return
 
@@ -83,12 +88,11 @@ export default function Modal({
     dialogRef.current.addEventListener('change', handler)
     return () => {
       dialogRef.current?.removeEventListener('input', handler)
-      // eslint-disable-next-line react-hooks/exhaustive-deps
       dialogRef.current?.removeEventListener('change', handler)
     }
   }, [open, initialFormSnapshot])
 
-  /* ============ Escape key + body scroll lock ============ */
+  /* ===== Escape key + scroll lock ===== */
   useEffect(() => {
     if (!open) return
 
@@ -113,7 +117,7 @@ export default function Modal({
     }
   }, [open])
 
-  /* ============ Cancel handler (with unsaved modal) ============ */
+  /* ===== Cancel handler ===== */
   const handleCancel = () => {
     if (hasUnsavedChanges) {
       setShowUnsavedModal(true)
@@ -122,7 +126,36 @@ export default function Modal({
     onCancel?.()
   }
 
-  /* ============ Unsaved modal handlers ============ */
+  /* ===== Confirm handler (check requireds) ===== */
+  const handleConfirm = () => {
+    if (!dialogRef.current) {
+      onConfirm?.()
+      return
+    }
+
+    const allFields = dialogRef.current.querySelectorAll('input, textarea, select')
+
+    const emptyRequired = Array.from(allFields).filter((el) => {
+      // Skip optional
+      if (el.dataset.optional === 'true') return false
+      // Skip hidden or display:none
+      if (el.offsetParent === null) return false
+      // Skip checkbox / radio / file / hidden input
+      if (['checkbox', 'radio', 'file', 'hidden'].includes(el.type)) return false
+
+      // Check empty value
+      return !el.value?.trim()
+    })
+
+    if (emptyRequired.length > 0) {
+      setShowIncompleteModal(true)
+      return
+    }
+
+    onConfirm?.()
+  }
+
+  /* ===== Modal Handlers ===== */
   const handleLeaveAnyway = () => {
     setShowUnsavedModal(false)
     onCancel?.()
@@ -130,6 +163,10 @@ export default function Modal({
 
   const handleStay = () => {
     setShowUnsavedModal(false)
+  }
+
+  const handleCloseIncomplete = () => {
+    setShowIncompleteModal(false)
   }
 
   if (!open) return null
@@ -171,28 +208,44 @@ export default function Modal({
           style={{ background: '#151D28' }}
         >
           {/* Header */}
-          <div
-            className="flex items-center justify-between px-6 py-4"
-            style={{ background: '#2A3A51', borderBottom: '2px solid var(--dim-yellow)' }}
-          >
-            {title ? (
-              <h2 id={titleId} className="app-title text-[18px]">
-                {title}
-              </h2>
-            ) : (
-              <div />
-            )}
 
-            {closable && (
-              <button
-                onClick={handleCancel}
-                aria-label="Close"
-                className="text-white/80 hover:text-white text-[20px] leading-none"
-              >
-                ✕
-              </button>
-            )}
-          </div>
+          {header ? (
+            <div className="flex items-center justify-center relative">
+              {header}
+              {closable && (
+                <div className="absolute right-8 top-5">
+                  <button
+                    onClick={handleCancel}
+                    aria-label="Close"
+                    className="text-white/80 hover:text-white text-[20px] leading-none"
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div
+              className="flex items-center justify-between px-6 py-4"
+              style={{ background: '#2A3A51', borderBottom: '2px solid var(--dim-yellow)' }}
+            >
+              {title && (
+                <h2 id={titleId} className="app-title text-[18px]">
+                  {title}
+                </h2>
+              )}
+
+              {closable && (
+                <button
+                  onClick={handleCancel}
+                  aria-label="Close"
+                  className="text-white/80 hover:text-white text-[20px] leading-none"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+          )}
 
           {/* Body */}
           <div className="p-6 max-h-[70vh] overflow-auto">{children}</div>
@@ -222,7 +275,7 @@ export default function Modal({
               {onConfirm && (
                 <button
                   type="button"
-                  onClick={onConfirm}
+                  onClick={handleConfirm}
                   disabled={disableConfirm}
                   className="px-5 h-10 text-sm rounded-sm disabled:opacity-60"
                   style={{
@@ -249,6 +302,9 @@ export default function Modal({
         onLeave={handleLeaveAnyway}
         onStay={handleStay}
       />
+
+      {/* Incomplete Form Modal */}
+      <IncompleteFormModal open={showIncompleteModal} onClose={handleCloseIncomplete} />
     </>
   )
 }

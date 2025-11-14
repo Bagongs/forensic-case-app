@@ -1,4 +1,4 @@
-import Modal from './Modal'
+import Modal from '../Modal'
 
 // eslint-disable-next-line react/prop-types
 export default function NotesModal({ open, onClose, notes }) {

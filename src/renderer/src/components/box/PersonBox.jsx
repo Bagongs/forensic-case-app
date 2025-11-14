@@ -1,6 +1,6 @@
 /* eslint-disable react/prop-types */
 import { FaEdit } from 'react-icons/fa'
-import iconAddEvidance from '../assets/icons/icon-add-evidance.svg'
+import iconAddEvidance from '../../assets/icons/icon-add-evidance.svg'
 // import iconExpand from '../assets/icons/icon-expand.svg' // kalau mau pakai di Add Evidence
 
 export function PersonBox({ name, roleLabel, children, onEdit, onAddEvidence, actionBgImage }) {

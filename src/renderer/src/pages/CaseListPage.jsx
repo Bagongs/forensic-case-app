@@ -6,8 +6,8 @@ import { PiArrowsDownUpBold } from 'react-icons/pi'
 
 import CaseLayout from './CaseLayout'
 import StatsCard from '../components/StatsCard'
-import MiniButton, { MiniButtonContent } from '../components/MiniButton'
-import AddCaseModal from '../components/AddCaseModal'
+import MiniButton, { MiniButtonContent } from '../components/common/MiniButton'
+import AddCaseModal from '../components/modals/case/AddCaseModal'
 import { useCases } from '../store/cases'
 
 import bgOpen from '../assets/image/stats/open.png'
@@ -18,7 +18,7 @@ import iconFilter from '../assets/icons/icon-filter.svg'
 import iconSearch from '../assets/icons/icon-search.svg'
 import bgButton from '../assets/image/bg-button.svg'
 import dropdownIcon from '../assets/icons/dropdown-icon.svg'
-import Pagination from '../components/Pagination'
+import Pagination from '../components/common/Pagination'
 
 /* ====== CONSTANTS ====== */
 const COLORS = {

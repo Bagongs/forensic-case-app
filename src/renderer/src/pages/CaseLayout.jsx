@@ -1,7 +1,7 @@
 /* eslint-disable react/prop-types */
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import headerImg from '../assets/image/header.svg'
-import ProfileCorner from '../components/common/ProfileCorner'
+import ProfileCorner from '../components/ProfileCorner'
 import { FaArrowLeft } from 'react-icons/fa'
 
 export default function CaseLayout({ title, showBack = false, children }) {

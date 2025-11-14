@@ -3,15 +3,15 @@ import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import CaseLayout from './CaseLayout'
 import StatsCard from '../components/StatsCard'
-import MiniButton, { MiniButtonContent } from '../components/MiniButton'
-import AddPersonModal from '../components/AddPersonModal'
+import MiniButton, { MiniButtonContent } from '../components/common/MiniButton'
+import AddPersonModal from '../components/modals/suspect/AddPersonModal'
 import { useCases } from '../store/cases'
 import bgPerson from '../assets/image/stats/person.png'
 import bgEvidance from '../assets/image/stats/evidance.png'
 import iconFilter from '../assets/icons/icon-filter.svg'
 import iconSearch from '../assets/icons/icon-search.svg'
 import bgButton from '../assets/image/bg-button.svg'
-import Pagination from '../components/Pagination'
+import Pagination from '../components/common/Pagination'
 
 /* ====== CONSTANTS ====== */
 const COLORS = {

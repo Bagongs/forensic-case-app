@@ -1,8 +1,8 @@
 // src/renderer/src/components/ChangeStatusModal.jsx
 /* eslint-disable react/prop-types */
 import { useEffect, useState } from 'react'
-import Modal from './Modal'
-import { useCases } from '../store/cases'
+import Modal from '../Modal'
+import { useCases } from '../../../store/cases'
 
 const OPTIONS = ['Open', 'Re-Open', 'Closed']
 
@@ -68,6 +68,7 @@ export default function ChangeStatusModal({
             placeholder="Write status change notes"
             className="w-full px-3 py-2 rounded-lg border bg-transparent resize-none"
             style={{ borderColor: 'var(--border)' }}
+            data-optional="true"
           />
         </div>
       </div>

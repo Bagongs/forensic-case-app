@@ -1,6 +1,11 @@
 /* eslint-disable react/prop-types */
 import { useEffect, useRef, useState } from 'react'
-import Modal from './Modal'
+import Modal from '../Modal'
+import FormLabel from '../../atoms/FormLabel'
+import Radio from '../../atoms/Radio'
+import Input from '../../atoms/Input'
+import Textarea from '../../atoms/Textarea'
+import Select from '../../atoms/Select'
 
 const DEVICE_SOURCES = ['Handphone', 'Laptop', 'PC', 'SSD', 'HDD', 'DVR', 'Flashdisk']
 const STATUS_OPTIONS = ['Witness', 'Reported', 'Suspected', 'Suspect', 'Defendant']
@@ -65,6 +70,7 @@ export default function EditEvidenceModal({
       setPreviewDataUrl(null)
     }
   }
+  console.log('STATUS : ', status)
 
   return (
     <Modal
@@ -170,10 +176,23 @@ export default function EditEvidenceModal({
         {/* === Person of Interest === */}
         <FormLabel>Person of Interest</FormLabel>
         <div className="flex items-center gap-6">
-          <Radio checked={poiMode === 'known'} onChange={() => setPoiMode('known')}>
+          <Radio
+            checked={poiMode === 'known'}
+            onChange={() => {
+              setPoiMode('known')
+              setStatus('') // reset status kalau sebelumnya unknown
+            }}
+          >
             Person Name
           </Radio>
-          <Radio checked={poiMode === 'unknown'} onChange={() => setPoiMode('unknown')}>
+
+          <Radio
+            checked={poiMode === 'unknown'}
+            onChange={() => {
+              setPoiMode('unknown')
+              setStatus(null) // 🔥 otomatis null kalau unknown
+            }}
+          >
             Unknown Person
           </Radio>
         </div>
@@ -194,10 +213,10 @@ export default function EditEvidenceModal({
               <select
                 className="w-full px-3 py-2 rounded-lg border bg-transparent"
                 style={{ borderColor: 'var(--border)' }}
-                value={status}
+                value={status === null || status === 'Unknown' ? '' : status}
                 onChange={(e) => setStatus(e.target.value)}
               >
-                <option selected disabled>
+                <option value="" disabled>
                   Select Suspect Status
                 </option>
                 {STATUS_OPTIONS.map((s) => (
@@ -211,53 +230,5 @@ export default function EditEvidenceModal({
         )}
       </div>
     </Modal>
-  )
-}
-
-/* ====== atomic ui components ====== */
-function FormLabel({ children }) {
-  return (
-    <div className="text-sm font-semibold mb-1" style={{ color: 'var(--dim)' }}>
-      {children}
-    </div>
-  )
-}
-
-function Input(props) {
-  return (
-    <input
-      {...props}
-      className="w-full px-3 py-2 rounded-lg border bg-transparent"
-      style={{ borderColor: 'var(--border)' }}
-    />
-  )
-}
-
-function Textarea(props) {
-  return (
-    <textarea
-      {...props}
-      className="w-full px-3 py-2 rounded-lg border bg-transparent resize-none"
-      style={{ borderColor: 'var(--border)' }}
-    />
-  )
-}
-
-function Select(props) {
-  return (
-    <select
-      {...props}
-      className="w-full px-3 py-2 rounded-lg border bg-transparent"
-      style={{ borderColor: 'var(--border)' }}
-    />
-  )
-}
-
-function Radio({ checked, onChange, children }) {
-  return (
-    <label className="inline-flex items-center gap-2 cursor-pointer">
-      <input type="radio" className="accent-indigo-400" checked={checked} onChange={onChange} />
-      {children}
-    </label>
   )
 }

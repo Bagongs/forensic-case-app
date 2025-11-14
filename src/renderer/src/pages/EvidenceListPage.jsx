@@ -3,14 +3,14 @@ import { useMemo, useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import CaseLayout from './CaseLayout'
 import StatsCard from '../components/StatsCard'
-import MiniButton, { MiniButtonContent } from '../components/MiniButton'
-import AddEvidenceModal from '../components/AddEvidenceModal'
+import MiniButton, { MiniButtonContent } from '../components/common/MiniButton'
+import AddEvidenceModal from '../components/modals/evidence/AddEvidenceModal'
 import { useCases } from '../store/cases'
 import bgCase from '../assets/image/stats/case.png'
 import bgEvidance from '../assets/image/stats/evidance.png'
 import iconSearch from '../assets/icons/icon-search.svg'
 import bgButton from '../assets/image/bg-button.svg'
-import Pagination from '../components/Pagination'
+import Pagination from '../components/common/Pagination'
 
 /* ====== CONSTANTS ====== */
 const COLORS = {

@@ -1,8 +1,13 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable react/prop-types */
 import { useEffect, useRef, useState } from 'react'
-import Modal from './Modal'
-import { useCases } from '../store/cases'
+import Modal from '../Modal'
+import { useCases } from '../../../store/cases'
+import FormLabel from '../../atoms/FormLabel'
+import Radio from '../../atoms/Radio'
+import Input from '../../atoms/Input'
+import Textarea from '../../atoms/Textarea'
+import Select from '../../atoms/Select'
 
 const DEVICE_SOURCES = ['Hp', 'Ssd', 'HardDisk', 'Pc', 'Laptop', 'DVR']
 const STATUS_OPTIONS = ['Witness', 'Reported', 'Suspected', 'Suspect', 'Defendant']
@@ -89,10 +94,23 @@ export default function AddPersonInlineModal({ caseId, open, onClose }) {
       <div className="grid gap-3">
         <FormLabel>Person of Interest</FormLabel>
         <div className="flex items-center gap-6">
-          <Radio checked={mode === 'known'} onChange={() => setMode('known')}>
+          <Radio
+            checked={mode === 'known'}
+            onChange={() => {
+              setMode('known')
+              setStatus('') // reset status kalau sebelumnya unknown
+            }}
+          >
             Person name
           </Radio>
-          <Radio checked={mode === 'unknown'} onChange={() => setMode('unknown')}>
+
+          <Radio
+            checked={mode === 'unknown'}
+            onChange={() => {
+              setMode('unknown')
+              setStatus(null) // 🔥 null kalau unknown
+            }}
+          >
             Unknown Person
           </Radio>
         </div>
@@ -194,49 +212,5 @@ export default function AddPersonInlineModal({ caseId, open, onClose }) {
         />
       </div>
     </Modal>
-  )
-}
-
-/* atoms */
-function FormLabel({ children }) {
-  return (
-    <div className="text-sm font-semibold" style={{ color: 'var(--dim)' }}>
-      {children}
-    </div>
-  )
-}
-function Input(props) {
-  return (
-    <input
-      {...props}
-      className="w-full px-3 py-2 rounded-lg border bg-transparent"
-      style={{ borderColor: 'var(--border)' }}
-    />
-  )
-}
-function Select(props) {
-  return (
-    <select
-      {...props}
-      className="w-full px-3 py-2 rounded-lg border bg-transparent"
-      style={{ borderColor: 'var(--border)' }}
-    />
-  )
-}
-function Radio({ checked, onChange, children }) {
-  return (
-    <label className="inline-flex items-center gap-2 cursor-pointer">
-      <input type="radio" className="accent-indigo-400" checked={checked} onChange={onChange} />
-      {children}
-    </label>
-  )
-}
-function Textarea(props) {
-  return (
-    <textarea
-      {...props}
-      className="w-full px-3 py-2 rounded-lg border bg-transparent resize-none"
-      style={{ borderColor: 'var(--border)' }}
-    />
   )
 }
