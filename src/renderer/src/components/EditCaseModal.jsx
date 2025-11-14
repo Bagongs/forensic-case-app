@@ -43,7 +43,7 @@ export default function EditCaseModal({ open, onClose, initial, onSave }) {
     >
       <div className="grid gap-4">
         <div>
-          <div className="text-xs font-semibold mb-1" style={{ color: 'var(--dim)' }}>
+          <div className="text-sm font-semibold mb-1" style={{ color: 'var(--dim)' }}>
             Case name
           </div>
           <input
@@ -56,7 +56,7 @@ export default function EditCaseModal({ open, onClose, initial, onSave }) {
         </div>
 
         <div>
-          <div className="text-xs font-semibold mb-1" style={{ color: 'var(--dim)' }}>
+          <div className="text-sm font-semibold mb-1" style={{ color: 'var(--dim)' }}>
             Case description
           </div>
           <textarea
@@ -69,7 +69,7 @@ export default function EditCaseModal({ open, onClose, initial, onSave }) {
           />
         </div>
         <div>
-          <div className="text-xs font-semibold mb-1" style={{ color: 'var(--dim)' }}>
+          <div className="text-sm font-semibold mb-1" style={{ color: 'var(--dim)' }}>
             Case ID
           </div>
           <input
@@ -82,7 +82,7 @@ export default function EditCaseModal({ open, onClose, initial, onSave }) {
         </div>
         <HorizontalLine color={'#394F6F'} />
         <div>
-          <div className="text-xs font-semibold mb-1" style={{ color: 'var(--dim)' }}>
+          <div className="text-sm font-semibold mb-1" style={{ color: 'var(--dim)' }}>
             Main Investigator
           </div>
           <input
@@ -95,7 +95,7 @@ export default function EditCaseModal({ open, onClose, initial, onSave }) {
         </div>
         <div className="flex flex-row gap-5">
           <div className="w-full">
-            <div className="text-xs font-semibold mb-1" style={{ color: 'var(--dim)' }}>
+            <div className="text-sm font-semibold mb-1" style={{ color: 'var(--dim)' }}>
               Agency
             </div>
             <input
@@ -107,7 +107,7 @@ export default function EditCaseModal({ open, onClose, initial, onSave }) {
             />
           </div>
           <div className="w-full">
-            <div className="text-xs font-semibold mb-1" style={{ color: 'var(--dim)' }}>
+            <div className="text-sm font-semibold mb-1" style={{ color: 'var(--dim)' }}>
               Work Unit
             </div>
             <input

@@ -95,7 +95,7 @@ export default function EditEvidenceModal({
       }}
       size="lg"
     >
-      <div className="grid gap-4">
+      <div className="grid gap-3">
         {/* === Case Related === */}
         <FormLabel>Case Related</FormLabel>
         <Input value={caseName} disabled readOnly />
@@ -133,7 +133,7 @@ export default function EditEvidenceModal({
             </button>
             <input ref={fileRef} type="file" className="hidden" onChange={onPickFile} />
             {(file || evidenceData.fileName) && (
-              <span className="text-xs opacity-70 truncate max-w-60">
+              <span className="text-sm opacity-70 truncate max-w-60">
                 {file?.name || evidenceData.fileName}
               </span>
             )}
@@ -188,7 +188,7 @@ export default function EditEvidenceModal({
             />
 
             <div>
-              <div className="text-xs font-semibold mb-1" style={{ color: 'var(--dim)' }}>
+              <div className="text-sm font-semibold mb-1" style={{ color: 'var(--dim)' }}>
                 Suspect Status
               </div>
               <select
@@ -217,7 +217,7 @@ export default function EditEvidenceModal({
 /* ====== atomic ui components ====== */
 function FormLabel({ children }) {
   return (
-    <div className="text-xs font-semibold mb-1" style={{ color: 'var(--dim)' }}>
+    <div className="text-sm font-semibold mb-1" style={{ color: 'var(--dim)' }}>
       {children}
     </div>
   )

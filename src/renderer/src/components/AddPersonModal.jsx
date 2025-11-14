@@ -1,5 +1,4 @@
 /* eslint-disable react/prop-types */
-// src/renderer/src/components/AddPersonModal.jsx
 import { useEffect, useRef, useState } from 'react'
 import Modal from './Modal'
 
@@ -8,11 +7,9 @@ const STATUS_OPTIONS = ['Witness', 'Reported', 'Suspected', 'Suspect', 'Defendan
 
 export default function AddPersonModal({ open, onClose, onSave, caseOptions = [] }) {
   const [caseId, setCaseId] = useState(caseOptions[0]?.value || '')
-  const [poiMode, setPoiMode] = useState('known') // known | unknown
+  const [poiMode, setPoiMode] = useState('known')
   const [name, setName] = useState('')
   const [status, setStatus] = useState(null)
-
-  // evidence data
   const [idMode, setIdMode] = useState('gen')
   const [evidenceId, setEvidenceId] = useState('')
   const [source, setSource] = useState('')
@@ -22,58 +19,56 @@ export default function AddPersonModal({ open, onClose, onSave, caseOptions = []
   const [previewUrl, setPreviewUrl] = useState(null)
   const fileRef = useRef(null)
 
-  /* ================== RESET STATE ================== */
   useEffect(() => {
-    if (!open) {
-      cleanupPreview()
-      setCaseId(caseOptions[0]?.value || '')
-      setPoiMode('known')
-      setName('')
-      setStatus(null)
-      setIdMode('gen')
-      setEvidenceId('')
-      setSource('')
-      setSummary('')
-      setFile(null)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (!open) reset()
   }, [open])
 
-  function cleanupPreview() {
+  function reset() {
     if (previewUrl) URL.revokeObjectURL(previewUrl)
+    setCaseId(caseOptions[0]?.value || '')
+    setPoiMode('known')
+    setName('')
+    setStatus(null)
+    setIdMode('gen')
+    setEvidenceId('')
+    setSource('')
+    setSummary('')
+    setNotes('')
+    setFile(null)
     setPreviewUrl(null)
   }
 
-  /* ================== FILE PICK ================== */
-  function onPickFile(e) {
-    const f = e.target.files?.[0]
-    setFile(f || null)
-    cleanupPreview()
-    if (f && f.type?.startsWith('image/')) {
-      setPreviewUrl(URL.createObjectURL(f))
+  async function onPickFile(e) {
+    const f = e.target.files?.[0] || null
+    setFile(f)
+    if (previewUrl) URL.revokeObjectURL(previewUrl)
+    setPreviewUrl(null)
+
+    if (!f) return
+    if (f.type?.startsWith('image/')) {
+      // convert to base64 agar bisa disimpan
+      const reader = new FileReader()
+      reader.onload = (ev) => setPreviewUrl(ev.target.result)
+      reader.readAsDataURL(f)
     }
+
+    // reset value biar bisa upload file yang sama lagi
+    e.target.value = ''
   }
 
   const canSubmit = caseId && (poiMode === 'unknown' || name.trim())
 
-  /* ================== RENDER ================== */
   return (
     <Modal
       open={open}
       title="Add Suspect"
       onCancel={() => {
-        cleanupPreview()
+        reset()
         onClose()
       }}
       confirmText="Submit"
       disableConfirm={!canSubmit}
       onConfirm={() => {
-        // generate previewDataUrl (kalau gambar)
-        let previewDataUrlFinal = null
-        if (file && file.type?.startsWith('image/')) {
-          previewDataUrlFinal = previewUrl || URL.createObjectURL(file)
-        }
-
         onSave({
           caseId,
           caseName: caseOptions.find((c) => c.value === caseId)?.label,
@@ -88,18 +83,16 @@ export default function AddPersonModal({ open, onClose, onSave, caseOptions = []
             fileName: file?.name,
             fileSize: file?.size,
             fileMime: file?.type,
-            previewDataUrl: previewDataUrlFinal
+            previewDataUrl: previewUrl // base64 data image
           }
         })
-
-        cleanupPreview()
+        reset()
         onClose()
       }}
       size="lg"
     >
-      <div className="grid gap-4">
-        {/* CASE SELECT */}
-        <FormLabel>Case name</FormLabel>
+      <div className="grid gap-3">
+        <FormLabel>Case Name</FormLabel>
         <Select value={caseId} onChange={(e) => setCaseId(e.target.value)}>
           <option value="" disabled>
             Select case
@@ -111,7 +104,6 @@ export default function AddPersonModal({ open, onClose, onSave, caseOptions = []
           ))}
         </Select>
 
-        {/* PERSON INFO */}
         <FormLabel>Person of Interest</FormLabel>
         <div className="flex items-center gap-6">
           <Radio checked={poiMode === 'known'} onChange={() => setPoiMode('known')}>
@@ -144,7 +136,6 @@ export default function AddPersonModal({ open, onClose, onSave, caseOptions = []
           </>
         )}
 
-        {/* EVIDENCE SECTION */}
         <FormLabel>Evidence ID Mode</FormLabel>
         <div className="flex items-center gap-6">
           <Radio checked={idMode === 'gen'} onChange={() => setIdMode('gen')}>
@@ -154,7 +145,6 @@ export default function AddPersonModal({ open, onClose, onSave, caseOptions = []
             Manual input
           </Radio>
         </div>
-
         {idMode === 'manual' && (
           <>
             <FormLabel>Evidence ID</FormLabel>
@@ -166,7 +156,6 @@ export default function AddPersonModal({ open, onClose, onSave, caseOptions = []
           </>
         )}
 
-        {/* Evidence source */}
         <FormLabel>Evidence Source</FormLabel>
         <Select value={source} onChange={(e) => setSource(e.target.value)}>
           <option value="" selected disabled>
@@ -179,7 +168,6 @@ export default function AddPersonModal({ open, onClose, onSave, caseOptions = []
           ))}
         </Select>
 
-        {/* File upload */}
         <FormLabel>Evidence File</FormLabel>
         <div
           className="rounded-lg border p-4 flex items-center justify-center"
@@ -192,14 +180,20 @@ export default function AddPersonModal({ open, onClose, onSave, caseOptions = []
           >
             Upload
           </button>
-          <input ref={fileRef} type="file" className="hidden" onChange={onPickFile} />
+          <input
+            ref={fileRef}
+            accept="image/*"
+            type="file"
+            className="hidden"
+            onChange={onPickFile}
+          />
           {file && !previewUrl && (
-            <span className="ml-3 text-xs opacity-70 truncate max-w-60">{file.name}</span>
+            <span className="ml-3 text-sm opacity-70 truncate max-w-60">{file.name}</span>
           )}
         </div>
 
         {previewUrl && (
-          <div className="rounded-lg border p-3" style={{ borderColor: 'var(--border)' }}>
+          <div className="rounded-lg border p-3 mt-2" style={{ borderColor: 'var(--border)' }}>
             <img
               src={previewUrl}
               alt="preview"
@@ -208,7 +202,6 @@ export default function AddPersonModal({ open, onClose, onSave, caseOptions = []
           </div>
         )}
 
-        {/* Evidence summary */}
         <FormLabel>Evidence Summary</FormLabel>
         <Textarea
           rows={4}
@@ -216,27 +209,26 @@ export default function AddPersonModal({ open, onClose, onSave, caseOptions = []
           onChange={(e) => setSummary(e.target.value)}
           placeholder="Enter Evidence summary"
         />
-        <FormLabel>Notes (Opsional) </FormLabel>
+        <FormLabel>Notes (Optional)</FormLabel>
         <Textarea
-          rows={4}
+          rows={3}
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
-          placeholder="Enter Notes"
+          placeholder="Enter notes"
         />
       </div>
     </Modal>
   )
 }
 
-/* ========== Atoms ========== */
+/* atoms */
 function FormLabel({ children }) {
   return (
-    <div className="text-xs font-semibold" style={{ color: 'var(--dim)' }}>
+    <div className="text-sm font-semibold" style={{ color: 'var(--dim)' }}>
       {children}
     </div>
   )
 }
-
 function Input(props) {
   return (
     <input
@@ -246,7 +238,6 @@ function Input(props) {
     />
   )
 }
-
 function Select(props) {
   return (
     <select
@@ -256,7 +247,6 @@ function Select(props) {
     />
   )
 }
-
 function Radio({ checked, onChange, children }) {
   return (
     <label className="inline-flex items-center gap-2 cursor-pointer">
@@ -265,7 +255,6 @@ function Radio({ checked, onChange, children }) {
     </label>
   )
 }
-
 function Textarea(props) {
   return (
     <textarea

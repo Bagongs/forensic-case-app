@@ -103,7 +103,7 @@ export default function AddEvidenceModal({
       }}
       size="lg"
     >
-      <div className="grid gap-4">
+      <div className="grid gap-3">
         {/* Case Related */}
         <FormLabel>Case Related</FormLabel>
         {defaultCaseId ? (
@@ -169,9 +169,15 @@ export default function AddEvidenceModal({
             >
               Upload
             </button>
-            <input ref={fileRef} type="file" className="hidden" onChange={onPickFile} />
+            <input
+              ref={fileRef}
+              accept="image/*"
+              type="file"
+              className="hidden"
+              onChange={onPickFile}
+            />
             {file && !previewDataUrl && (
-              <span className="text-xs opacity-70 truncate max-w-60">{file.name}</span>
+              <span className="text-sm opacity-70 truncate max-w-60">{file.name}</span>
             )}
           </div>
         </div>
@@ -233,7 +239,7 @@ export default function AddEvidenceModal({
               readOnly={!!defaultPerson}
             />
             <div>
-              <div className="text-xs font-semibold mb-1" style={{ color: 'var(--dim)' }}>
+              <div className="text-sm font-semibold mb-1" style={{ color: 'var(--dim)' }}>
                 Suspect Status
               </div>
               <select
@@ -263,7 +269,7 @@ export default function AddEvidenceModal({
 /* atomic ui components */
 function FormLabel({ children }) {
   return (
-    <div className="text-xs font-semibold" style={{ color: 'var(--dim)' }}>
+    <div className="text-sm font-semibold" style={{ color: 'var(--dim)' }}>
       {children}
     </div>
   )

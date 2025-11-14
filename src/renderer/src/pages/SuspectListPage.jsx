@@ -80,19 +80,22 @@ export default function SuspectListPage() {
     const term = q.trim().toLowerCase()
     let arr = rows
 
-    // filter by status
+    // 🧹 filter by status (jika user memilih filter status)
     if (statusFilter.length > 0) {
       arr = arr.filter((r) => statusFilter.includes(r.status))
     }
 
-    // search
+    // 🚫 sembunyikan status Unknown / null / kosong
+    arr = arr.filter((r) => r.status && r.status.toLowerCase() !== 'unknown')
+
+    // 🔍 search
     if (term) {
       arr = arr.filter(
         (r) =>
-          r.name.toLowerCase().includes(term) ||
-          r.caseName.toLowerCase().includes(term) ||
-          r.status.toLowerCase().includes(term) ||
-          r.investigator.toLowerCase().includes(term)
+          r.name?.toLowerCase().includes(term) ||
+          r.caseName?.toLowerCase().includes(term) ||
+          r.status?.toLowerCase().includes(term) ||
+          r.investigator?.toLowerCase().includes(term)
       )
     }
 
@@ -132,7 +135,7 @@ export default function SuspectListPage() {
 
   const badgeStatus = (status = 'Unknown') => {
     const s = STATUS_OPTIONS.find((opt) => opt.name.toLowerCase() === status.toLowerCase())
-    if (!s) return
+    if (!s || s == 'Unknown') return
     return (
       <div
         className="px-4 py-1 text-[13px] font-semibold text-center rounded-full"

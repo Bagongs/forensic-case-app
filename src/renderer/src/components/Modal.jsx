@@ -1,7 +1,7 @@
-// src/renderer/src/components/Modal.jsx
 /* eslint-disable react/prop-types */
-import { useEffect, useRef, useId } from 'react'
+import { useEffect, useRef, useId, useState } from 'react'
 import clsx from 'clsx'
+import UnsavedChangesModal from './UnsavedChangesModal'
 
 // 🔐 Global counter untuk scroll-lock
 let openModalCount = 0
@@ -25,13 +25,16 @@ export default function Modal({
   const dialogRef = useRef(null)
   const didFocusRef = useRef(false)
   const titleId = useId()
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+  const [initialFormSnapshot, setInitialFormSnapshot] = useState(null)
+  const [showUnsavedModal, setShowUnsavedModal] = useState(false)
 
-  // ===== Focus handler =====
   useEffect(() => {
     if (!open) {
       didFocusRef.current = false
       return
     }
+
     if (didFocusRef.current) return
 
     if (initialFocusSelector) {
@@ -56,19 +59,44 @@ export default function Modal({
     didFocusRef.current = true
   }, [open, initialFocusSelector])
 
-  // ===== Escape key + body scroll lock (AMAN untuk banyak modal) =====
+  /* ============ Save initial snapshot ============ */
+  useEffect(() => {
+    if (open && dialogRef.current) {
+      const formValues = collectFormValues(dialogRef.current)
+      setInitialFormSnapshot(formValues)
+      setHasUnsavedChanges(false)
+    }
+  }, [open])
+
+  /* ============ Detect form changes ============ */
+  useEffect(() => {
+    if (!open || !dialogRef.current) return
+
+    const handler = () => {
+      const current = collectFormValues(dialogRef.current)
+      setHasUnsavedChanges(
+        initialFormSnapshot && JSON.stringify(current) !== JSON.stringify(initialFormSnapshot)
+      )
+    }
+
+    dialogRef.current.addEventListener('input', handler)
+    dialogRef.current.addEventListener('change', handler)
+    return () => {
+      dialogRef.current?.removeEventListener('input', handler)
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      dialogRef.current?.removeEventListener('change', handler)
+    }
+  }, [open, initialFormSnapshot])
+
+  /* ============ Escape key + body scroll lock ============ */
   useEffect(() => {
     if (!open) return
 
     const onKey = (e) => {
-      if (e.key === 'Escape' && closable) {
-        onCancel?.()
-      }
+      if (e.key === 'Escape' && closable) handleCancel()
     }
 
     document.addEventListener('keydown', onKey)
-
-    // scroll-lock hanya diatur di modal pertama yang buka
     openModalCount += 1
     if (openModalCount === 1) {
       bodyOverflowBeforeLock = document.body.style.overflow
@@ -77,14 +105,32 @@ export default function Modal({
 
     return () => {
       document.removeEventListener('keydown', onKey)
-
       openModalCount -= 1
       if (openModalCount <= 0) {
         document.body.style.overflow = bodyOverflowBeforeLock
         openModalCount = 0
       }
     }
-  }, [open, onCancel, closable])
+  }, [open])
+
+  /* ============ Cancel handler (with unsaved modal) ============ */
+  const handleCancel = () => {
+    if (hasUnsavedChanges) {
+      setShowUnsavedModal(true)
+      return
+    }
+    onCancel?.()
+  }
+
+  /* ============ Unsaved modal handlers ============ */
+  const handleLeaveAnyway = () => {
+    setShowUnsavedModal(false)
+    onCancel?.()
+  }
+
+  const handleStay = () => {
+    setShowUnsavedModal(false)
+  }
 
   if (!open) return null
 
@@ -100,94 +146,123 @@ export default function Modal({
             : 'w-[560px]'
 
   return (
-    <div
-      className="fixed inset-0 z-50 grid place-items-center p-6"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby={title ? titleId : undefined}
-    >
-      {/* Backdrop */}
+    <>
+      {/* Main Modal */}
       <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={closable ? onCancel : undefined}
-      />
-
-      {/* Dialog */}
-      <div
-        ref={dialogRef}
-        className={clsx('relative rounded-[14px] overflow-visible shadow-xl', width, className)}
-        style={{ background: '#151D28' }}
+        className="fixed inset-0 z-50 grid place-items-center p-6"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={title ? titleId : undefined}
       >
-        {/* Header */}
+        {/* Backdrop */}
         <div
-          className="flex items-center justify-between px-6 py-4"
-          style={{ background: '#2A3A51', borderBottom: '2px solid var(--dim-yellow)' }}
+          className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+          onClick={closable ? handleCancel : undefined}
+        />
+
+        {/* Dialog */}
+        <div
+          ref={dialogRef}
+          className={clsx(
+            'relative rounded-[14px] overflow-visible shadow-xl transition-all',
+            width,
+            className
+          )}
+          style={{ background: '#151D28' }}
         >
-          {title ? (
-            <h2 id={titleId} className="app-title text-[18px]">
-              {title}
-            </h2>
-          ) : (
-            <div />
-          )}
-
-          {closable && (
-            <button
-              onClick={onCancel}
-              aria-label="Close"
-              className="text-white/80 hover:text-white text-[20px] leading-none"
-            >
-              ✕
-            </button>
-          )}
-        </div>
-
-        {/* Body */}
-        <div className="p-6 max-h-[70vh] overflow-auto">{children}</div>
-
-        {/* Footer */}
-        {footer !== undefined ? (
-          <div className="px-6 pb-5">{footer}</div>
-        ) : (
+          {/* Header */}
           <div
-            className={`px-6 pb-5 flex ${
-              confirmText !== 'Delete' ? 'justify-end' : 'justify-center'
-            } gap-3`}
+            className="flex items-center justify-between px-6 py-4"
+            style={{ background: '#2A3A51', borderBottom: '2px solid var(--dim-yellow)' }}
           >
-            <button
-              type="button"
-              onClick={onCancel}
-              className="px-5 h-10 text-sm rounded-sm"
-              style={{
-                background: 'transparent',
-                border: confirmText !== 'Delete' ? '1.5px solid #EDC702' : '1.5px solid #7D7D7D',
-                color: '#E7E9EE'
-              }}
-            >
-              {cancelText}
-            </button>
+            {title ? (
+              <h2 id={titleId} className="app-title text-[18px]">
+                {title}
+              </h2>
+            ) : (
+              <div />
+            )}
 
-            {onConfirm && (
+            {closable && (
               <button
-                type="button"
-                onClick={onConfirm}
-                disabled={disableConfirm}
-                className="px-5 h-10 text-sm rounded-sm disabled:opacity-60"
-                style={{
-                  background:
-                    confirmText !== 'Delete'
-                      ? 'radial-gradient(circle, #EDC702 0%, #B89E02 100%)'
-                      : 'radial-gradient(circle, #B10202 0%, #B10101B2 100%)',
-                  color: confirmText !== 'Delete' ? '#0C0C0C' : '#F4F6F8',
-                  border: confirmText !== 'Delete' ? '1px solid #EDC702B2' : '0.7px solid #B10202B2'
-                }}
+                onClick={handleCancel}
+                aria-label="Close"
+                className="text-white/80 hover:text-white text-[20px] leading-none"
               >
-                {confirmText}
+                ✕
               </button>
             )}
           </div>
-        )}
+
+          {/* Body */}
+          <div className="p-6 max-h-[70vh] overflow-auto">{children}</div>
+
+          {/* Footer */}
+          {footer !== undefined ? (
+            <div className="px-6 pb-5">{footer}</div>
+          ) : (
+            <div
+              className={`px-6 pb-5 flex ${
+                confirmText !== 'Delete' ? 'justify-end' : 'justify-center'
+              } gap-3`}
+            >
+              <button
+                type="button"
+                onClick={handleCancel}
+                className="px-5 h-10 text-sm rounded-sm"
+                style={{
+                  background: 'transparent',
+                  border: confirmText !== 'Delete' ? '1.5px solid #EDC702' : '1.5px solid #7D7D7D',
+                  color: '#E7E9EE'
+                }}
+              >
+                {cancelText}
+              </button>
+
+              {onConfirm && (
+                <button
+                  type="button"
+                  onClick={onConfirm}
+                  disabled={disableConfirm}
+                  className="px-5 h-10 text-sm rounded-sm disabled:opacity-60"
+                  style={{
+                    background:
+                      confirmText !== 'Delete'
+                        ? 'radial-gradient(circle, #EDC702 0%, #B89E02 100%)'
+                        : 'radial-gradient(circle, #B10202 0%, #B10101B2 100%)',
+                    color: confirmText !== 'Delete' ? '#0C0C0C' : '#F4F6F8',
+                    border:
+                      confirmText !== 'Delete' ? '3px solid #EDC702B2' : '0.7px solid #B10202B2'
+                  }}
+                >
+                  {confirmText}
+                </button>
+              )}
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+
+      {/* Unsaved Changes Modal */}
+      <UnsavedChangesModal
+        open={showUnsavedModal}
+        onLeave={handleLeaveAnyway}
+        onStay={handleStay}
+      />
+    </>
   )
+}
+
+/* Helper */
+function collectFormValues(root) {
+  const values = {}
+  const elements = root.querySelectorAll('input, textarea, select')
+  elements.forEach((el) => {
+    if (el.type === 'checkbox' || el.type === 'radio') {
+      values[el.name || el.id || el.dataset.key || el.outerHTML] = el.checked
+    } else {
+      values[el.name || el.id || el.dataset.key || el.outerHTML] = el.value
+    }
+  })
+  return values
 }

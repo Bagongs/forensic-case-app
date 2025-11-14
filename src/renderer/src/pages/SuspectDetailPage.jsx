@@ -73,7 +73,7 @@ export default function SuspectDetailPage() {
     )
   }
   const badgeStatus = (status = 'Unknown') => {
-    if (!status) {
+    if (!status || status == 'Unknown') {
       return
     }
     const s = status.toLowerCase()
@@ -194,12 +194,18 @@ export default function SuspectDetailPage() {
         <div className="grid gap-4 pr-2 overflow-y-auto" style={{ maxHeight: 240 }}>
           {evidences.map((e) => (
             <div key={e.id} className="flex gap-4 items-start">
-              <img
-                src={e.previewDataUrl || e.img || 'https://placehold.co/180x110?text=No+Image'}
-                alt="evidence"
-                className="w-[180px] h-[110px] object-cover rounded-sm border"
-                style={{ borderColor: '#3E4B5D' }}
-              />
+              {e.previewDataUrl ? (
+                <img
+                  src={e.previewDataUrl || e.img || 'https://placehold.co/180x110?text=No+Image'}
+                  alt="evidence"
+                  className="w-[180px] h-[110px] object-cover rounded-sm border"
+                  style={{ borderColor: '#3E4B5D' }}
+                />
+              ) : (
+                <div className="w-[180px] h-[110px] border border-[#3E4B5D] text-xs opacity-60 flex items-center justify-center">
+                  No Preview
+                </div>
+              )}
               <div className="flex-1">
                 <div className="font-[Aldrich] text-[15px] mb-1 text-[#F4F6F8]">
                   {e.fileName || 'Evidence'}

@@ -8,11 +8,17 @@ export function EvidenceCard({ image, code, summary, onClick, expandIcon }) {
     >
       {/* image */}
       <div
-        className="relative w-full h-[210px] overflow-hidden border-b"
+        className="relative w-full h-[210px] overflow-hidden border-b flex items-center justify-center"
         style={{ borderColor: '#6A7A94' }}
       >
-        <img src={image} alt="" className="w-full h-full object-cover" draggable="false" />
-        {expandIcon && <div className="absolute bottom-2 right-2 opacity-90">{expandIcon}</div>}
+        {image ? (
+          <>
+            <img src={image} alt="" className="w-full h-full object-contain" draggable="false" />
+            {expandIcon && <div className="absolute bottom-2 right-2 opacity-90">{expandIcon}</div>}
+          </>
+        ) : (
+          <span className="text-xs opacity-60">No Preview</span>
+        )}
       </div>
 
       {/* text */}

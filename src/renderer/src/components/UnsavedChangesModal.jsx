@@ -1,7 +1,7 @@
 // src/renderer/src/components/UnsavedChangesModal.jsx
 /* eslint-disable react/prop-types */
-import { AiFillWarning } from 'react-icons/ai'
 import Modal from './Modal'
+import { MdOutlineWarningAmber } from 'react-icons/md'
 
 export default function UnsavedChangesModal({ open, onLeave, onStay }) {
   return (
@@ -44,7 +44,7 @@ export default function UnsavedChangesModal({ open, onLeave, onStay }) {
     >
       <div className="py-4">
         <div className="flex flex-col items-center text-center gap-4">
-          <AiFillWarning size={64} color="#F3D600" />
+          <MdOutlineWarningAmber size={64} color="#F3D600" />
           <p className="text-[22px] leading-8 text-white/95">
             If you leave this form, your data will
             <br />

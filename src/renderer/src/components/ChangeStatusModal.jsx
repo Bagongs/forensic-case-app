@@ -36,8 +36,8 @@ export default function ChangeStatusModal({
       }}
       size="md"
     >
-      <div className="grid gap-4">
-        <div className="text-xs font-semibold" style={{ color: 'var(--dim)' }}>
+      <div className="grid gap-3">
+        <div className="text-sm font-semibold" style={{ color: 'var(--dim)' }}>
           Select status
         </div>
         <div className="flex flex-wrap gap-2">
@@ -58,7 +58,7 @@ export default function ChangeStatusModal({
         </div>
 
         <div>
-          <div className="text-xs font-semibold mb-1" style={{ color: 'var(--dim)' }}>
+          <div className="text-sm font-semibold mb-1" style={{ color: 'var(--dim)' }}>
             Notes (optional)
           </div>
           <textarea

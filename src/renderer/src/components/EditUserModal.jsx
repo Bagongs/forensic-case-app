@@ -42,7 +42,7 @@ export default function EditUserModal({ open, onClose, onSave, user }) {
       confirmText="Save Changes"
       onConfirm={handleSave}
     >
-      <div className="grid gap-4">
+      <div className="grid gap-3">
         <FormLabel>Name</FormLabel>
         <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Name" />
 
@@ -92,7 +92,7 @@ export default function EditUserModal({ open, onClose, onSave, user }) {
 
 function FormLabel({ children }) {
   return (
-    <div className="text-xs font-semibold" style={{ color: 'var(--dim)' }}>
+    <div className="text-sm font-semibold" style={{ color: 'var(--dim)' }}>
       {children}
     </div>
   )

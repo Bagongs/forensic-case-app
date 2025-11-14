@@ -31,7 +31,7 @@ export default function LoginPage() {
     <div className="min-h-screen w-full flex items-center justify-center px-4">
       {/* CARD UTAMA */}
       <div
-        className="relative rounded-[18px] overflow-hidden"
+        className="relative overflow-hidden"
         style={{
           width: 1120,
           height: 520,
@@ -57,7 +57,7 @@ export default function LoginPage() {
               letterSpacing: '.04em'
             }}
           >
-            CYBER SENTINEL
+            Data Analytics Platform
           </h1>
         </div>
 

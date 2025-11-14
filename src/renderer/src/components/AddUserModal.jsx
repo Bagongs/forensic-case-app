@@ -47,7 +47,7 @@ export default function AddUserModal({ open, onClose, onSave }) {
       confirmText="Add User"
       onConfirm={handleSave}
     >
-      <div className="grid gap-4">
+      <div className="grid gap-3">
         {/* Name */}
         <FormLabel>Name</FormLabel>
         <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Name" />
@@ -108,7 +108,7 @@ export default function AddUserModal({ open, onClose, onSave }) {
 /* ——— UI helpers ——— */
 function FormLabel({ children }) {
   return (
-    <div className="text-xs font-semibold" style={{ color: 'var(--dim)' }}>
+    <div className="text-sm font-semibold" style={{ color: 'var(--dim)' }}>
       {children}
     </div>
   )

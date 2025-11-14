@@ -9,7 +9,7 @@ const TOKENS = {
   modalBg: '#151D28',
   ring: '#394F6F',
   text: '#F4F6F8',
-  dim: '#A8B3C4',
+  dim: '#F4F6F8',
   gold: '#EDC702',
   statusBg: '#2C3C53'
 }
@@ -25,7 +25,7 @@ const DEVICE_SOURCES = ['Hp', 'Ssd', 'HardDisk', 'Pc', 'Laptop', 'DVR']
 
 /* =============== PRIMITIVES =============== */
 const Label = ({ children }) => (
-  <div className="text-sm mb-2" style={{ color: TOKENS.dim }}>
+  <div className="text-sm mb-2" style={{ color: TOKENS.dim, fontWeight: 500 }}>
     {children}
   </div>
 )
@@ -122,7 +122,7 @@ export default function StageContentModal({
   }
 
   return (
-    <div className="fixed inset-0 z-[1000] flex items-center justify-center">
+    <div className="fixed inset-0 z-1000 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/60" onClick={onClose} />
       <div
         className="relative w-[min(920px,95vw)] max-h-[92vh] rounded-xl overflow-hidden flex flex-col"
@@ -203,8 +203,6 @@ function AcquisitionPanel({ registerCollector }) {
     ...acquisition
   })
 
-  const addStep = () => setV({ ...v, steps: [...v.steps, ''], photos: [...v.photos, null] })
-
   const setPhoto = (i, file) => {
     const reader = new FileReader()
     reader.onload = () => {
@@ -241,10 +239,15 @@ function AcquisitionPanel({ registerCollector }) {
           <Input
             value={v.investigator}
             onChange={(e) => setV({ ...v, investigator: e.target.value })}
+            placeholder="Name"
           />
         </Field>
         <Field label="Location">
-          <Input value={v.location} onChange={(e) => setV({ ...v, location: e.target.value })} />
+          <Input
+            value={v.location}
+            onChange={(e) => setV({ ...v, location: e.target.value })}
+            placeholder="Location"
+          />
         </Field>
       </Row>
 
@@ -257,10 +260,18 @@ function AcquisitionPanel({ registerCollector }) {
           />
         </Field>
         <Field label="Evidence Type">
-          <Input value={v.type} onChange={(e) => setV({ ...v, type: e.target.value })} />
+          <Input
+            value={v.type}
+            onChange={(e) => setV({ ...v, type: e.target.value })}
+            placeholder="Evidence Type"
+          />
         </Field>
         <Field label="Evidence Detail">
-          <Input value={v.detail} onChange={(e) => setV({ ...v, detail: e.target.value })} />
+          <Input
+            value={v.detail}
+            onChange={(e) => setV({ ...v, detail: e.target.value })}
+            placeholder="Evidence Detail"
+          />
         </Field>
       </Row>
 
@@ -269,6 +280,7 @@ function AcquisitionPanel({ registerCollector }) {
         <div key={i} className="flex items-start gap-3 mb-3">
           <Input
             value={s}
+            placeholder={`${i + 1}.`}
             onChange={(e) => {
               const next = [...v.steps]
               next[i] = e.target.value
@@ -320,8 +332,12 @@ function AcquisitionPanel({ registerCollector }) {
         + Add
       </button>
 
-      <Field label="Notes">
-        <Textarea value={v.notes} onChange={(e) => setV({ ...v, notes: e.target.value })} />
+      <Field label="Notes (Optional)">
+        <Textarea
+          value={v.notes}
+          onChange={(e) => setV({ ...v, notes: e.target.value })}
+          placeholder="Evidence notes"
+        />
       </Field>
     </>
   )
@@ -370,10 +386,15 @@ function PreparationPanel({ registerCollector }) {
           <Input
             value={v.investigator}
             onChange={(e) => setV({ ...v, investigator: e.target.value })}
+            placeholder="Name"
           />
         </Field>
         <Field label="Location">
-          <Input value={v.location} onChange={(e) => setV({ ...v, location: e.target.value })} />
+          <Input
+            value={v.location}
+            onChange={(e) => setV({ ...v, location: e.target.value })}
+            placeholder="Location"
+          />
         </Field>
       </Row>
 
@@ -386,10 +407,18 @@ function PreparationPanel({ registerCollector }) {
           />
         </Field>
         <Field label="Evidence Type">
-          <Input value={v.type} onChange={(e) => setV({ ...v, type: e.target.value })} />
+          <Input
+            value={v.type}
+            onChange={(e) => setV({ ...v, type: e.target.value })}
+            placeholder="Evidence Type"
+          />
         </Field>
         <Field label="Evidence Detail">
-          <Input value={v.detail} onChange={(e) => setV({ ...v, detail: e.target.value })} />
+          <Input
+            value={v.detail}
+            onChange={(e) => setV({ ...v, detail: e.target.value })}
+            placeholder="Evidence Detail"
+          />
         </Field>
       </Row>
 
@@ -400,7 +429,7 @@ function PreparationPanel({ registerCollector }) {
       {v.pairs.map((p, i) => (
         <div key={i} className="grid grid-cols-2 gap-3 mb-3 items-start">
           <Input
-            placeholder="Investigation Hypothesis"
+            placeholder={`${i + 1}.`}
             value={p.investigation}
             onChange={(e) => setPair(i, 'investigation', e.target.value)}
           />
@@ -428,8 +457,12 @@ function PreparationPanel({ registerCollector }) {
         + Add
       </button>
 
-      <Field label="Notes">
-        <Textarea value={v.notes} onChange={(e) => setV({ ...v, notes: e.target.value })} />
+      <Field label="Notes (Optional)">
+        <Textarea
+          value={v.notes}
+          onChange={(e) => setV({ ...v, notes: e.target.value })}
+          placeholder="Evidence notes"
+        />
       </Field>
     </>
   )
@@ -476,10 +509,15 @@ function ExtractionPanel({ registerCollector }) {
           <Input
             value={v.investigator}
             onChange={(e) => setV({ ...v, investigator: e.target.value })}
+            placeholder="Name"
           />
         </Field>
         <Field label="Location">
-          <Input value={v.location} onChange={(e) => setV({ ...v, location: e.target.value })} />
+          <Input
+            value={v.location}
+            onChange={(e) => setV({ ...v, location: e.target.value })}
+            placeholder="Location"
+          />
         </Field>
       </Row>
 
@@ -492,10 +530,18 @@ function ExtractionPanel({ registerCollector }) {
           />
         </Field>
         <Field label="Evidence Type">
-          <Input value={v.type} onChange={(e) => setV({ ...v, type: e.target.value })} />
+          <Input
+            value={v.type}
+            onChange={(e) => setV({ ...v, type: e.target.value })}
+            placeholder="Evidence Type"
+          />
         </Field>
         <Field label="Evidence Detail">
-          <Input value={v.detail} onChange={(e) => setV({ ...v, detail: e.target.value })} />
+          <Input
+            value={v.detail}
+            onChange={(e) => setV({ ...v, detail: e.target.value })}
+            placeholder="Evidence Detail"
+          />
         </Field>
       </Row>
 
@@ -515,8 +561,12 @@ function ExtractionPanel({ registerCollector }) {
         </ul>
       </Field>
 
-      <Field label="Notes">
-        <Textarea value={v.notes} onChange={(e) => setV({ ...v, notes: e.target.value })} />
+      <Field label="Notes (Optional)">
+        <Textarea
+          value={v.notes}
+          onChange={(e) => setV({ ...v, notes: e.target.value })}
+          placeholder="Evidence Notes"
+        />
       </Field>
     </>
   )
@@ -565,7 +615,10 @@ function AnalysisPanel({ open, registerCollector, investigationTools }) {
     reader.onload = () =>
       setV((prev) => ({
         ...prev,
-        reports: [...(prev.reports || []), { name: file.name, mime: file.type, base64: reader.result }]
+        reports: [
+          ...(prev.reports || []),
+          { name: file.name, mime: file.type, base64: reader.result }
+        ]
       }))
     reader.readAsDataURL(file)
   }
@@ -597,10 +650,15 @@ function AnalysisPanel({ open, registerCollector, investigationTools }) {
           <Input
             value={v.investigator}
             onChange={(e) => setV({ ...v, investigator: e.target.value })}
+            placeholder="Name"
           />
         </Field>
         <Field label="Location">
-          <Input value={v.location} onChange={(e) => setV({ ...v, location: e.target.value })} />
+          <Input
+            value={v.location}
+            onChange={(e) => setV({ ...v, location: e.target.value })}
+            placeholder="Location"
+          />
         </Field>
       </Row>
 
@@ -613,10 +671,18 @@ function AnalysisPanel({ open, registerCollector, investigationTools }) {
           />
         </Field>
         <Field label="Evidence Type">
-          <Input value={v.type} onChange={(e) => setV({ ...v, type: e.target.value })} />
+          <Input
+            value={v.type}
+            onChange={(e) => setV({ ...v, type: e.target.value })}
+            placeholder="Evidence Type"
+          />
         </Field>
         <Field label="Evidence Detail">
-          <Input value={v.detail} onChange={(e) => setV({ ...v, detail: e.target.value })} />
+          <Input
+            value={v.detail}
+            onChange={(e) => setV({ ...v, detail: e.target.value })}
+            placeholder="Evidence Detail"
+          />
         </Field>
       </Row>
 
@@ -685,7 +751,7 @@ function AnalysisPanel({ open, registerCollector, investigationTools }) {
                 </span>
               </div>
               <span
-                className="text-xs px-3 py-1 rounded-md"
+                className="text-sm px-3 py-1 rounded-md"
                 style={{ background: TOKENS.statusBg, color: TOKENS.text }}
               >
                 Uploaded
@@ -700,6 +766,7 @@ function AnalysisPanel({ open, registerCollector, investigationTools }) {
           rows={3}
           value={v.notes}
           onChange={(e) => setV({ ...v, notes: e.target.value })}
+          placeholder="Evidence Notes"
         />
       </Field>
     </>

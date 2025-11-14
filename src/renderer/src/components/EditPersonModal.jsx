@@ -124,7 +124,7 @@ export default function EditPersonModal({
       }}
       size="lg"
     >
-      <div className="grid gap-4">
+      <div className="grid gap-3">
         <div className="flex justify-between gap-2 items-center">
           <FormLabel>Person of Interest</FormLabel>
           {showDelete && (
@@ -150,7 +150,7 @@ export default function EditPersonModal({
           <>
             {/* 🧍 Person Name */}
             <div>
-              <div className="text-xs font-semibold mb-1" style={{ color: 'var(--dim)' }}>
+              <div className="text-sm font-semibold mb-1" style={{ color: 'var(--dim)' }}>
                 Person Name
               </div>
               <input
@@ -165,7 +165,7 @@ export default function EditPersonModal({
 
             {/* 🏷️ Status Field */}
             <div>
-              <div className="text-xs font-semibold mb-1" style={{ color: 'var(--dim)' }}>
+              <div className="text-sm font-semibold mb-1" style={{ color: 'var(--dim)' }}>
                 Status
               </div>
               <select
@@ -194,7 +194,7 @@ export default function EditPersonModal({
 
 function FormLabel({ children }) {
   return (
-    <div className="text-xs font-semibold" style={{ color: 'var(--dim)' }}>
+    <div className="text-sm font-semibold" style={{ color: 'var(--dim)' }}>
       {children}
     </div>
   )

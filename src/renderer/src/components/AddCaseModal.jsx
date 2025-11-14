@@ -50,7 +50,7 @@ export default function AddCaseModal({ open, onClose, onSave }) {
       disableConfirm={!canSubmit}
       size="lg"
     >
-      <div className="grid gap-4">
+      <div className="grid gap-3">
         {/* Case name */}
         <FormLabel>Case name</FormLabel>
         <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Name" />
@@ -93,7 +93,7 @@ export default function AddCaseModal({ open, onClose, onSave }) {
 
         {/* Agency */}
         <div className="flex flex-row gap-5 w-full">
-          <div className="w-full">
+          <div className="w-full space-y-2">
             <FormLabel>Agency</FormLabel>
             <Input
               value={agency}
@@ -103,7 +103,7 @@ export default function AddCaseModal({ open, onClose, onSave }) {
           </div>
 
           {/* Work Unit */}
-          <div className="w-full">
+          <div className="w-full space-y-2">
             <FormLabel>Work Unit</FormLabel>
             <Input
               value={workUnit}
@@ -120,7 +120,7 @@ export default function AddCaseModal({ open, onClose, onSave }) {
 /* ——— helpers (mini UI atoms monokrom) ——— */
 function FormLabel({ children }) {
   return (
-    <div className="text-xs font-semibold" style={{ color: 'var(--dim)' }}>
+    <div className="text-sm font-semibold" style={{ color: 'var(--dim)' }}>
       {children}
     </div>
   )
