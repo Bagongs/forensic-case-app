@@ -201,7 +201,7 @@ export default function Modal({
         <div
           ref={dialogRef}
           className={clsx(
-            'relative rounded-[14px] overflow-visible shadow-xl transition-all',
+            'relative rounded-sm overflow-visible shadow-xl transition-all',
             width,
             className
           )}
@@ -210,7 +210,7 @@ export default function Modal({
           {/* Header */}
 
           {header ? (
-            <div className="flex items-center justify-center relative">
+            <div className="flex items-center justify-center relative rounded-t-sm">
               {header}
               {closable && (
                 <div className="absolute right-8 top-5">
@@ -226,7 +226,7 @@ export default function Modal({
             </div>
           ) : (
             <div
-              className="flex items-center justify-between px-6 py-4"
+              className="flex items-center justify-between px-6 py-4 rounded-t-sm"
               style={{ background: '#2A3A51', borderBottom: '2px solid var(--dim-yellow)' }}
             >
               {title && (
@@ -255,7 +255,7 @@ export default function Modal({
             <div className="px-6 pb-5">{footer}</div>
           ) : (
             <div
-              className={`px-6 pb-5 flex ${
+              className={`px-6 pb-5 pt-3 flex ${
                 confirmText !== 'Delete' ? 'justify-end' : 'justify-center'
               } gap-3`}
             >
