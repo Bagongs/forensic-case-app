@@ -20,7 +20,7 @@ export default function NotesBox({
   gradient = 'linear-gradient(180deg, #1C2737 -94.25%, #1B2533 100%)',
   borderColor = '#4C607D',
   borderW = 1.5,
-  cut = 18,
+  cut = 16,
 
   // warna efek glow
   glowColor = '#FFFFFF', // putih utama
@@ -56,7 +56,7 @@ export default function NotesBox({
   }, [])
 
   const d = getPathD(size.w, size.h, cut)
-
+  cut = cut * 0.6
   const innerClip = `polygon(
     ${Math.max(0, cut - borderW)}px ${borderW}px,
     calc(100% - ${borderW}px) ${borderW}px,
@@ -166,7 +166,7 @@ export default function NotesBox({
 /** Path polygon cut-corner */
 function getPathD(w, h, c) {
   if (!w || !h) return `M0,0 H1 V1 H0 Z`
-  const cut = Math.max(0, c)
+  const cut = Math.max(0, c * 0.6)
   return [`M ${cut} 0`, `H ${w}`, `V ${h - cut}`, `L ${w - cut} ${h}`, `H 0`, `V ${cut}`, `Z`].join(
     ' '
   )

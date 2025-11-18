@@ -225,6 +225,7 @@ export default function EvidenceDetailPage() {
     setNotesValue(stageNotes)
   }, [active, latest])
 
+  console.log(latest)
   return (
     <CaseLayout title="Evidence Management" showBack={true}>
       <div className="mx-auto py-6">
@@ -497,13 +498,26 @@ export default function EvidenceDetailPage() {
                 {active === 'extraction' && showContent && (
                   <div className="flex justify-center items-center my-5 relative">
                     <img src={bgExtranctionResult} width={180} />
-                    <div className="absolute -mt-8 text-center">
-                      <p className="font-bold">Handphone A</p>
-                      <p>Size : 67gb</p>
-                    </div>
-                    <button className="absolute bg-[#2A3A51] px-5 mt-32 border-y-black border border-x-0">
-                      Download
-                    </button>
+                    {latest?.files?.[0] ? (
+                      <>
+                        <div className="absolute -mt-8 text-center">
+                          <p className="font-bold truncate max-w-[220px]">{latest.files[0].name}</p>
+                          <p>
+                            Size : {latest.files[0].size || approxSizeLabel(latest.files[0].base64)}
+                          </p>
+                        </div>
+                        <button
+                          className="absolute bg-[#2A3A51] px-5 mt-32 border-y-black border border-x-0"
+                          onClick={() => downloadReport(latest.files[0])}
+                        >
+                          Download
+                        </button>
+                      </>
+                    ) : (
+                      <div className="absolute text-center -mt-5 text-[#A5B1C2]">
+                        No extraction file uploaded.
+                      </div>
+                    )}
                   </div>
                 )}
 

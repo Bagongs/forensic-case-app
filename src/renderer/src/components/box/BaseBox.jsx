@@ -88,7 +88,7 @@ function BaseCutBox({
 function getPathByType(w, h, c, type, extra = {}) {
   if (!w || !h) return 'M0,0 H1 V1 H0 Z'
   const o = 0.6 // offset kecil untuk chamfer sudut luar agar anti-alias halus
-  const cut = Math.max(0, c)
+  const cut = Math.max(0, c * 0.6)
 
   const withTopNotchChamfered = () => {
     const { notchWidth = 180, notchDepth = 26, notchOffset = 'center', notchChamfer = 14 } = extra
@@ -181,11 +181,12 @@ function getPathByType(w, h, c, type, extra = {}) {
 /* ================= CLIP-PATH (ISI) ================= */
 function getInnerClipPath(w, h, c, type, borderW, extra = {}) {
   if (!w || !h) return 'none'
+  const cut = Math.max(0, c * 0.6) // ⬅️ kecil juga di inner
   const x0 = borderW,
     y0 = borderW
   const x1 = w - borderW,
     y1 = h - borderW
-  const c2 = Math.max(0, c - borderW)
+  const c2 = Math.max(0, cut - borderW)
   const pct = (x, y) => `${(x / w) * 100}% ${(y / h) * 100}%`
 
   if (type === 'allSideWithTopNotchChamfered') {

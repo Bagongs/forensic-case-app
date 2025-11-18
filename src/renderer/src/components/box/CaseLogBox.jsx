@@ -9,7 +9,7 @@ export default function CaseLogBox({
   bg = 'linear-gradient(180deg, #1C2737 -94.25%, #1B2533 100%)',
   borderColor = '#4C607D',
   borderW = 1.5,
-  cut = 18,
+  cut = 16,
   onViewNotes
 }) {
   return (

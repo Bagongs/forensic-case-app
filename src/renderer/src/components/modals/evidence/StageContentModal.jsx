@@ -457,9 +457,33 @@ function ExtractionPanel({ registerCollector }) {
     ...extraction
   })
 
+  // helper konversi byte ke label
+  const approxSizeLabel = (base64) => {
+    if (!base64) return '-'
+    const sizeInBytes = Math.ceil((base64.length * 3) / 4) - 2
+    if (sizeInBytes < 1024) return `${sizeInBytes} B`
+    if (sizeInBytes < 1024 * 1024) return `${(sizeInBytes / 1024).toFixed(1)} KB`
+    return `${(sizeInBytes / 1024 / 1024).toFixed(2)} MB`
+  }
+
+  // helper upload
   const addFile = (file) => {
     const reader = new FileReader()
-    reader.onload = () => setV({ ...v, files: [{ name: file.name, base64: reader.result }] }) // ⬅️ timpa array
+    reader.onload = () => {
+      const base64 = reader.result
+      const sizeLabel = approxSizeLabel(base64)
+      setV({
+        ...v,
+        files: [
+          {
+            name: file.name,
+            mime: file.type,
+            size: sizeLabel,
+            base64
+          }
+        ] // single file (replace array)
+      })
+    }
     reader.readAsDataURL(file)
   }
 
@@ -530,9 +554,14 @@ function ExtractionPanel({ registerCollector }) {
             />
           </label>
         </div>
-        <ul className="mt-3 space-y-1 text-sm text-gray-400">
-          {v.files.length > 0 && <li>📄 {v.files[0].name}</li>}
-        </ul>
+
+        {v.files.length > 0 && (
+          <ul className="mt-3 space-y-1 text-sm text-gray-400">
+            <li>
+              📄 {v.files[0].name} — <span className="text-[#9FAEC1]">{v.files[0].size}</span>
+            </li>
+          </ul>
+        )}
       </Field>
 
       <Field label="Notes (Optional)">

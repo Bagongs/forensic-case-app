@@ -14,7 +14,7 @@ export default function ConfirmDeleteModal({ open, onClose, onConfirm, name, col
       <div className="flex gap-4 flex-col items-center">
         <MdOutlineWarningAmber color={colorIcon} size={64} />
         <p className="text-lg">
-          Are you sure you want to delete this record for{' '}
+          Are you sure you want to delete this record <br /> for{' '}
           <span className="font-semibold">{name}</span>?
         </p>
       </div>
