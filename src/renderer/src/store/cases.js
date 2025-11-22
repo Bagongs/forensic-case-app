@@ -2,6 +2,22 @@
 import { create } from 'zustand'
 
 /* ============================================================
+   CONFIG
+============================================================ */
+// kalau kamu set VITE_BACKEND_URL di .env, itu akan dipakai.
+// fallback ke IP backend kamu sekarang.
+const BACKEND_BASE =
+  import.meta.env?.VITE_BACKEND_URL || window?.api?.backendBase || 'http://172.15.2.105:8000'
+
+const resolveBackendUrl = (maybePath) => {
+  if (!maybePath) return null
+  const s = String(maybePath)
+  if (s.startsWith('http://') || s.startsWith('https://')) return s
+  const cleaned = s.replace(/^\/+/, '')
+  return `${BACKEND_BASE}/${cleaned}`
+}
+
+/* ============================================================
    UTILS
 ============================================================ */
 const unwrap = (res) => {
@@ -64,15 +80,24 @@ const mapApiCaseDetail = (detail, existing) => {
     name: p.name || p.person_name || 'Unknown',
     status: p.person_type || p.suspect_status || 'Person of Interest',
     notes: p.notes || '',
-    evidences: (p.evidence || p.evidences || []).map((ev) => ({
-      id: ev.id,
-      evidenceNumber: ev.evidence_number ?? '',
-      summary: ev.evidence_summary || ev.summary || '',
-      fileName: ev.file_path ? ev.file_path.split('/').pop() : ev.file_name,
-      previewUrl: ev.preview_image || ev.preview_url || null,
-      source: ev.source || ev.evidence_source || '-',
-      createdAt: ev.created_at || ev.created_date
-    }))
+    evidences: (p.evidence || p.evidences || []).map((ev) => {
+      const filePath = ev.file_path || ev.filePath || ''
+      const previewFromApi = ev.preview_image || ev.preview_url || ev.previewUrl || null
+      const resolvedImage = resolveBackendUrl(previewFromApi || filePath)
+
+      return {
+        id: ev.id,
+        evidenceNumber: ev.evidence_number ?? '',
+        summary: ev.evidence_summary || ev.summary || '',
+        filePath,
+        fileName: filePath ? filePath.split('/').pop() : ev.file_name || ev.evidence_number,
+        previewUrl: resolvedImage,
+        image: resolvedImage,
+        previewDataUrl: resolvedImage,
+        source: ev.source || ev.evidence_source || '-',
+        createdAt: ev.created_at || ev.created_date
+      }
+    })
   }))
 
   return {
@@ -110,9 +135,7 @@ const normalizeCasePayload = (input, { forUpdate = false } = {}) => {
       input.investigator_name,
 
     agency_name: input.agency_name ?? input.agency ?? input.agencyName,
-
     work_unit_name: input.work_unit_name ?? input.work_unit ?? input.workUnit,
-
     case_number: input.case_number ?? input.id ?? null
   }
 
@@ -218,15 +241,12 @@ export const useCases = create((set, get) => ({
   },
 
   /* ============================================================
-     CREATE CASE — Contract API Compliant
+     CREATE CASE
   ============================================================ */
   async createCaseRemote(payload) {
     set({ loading: true, error: null })
     try {
       const apiPayload = normalizeCasePayload(payload)
-
-      console.log('[CreateCase → Final API Payload]:', apiPayload)
-
       const res = await window.api.invoke('cases:create', apiPayload)
       const apiCase = unwrap(res)
       const mapped = mapApiCaseListItem(apiCase)
@@ -241,14 +261,12 @@ export const useCases = create((set, get) => ({
   },
 
   /* ============================================================
-     UPDATE CASE — Contract API Compliant
+     UPDATE CASE
   ============================================================ */
   async updateCaseRemote(caseId, patch) {
     set({ loading: true, error: null })
     try {
       const apiPatch = normalizeCasePayload(patch, { forUpdate: true })
-
-      console.log('[UpdateCase → Final API Payload]:', apiPatch)
 
       const res = await window.api.invoke('cases:update', {
         caseId,

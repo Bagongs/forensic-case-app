@@ -1,5 +1,6 @@
 /* eslint-disable react/prop-types */
 export function EvidenceCard({ image, code, summary, onClick, expandIcon }) {
+  // image sudah berisi URL final dari store (previewUrl/image/previewDataUrl)
   return (
     <div
       className="border flex flex-col cursor-pointer hover:brightness-105 transition"
@@ -13,7 +14,16 @@ export function EvidenceCard({ image, code, summary, onClick, expandIcon }) {
       >
         {image ? (
           <>
-            <img src={image} alt="" className="w-full h-full object-contain" draggable="false" />
+            <img
+              src={image}
+              alt=""
+              className="w-full h-full object-contain"
+              draggable="false"
+              onError={(e) => {
+                // fallback kalau file_path kosong / 404
+                e.currentTarget.style.display = 'none'
+              }}
+            />
             {expandIcon && <div className="absolute bottom-2 right-2 opacity-90">{expandIcon}</div>}
           </>
         ) : (
@@ -23,9 +33,9 @@ export function EvidenceCard({ image, code, summary, onClick, expandIcon }) {
 
       {/* text */}
       <div className="p-4 text-[#E7E9EE] font-[Noto Sans] leading-relaxed">
-        <div className="text-[#F1CC49] font-semibold text-[15px]">{code}</div>
+        <div className="text-[#F1CC49] font-semibold text-[15px]">{code || '-'}</div>
         <div className="text-[13px] opacity-80">Evidence Summary</div>
-        <p className="text-[13.5px] leading-snug mt-1">{summary}</p>
+        <p className="text-[13.5px] leading-snug mt-1">{summary || '-'}</p>
       </div>
     </div>
   )

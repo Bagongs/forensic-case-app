@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
@@ -55,15 +54,13 @@ export default function CaseDetailPage() {
   const updateCaseRemote = useCases((s) => s.updateCaseRemote)
   const saveCaseNotesRemote = useCases((s) => s.saveCaseNotesRemote)
   const editCaseNotesRemote = useCases((s) => s.editCaseNotesRemote)
-
-  // delete person (legacy person contract)
   const deletePersonRemote = useCases((s) => s.deletePersonRemote)
 
   const caseLogsMap = useCases((s) => s.caseLogs)
   const loading = useCases((s) => s.loading)
   const error = useCases((s) => s.error)
 
-  // data dari store
+  // data dari store (bisa list-shape atau detail-shape)
   const item = caseId ? getCaseById?.(caseId) : null
 
   // ===== local states =====
@@ -85,8 +82,9 @@ export default function CaseDetailPage() {
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
 
   const savingRef = useRef(false)
+  const fetchedDetailRef = useRef(null) // prevent double fetch
 
-  // selected person (fresh dari store)
+  // selected person from fresh store
   const selectedPerson = useCases((s) =>
     caseId
       ? s.getCaseById(caseId)?.persons?.find((p) => Number(p.id) === Number(selectedPersonId))
@@ -95,19 +93,21 @@ export default function CaseDetailPage() {
 
   // ===== side effects =====
 
-  // 1) fetch detail saat mount / id berubah (hindari double fetch)
+  // ✅ ALWAYS fetch detail when entering page / caseId changes
   useEffect(() => {
     if (!caseId) return
-    if (!item) fetchCaseDetail(caseId).catch(() => {})
-  }, [caseId, item])
+    if (fetchedDetailRef.current === caseId) return
+    fetchedDetailRef.current = caseId
+    fetchCaseDetail(caseId).catch(() => {})
+  }, [caseId])
 
-  // 2) fetch logs saat id berubah
+  // fetch logs on caseId change
   useEffect(() => {
     if (!caseId) return
     fetchCaseLogs(caseId, { skip: 0, limit: 50 }).catch(() => {})
   }, [caseId])
 
-  // 3) sync notes local kalau backend update
+  // sync notes local if backend updates
   useEffect(() => {
     setNotes(item?.notes || '')
   }, [item?.notes])
@@ -207,26 +207,16 @@ Z`.trim()
       const res = await window.api.invoke('cases:exportPdf', item.id)
       if (res?.error) throw new Error(res.message)
       console.log('PDF ready:', res?.filename || res)
-      // TODO: toast / save dialog
+      // TODO toast / save dialog
     } catch (e) {
       console.error('Export PDF failed:', e)
-      // TODO: toast error
+      // TODO toast error
     }
   }
 
-  // ===== helper delete (support 2 possible signatures) =====
-  const doDeletePerson = async (personId) => {
-    if (!personId) return
-    // store lama biasanya (caseId, personId)
-    try {
-      return await deletePersonRemote(item.id, personId)
-    } catch (e1) {
-      // store baru biasanya (personId) aja
-      return await deletePersonRemote(personId)
-    }
-  }
-
-  // ===== render empty / loading =====
+  /* ============================================================
+     RENDER EMPTY / LOADING
+  ============================================================ */
   if (!caseId) {
     return (
       <div className="max-w-5xl mx-auto px-6 py-10">
@@ -262,8 +252,6 @@ Z`.trim()
   }
 
   const persons = item.persons || []
-
-  // ✅ case number untuk header (fallback aman)
   const headerCaseNumber = item.caseNumber || item.case_number || item.caseNumberText || item.id
 
   return (
@@ -309,6 +297,7 @@ Z`.trim()
       {/* MAIN GRID */}
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6">
         <div className="space-y-6">
+          {/* DESCRIPTION */}
           <ExactSvgCutBox
             pathD={PATH_D}
             paddingX={40}
@@ -360,14 +349,19 @@ Z`.trim()
                     setOpenAddEv(true)
                   }}
                 >
-                  {evidences.map((ev) => (
-                    <EvidenceCard
-                      key={ev.id}
-                      image={ev.previewDataUrl || ev.image}
-                      code={ev.fileName || ev.id}
-                      summary={ev.summary}
-                    />
-                  ))}
+                  {evidences.map((ev) => {
+                    const img = ev.previewDataUrl || ev.image || ev.previewUrl || null
+
+                    return (
+                      <EvidenceCard
+                        key={ev.id}
+                        image={img}
+                        code={ev.fileName || ev.evidenceNumber || ev.id}
+                        summary={ev.summary}
+                      />
+                    )
+                  })}
+
                   {evidences.length === 0 && (
                     <div className="text-sm text-[#888F99]">No evidence added.</div>
                   )}
@@ -375,7 +369,9 @@ Z`.trim()
               )
             })}
 
-            {persons.length === 0 && <span className="text-center">No Person Interest</span>}
+            {persons.length === 0 && (
+              <div className="text-center text-sm opacity-70 py-8">No Person of Interest</div>
+            )}
           </PersonSectionBox>
         </div>
 
@@ -398,7 +394,7 @@ Z`.trim()
         </aside>
       </div>
 
-      {/* SUMMARY / NOTES */}
+      {/* NOTES */}
       <div className="flex w-full mt-5">
         <NotesBox
           title="Notes"
@@ -468,13 +464,12 @@ Z`.trim()
           onClose={() => setConfirmDeleteOpen(false)}
           name={selectedPerson?.name}
           onConfirm={async () => {
-            await doDeletePerson(selectedPersonId)
+            await deletePersonRemote(item.id, selectedPersonId)
 
             setConfirmDeleteOpen(false)
             setEditPersonOpen(false)
             setSelectedPersonId(null)
 
-            // refresh logs setelah delete
             await fetchCaseLogs(item.id, { skip: 0, limit: 50 })
           }}
           colorIcon="red"
