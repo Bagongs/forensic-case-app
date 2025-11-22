@@ -31,7 +31,7 @@ export default function LoginPage() {
   const finalError = error || storeError
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center px-4">
+    <div className="fixed inset-0 w-full h-full flex items-center justify-center overflow-hidden px-4">
       {/* CARD UTAMA */}
       <div
         className="relative overflow-hidden"
