@@ -4,8 +4,7 @@ import { getTokens, updateTokens, clearSession } from '../session.js'
 import { refreshTokenRequest } from './auth.service.js'
 
 const api = axios.create({
-  baseURL: process.env.BACKEND_URL || 'http://172.15.2.105:8000/api/v1',
-  timeout: 20000
+  baseURL: process.env.BACKEND_URL || 'http://172.15.2.105:8000/api/v1'
 })
 
 // ============================

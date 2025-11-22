@@ -38,14 +38,17 @@ const COLORS = {
 const PAGE_SIZES = [5, 10, 15]
 
 /* ====== HELPERS ====== */
-const fmt = (iso) => {
-  if (!iso) return '-'
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return String(iso)
+const fmt = (val) => {
+  if (!val) return '-'
+  if (typeof val === 'string' && /^\d{2}\/\d{2}\/\d{4}$/.test(val)) {
+    return val // sudah format DD/MM/YYYY dari backend
+  }
+  const d = new Date(val)
+  if (Number.isNaN(d.getTime())) return String(val)
   const dd = String(d.getDate()).padStart(2, '0')
   const mm = String(d.getMonth() + 1).padStart(2, '0')
   const yyyy = String(d.getFullYear())
-  return `${mm}/${dd}/${yyyy}`
+  return `${dd}/${mm}/${yyyy}`
 }
 
 function StatusCell({ value = 'Open' }) {
@@ -141,6 +144,7 @@ export default function CaseListPage() {
   }, [page, totalPages])
 
   const handleSaveCase = async (payload) => {
+    console.log('[Renderer Payload] =>', payload)
     try {
       const created = await createCaseRemote(payload)
       setModal(false)
@@ -288,34 +292,44 @@ export default function CaseListPage() {
           </thead>
 
           <tbody>
-            {cases.map((row) => {
+            {cases.map((row, idx) => {
+              // ✅ sesuai response API
               const id = row.id ?? row.case_id
-              const name = row.name ?? row.case_name ?? row.title
-              const investigator = row.investigator ?? row.investigator_name ?? '-'
-              const agency = row.agency ?? row.agency_name ?? '-'
-              const createdAt = row.createdAt ?? row.created_at ?? row.date_created
+              const safeKey = id ? `case-${id}` : `case-temp-${idx}`
+
+              const name = row.title ?? row.case_name ?? row.name ?? row.title
+              const investigator =
+                row.main_investigator ?? row.investigator ?? row.investigator_name ?? '-'
+              const agency = row.agency_name ?? row.agency ?? row.agency_name ?? '-'
+              const createdAt = row.created_at ?? row.createdAt ?? row.date_created
               const status = row.status ?? row.case_status ?? 'Open'
 
               return (
-                <tr key={id} className="hover:bg-white/5">
+                <tr key={safeKey} className="hover:bg-white/5">
                   <td className="px-4 py-3 border-b" style={{ borderColor: COLORS.border }}>
-                    {id}
+                    {row.case_number || id}
                   </td>
+
                   <td className="px-4 py-3 border-b" style={{ borderColor: COLORS.border }}>
                     {name}
                   </td>
+
                   <td className="px-4 py-3 border-b" style={{ borderColor: COLORS.border }}>
                     {investigator}
                   </td>
+
                   <td className="px-4 py-3 border-b" style={{ borderColor: COLORS.border }}>
                     {agency}
                   </td>
+
                   <td className="px-4 py-3 border-b" style={{ borderColor: COLORS.border }}>
                     {fmt(createdAt)}
                   </td>
+
                   <td className="px-4 py-3 border-b" style={{ borderColor: COLORS.border }}>
                     <StatusCell value={status} />
                   </td>
+
                   <td className="px-4 py-3 border-b" style={{ borderColor: COLORS.border }}>
                     <button
                       onClick={() => nav(`/cases/${id}`)}

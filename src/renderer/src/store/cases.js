@@ -1,16 +1,9 @@
-/* eslint-disable no-unused-vars */
 // src/renderer/src/store/cases.js
 import { create } from 'zustand'
 
 /* ============================================================
    UTILS
 ============================================================ */
-const fmtLocalDate = (iso) => {
-  if (!iso) return ''
-  return new Date(iso).toLocaleDateString('id-ID')
-}
-
-// unwrap response dari IPC/service (biar fleksibel)
 const unwrap = (res) => {
   if (!res) return null
   if (typeof res === 'object' && 'data' in res) return res.data
@@ -22,18 +15,34 @@ const unwrapTotal = (res, fallback = 0) => {
   return res.total ?? res.meta?.total ?? fallback
 }
 
+/* Normalisasi status dari API */
+const normalizeStatus = (s) => {
+  if (!s) return 'Open'
+  const v = String(s).toLowerCase()
+
+  if (v.includes('reopen') || v.includes('re-open')) return 'Re-Open'
+  if (v.includes('close')) return 'Closed'
+  if (v.includes('open')) return 'Open'
+
+  return 'Open'
+}
+
 /* ============================================================
    MAPPING: Case List Item
 ============================================================ */
 const mapApiCaseListItem = (api) => ({
   id: api.id ?? api.case_id,
+  caseNumber: api.case_number ?? '',
   name: api.title ?? api.case_name ?? api.name ?? '',
   description: api.description || '',
-  status: api.status || api.case_status || 'Open',
-  agency: api.agency || api.agency_name || '',
-  workUnit: api.work_unit || api.work_unit_name || '',
-  investigator: api.case_officer || api.main_investigator || api.investigator || '',
-  createdAt: api.created_date || api.created_at || api.date_created || new Date().toISOString(),
+  status: normalizeStatus(api.status || api.case_status || 'Open'),
+
+  agency: api.agency_name ?? api.agency ?? '',
+  workUnit: api.work_unit_name ?? api.work_unit ?? '',
+  investigator: api.main_investigator ?? api.case_officer ?? api.investigator ?? '',
+
+  createdAt: api.created_at ?? api.created_date ?? new Date().toISOString(),
+  updatedAt: api.updated_at ?? api.updated_date ?? null,
 
   persons: [],
   notes: '',
@@ -43,7 +52,7 @@ const mapApiCaseListItem = (api) => ({
 /* ============================================================
    MAPPING: Case Detail
 ============================================================ */
-const mapApiCaseDetailToLocal = (detail, existing) => {
+const mapApiCaseDetail = (detail, existing) => {
   const apiCase = detail.case || detail
   const persons = detail.persons_of_interest || detail.persons || []
   const caseNotes = detail.case_notes || detail.notes || ''
@@ -57,6 +66,7 @@ const mapApiCaseDetailToLocal = (detail, existing) => {
     notes: p.notes || '',
     evidences: (p.evidence || p.evidences || []).map((ev) => ({
       id: ev.id,
+      evidenceNumber: ev.evidence_number ?? '',
       summary: ev.evidence_summary || ev.summary || '',
       fileName: ev.file_path ? ev.file_path.split('/').pop() : ev.file_name,
       previewUrl: ev.preview_image || ev.preview_url || null,
@@ -67,13 +77,18 @@ const mapApiCaseDetailToLocal = (detail, existing) => {
 
   return {
     ...base,
+    caseNumber: apiCase.case_number ?? base.caseNumber,
     name: apiCase.title ?? apiCase.case_name ?? base.name,
-    description: apiCase.description || base.description,
-    status: apiCase.status || apiCase.case_status || base.status,
-    agency: apiCase.agency || apiCase.agency_name || base.agency,
-    workUnit: apiCase.work_unit || apiCase.work_unit_name || base.workUnit,
-    investigator: apiCase.case_officer || apiCase.main_investigator || base.investigator,
-    createdAt: apiCase.created_date || apiCase.created_at || base.createdAt,
+    description: apiCase.description ?? base.description,
+    status: normalizeStatus(apiCase.status ?? apiCase.case_status ?? base.status),
+    agency: apiCase.agency_name ?? apiCase.agency ?? base.agency,
+    workUnit: apiCase.work_unit_name ?? apiCase.work_unit ?? base.workUnit,
+    investigator:
+      apiCase.main_investigator ??
+      apiCase.case_officer ??
+      apiCase.investigator ??
+      base.investigator,
+    createdAt: apiCase.created_at ?? apiCase.created_date ?? base.createdAt,
 
     persons: mappedPersons,
     notes: caseNotes
@@ -81,18 +96,34 @@ const mapApiCaseDetailToLocal = (detail, existing) => {
 }
 
 /* ============================================================
-   MAPPING: Logs
+   PAYLOAD NORMALIZER FOR CREATE / UPDATE
 ============================================================ */
-const mapApiLogsToView = (apiLogs = []) =>
-  apiLogs.map((log) => ({
-    id: log.id,
-    status: log.action || log.status,
-    by: log.performed_by || log.by || '',
-    date: log.created_at || log.date,
-    change: log.change_detail || log.change || undefined,
-    hasNotes: !!log.notes,
-    notes: log.notes
-  }))
+const normalizeCasePayload = (input, { forUpdate = false } = {}) => {
+  const out = {
+    title: input.title ?? input.name,
+    description: input.description ?? input.desc,
+
+    main_investigator:
+      input.main_investigator ??
+      input.investigator ??
+      input.case_officer ??
+      input.investigator_name,
+
+    agency_name: input.agency_name ?? input.agency ?? input.agencyName,
+
+    work_unit_name: input.work_unit_name ?? input.work_unit ?? input.workUnit,
+
+    case_number: input.case_number ?? input.id ?? null
+  }
+
+  Object.keys(out).forEach((k) => {
+    if (out[k] === undefined || out[k] === null || out[k] === '' || (forUpdate && !(k in input))) {
+      delete out[k]
+    }
+  })
+
+  return out
+}
 
 /* ============================================================
    STORE
@@ -119,7 +150,15 @@ export const useCases = create((set, get) => ({
     set({ loading: true, error: null })
     try {
       const res = await window.api.invoke('cases:summary')
-      set({ summary: unwrap(res), loading: false })
+      const raw = res
+
+      set({
+        summary: {
+          ...unwrap(res),
+          total_cases: raw.total_cases
+        },
+        loading: false
+      })
     } catch (err) {
       set({ error: err?.message || 'Failed to fetch summary', loading: false })
     }
@@ -163,7 +202,7 @@ export const useCases = create((set, get) => ({
       const current = get().cases
       const existing = current.find((c) => c.id === (detail.case?.id ?? detail.id))
 
-      const mapped = mapApiCaseDetailToLocal(detail, existing)
+      const mapped = mapApiCaseDetail(detail, existing)
 
       const nextCases = existing
         ? current.map((c) => (c.id === mapped.id ? mapped : c))
@@ -179,22 +218,14 @@ export const useCases = create((set, get) => ({
   },
 
   /* ============================================================
-     CREATE CASE
+     CREATE CASE — Contract API Compliant
   ============================================================ */
   async createCaseRemote(payload) {
     set({ loading: true, error: null })
     try {
-      const apiPayload = {
-        title: payload.name,
-        description: payload.description,
-        case_officer: payload.investigator,
-        agency: payload.agency,
-        work_unit: payload.workUnit
-      }
+      const apiPayload = normalizeCasePayload(payload)
 
-      if (payload.idMode === 'manual' && payload.id) {
-        apiPayload.case_id = payload.id
-      }
+      console.log('[CreateCase → Final API Payload]:', apiPayload)
 
       const res = await window.api.invoke('cases:create', apiPayload)
       const apiCase = unwrap(res)
@@ -203,50 +234,41 @@ export const useCases = create((set, get) => ({
       set({ cases: [mapped, ...get().cases], loading: false })
       return mapped
     } catch (err) {
-      console.error(err)
+      console.error('[CreateCase ERROR]', err)
       set({ error: err?.message || 'Failed to create case', loading: false })
       throw err
     }
   },
 
   /* ============================================================
-     UPDATE CASE
+     UPDATE CASE — Contract API Compliant
   ============================================================ */
   async updateCaseRemote(caseId, patch) {
     set({ loading: true, error: null })
     try {
-      const apiPatch = {
-        ...(patch.name !== undefined ? { title: patch.name } : {}),
-        ...(patch.description !== undefined ? { description: patch.description } : {}),
-        ...(patch.investigator !== undefined ? { case_officer: patch.investigator } : {}),
-        ...(patch.agency !== undefined ? { agency: patch.agency } : {}),
-        ...(patch.workUnit !== undefined ? { work_unit: patch.workUnit } : {})
-      }
+      const apiPatch = normalizeCasePayload(patch, { forUpdate: true })
 
-      const res = await window.api.invoke('cases:update', { caseId, payload: apiPatch })
+      console.log('[UpdateCase → Final API Payload]:', apiPatch)
+
+      const res = await window.api.invoke('cases:update', {
+        caseId,
+        payload: apiPatch
+      })
+
       const updated = unwrap(res)
-
       const current = get().cases
       const existing = current.find((c) => c.id === updated.id)
-      const base = existing || mapApiCaseListItem(updated)
 
-      const merged = {
-        ...base,
-        name: updated.title ?? updated.case_name ?? base.name,
-        description: updated.description ?? base.description,
-        status: updated.status ?? updated.case_status ?? base.status,
-        agency: updated.agency ?? updated.agency_name ?? base.agency,
-        workUnit: updated.work_unit ?? updated.work_unit_name ?? base.workUnit,
-        investigator: updated.case_officer ?? updated.main_investigator ?? base.investigator,
-        createdAt: updated.created_at ?? updated.created_date ?? base.createdAt
-      }
+      const merged = mapApiCaseListItem(updated)
 
-      const nextCases = current.map((c) => (c.id === merged.id ? merged : c))
+      const nextCases = existing
+        ? current.map((c) => (c.id === merged.id ? merged : c))
+        : [...current, merged]
 
       set({ cases: nextCases, loading: false })
       return merged
     } catch (err) {
-      console.error(err)
+      console.error('[UpdateCase ERROR]', err)
       set({ error: err?.message || 'Failed to update case', loading: false })
       throw err
     }
@@ -292,7 +314,16 @@ export const useCases = create((set, get) => ({
     try {
       const res = await window.api.invoke('caseLogs:list', { caseId, params })
       const apiLogs = unwrap(res) || []
-      const viewLogs = mapApiLogsToView(apiLogs)
+
+      const viewLogs = apiLogs.map((log) => ({
+        id: log.id,
+        status: log.action || log.status,
+        by: log.performed_by || log.by || '',
+        date: log.created_at || log.date,
+        change: log.change_detail || log.change || undefined,
+        hasNotes: !!log.notes,
+        notes: log.notes
+      }))
 
       set((state) => ({
         caseLogs: {
@@ -318,32 +349,8 @@ export const useCases = create((set, get) => ({
     }
   },
 
-  async changeCaseStatusRemote(caseId, { status, notes }) {
-    set({ loading: true, error: null })
-    try {
-      const res = await window.api.invoke('caseLogs:changeStatus', {
-        caseId,
-        payload: { status, notes }
-      })
-      const log = unwrap(res)
-
-      set({
-        cases: get().cases.map((c) =>
-          c.id === caseId ? { ...c, status: log?.status || status } : c
-        ),
-        loading: false
-      })
-
-      await get().fetchCaseLogs(caseId, { skip: 0, limit: 50 })
-      return log
-    } catch (err) {
-      set({ error: err?.message || 'Failed to change status', loading: false })
-      throw err
-    }
-  },
-
   /* ============================================================
-     PERSON DELETE (POI)
+     Delete Person
   ============================================================ */
   async deletePersonRemote(caseId, personId) {
     set({ loading: true, error: null })
@@ -358,7 +365,7 @@ export const useCases = create((set, get) => ({
   },
 
   /* ============================================================
-     EVIDENCE ADD TO PERSON
+     Evidence Add To Person
   ============================================================ */
   async addEvidenceToPersonRemote(caseId, payload) {
     set({ loading: true, error: null })
@@ -373,7 +380,7 @@ export const useCases = create((set, get) => ({
   },
 
   /* ============================================================
-     HELPERS
+     HELPER
   ============================================================ */
   getCaseById: (id) => (get().cases || []).find((c) => c.id === id)
 }))

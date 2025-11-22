@@ -5,22 +5,7 @@ import fs from 'fs'
 import { Buffer } from 'node:buffer'
 import { deletePerson as deletePersonLegacy } from './persons.service.js'
 
-export async function getSuspectList(params = {}) {
-  const res = await api.get('/suspects/', { params })
-  return res.data
-}
-
-export async function getSuspectSummary() {
-  const res = await api.get('/suspects/get-suspect-summary')
-  return res.data
-}
-
-export async function getSuspectDetail(id) {
-  const res = await api.get(`/suspects/get-suspect-detail/${id}`)
-  return res.data
-}
-
-// helper kecil untuk append field biasa
+// 🔧 Append field helper
 function appendField(form, key, value) {
   if (value === undefined || value === null) return
   if (typeof value === 'boolean') {
@@ -30,27 +15,57 @@ function appendField(form, key, value) {
   }
 }
 
+/* ============================================================
+   1. GET LIST
+============================================================ */
+export async function getSuspectList(params = {}) {
+  const res = await api.get('/suspects/', { params })
+  return res.data
+}
+
+/* ============================================================
+   2. SUMMARY
+============================================================ */
+export async function getSuspectSummary() {
+  const res = await api.get('/suspects/get-suspect-summary')
+  return res.data
+}
+
+/* ============================================================
+   3. DETAIL
+============================================================ */
+export async function getSuspectDetail(id) {
+  const res = await api.get(`/suspects/get-suspect-detail/${id}`)
+  return res.data
+}
+
+/* ============================================================
+   4. CREATE SUSPECT
+============================================================ */
 export async function createSuspect(payload) {
   const form = new FormData()
 
-  // === FILE HANDLING: evidence_file & suspect_image (kalau dipakai) ===
+  // ---- evidence_file ----
   if (payload.evidence_file) {
-    const file = payload.evidence_file
-    if (typeof file === 'string') {
-      if (fs.existsSync(file)) {
-        form.append('evidence_file', fs.createReadStream(file))
+    const f = payload.evidence_file
+
+    if (typeof f === 'string') {
+      if (fs.existsSync(f)) {
+        form.append('evidence_file', fs.createReadStream(f))
       }
-    } else if (file.buffer) {
-      const buf = Buffer.from(file.buffer)
+    } else if (f.buffer) {
+      const buf = Buffer.from(f.buffer)
       form.append('evidence_file', buf, {
-        filename: file.name || 'evidence_file',
-        contentType: file.type || 'application/octet-stream'
+        filename: f.name || 'evidence_file',
+        contentType: f.type || 'application/octet-stream'
       })
     }
   }
 
+  // ---- suspect image (optional future usage) ----
   if (payload.suspect_image) {
     const img = payload.suspect_image
+
     if (typeof img === 'string') {
       if (fs.existsSync(img)) {
         form.append('suspect_image', fs.createReadStream(img))
@@ -64,7 +79,7 @@ export async function createSuspect(payload) {
     }
   }
 
-  // === FIELD BIASA ===
+  // ---- inject form fields ----
   appendField(form, 'case_id', payload.case_id)
   appendField(form, 'is_unknown_person', payload.is_unknown_person)
   appendField(form, 'person_name', payload.person_name)
@@ -80,11 +95,16 @@ export async function createSuspect(payload) {
   return res.data
 }
 
+/* ============================================================
+   5. UPDATE SUSPECT  (NO EVIDENCE UPDATE)
+============================================================ */
 export async function updateSuspect(id, payload) {
   const form = new FormData()
 
+  // optional image
   if (payload.suspect_image) {
     const img = payload.suspect_image
+
     if (typeof img === 'string') {
       if (fs.existsSync(img)) {
         form.append('suspect_image', fs.createReadStream(img))
@@ -101,45 +121,40 @@ export async function updateSuspect(id, payload) {
   appendField(form, 'is_unknown_person', payload.is_unknown_person)
   appendField(form, 'person_name', payload.person_name)
   appendField(form, 'suspect_status', payload.suspect_status)
+  appendField(form, 'case_id', payload.case_id)
 
   const res = await api.put(`/suspects/update-suspect/${id}`, form, {
     headers: form.getHeaders()
   })
-
   return res.data
 }
 
-/**
- * Save notes baru:
- * POST /api/v1/persons/save-suspect-notes/{suspect_id}
- */
+/* ============================================================
+   6. SAVE NOTES (NEW)
+============================================================ */
 export async function saveSuspectNotes({ suspect_id, notes }) {
   const res = await api.post(`/persons/save-suspect-notes/${suspect_id}`, { notes })
   return res.data
 }
 
-/**
- * Edit notes existing:
- * PUT /api/v1/persons/edit-suspect-notes/{suspect_id}
- */
+/* ============================================================
+   7. EDIT NOTES (NEW)
+============================================================ */
 export async function editSuspectNotes({ suspect_id, notes }) {
   const res = await api.put(`/persons/edit-suspect-notes/${suspect_id}`, { notes })
   return res.data
 }
 
-/**
- * Export suspect detail PDF:
- * GET /api/v1/suspects/export-suspect-detail-pdf/{suspect_id}
- * Return buffer + filename (kalau ada di header).
- */
+/* ============================================================
+   8. EXPORT SUSPECT PDF
+============================================================ */
 export async function exportSuspectDetailPdf(suspect_id) {
   const res = await api.get(`/suspects/export-suspect-detail-pdf/${suspect_id}`, {
     responseType: 'arraybuffer'
   })
 
-  // coba ambil filename dari content-disposition
-  const dispo = res.headers?.['content-disposition'] || res.headers?.['Content-Disposition']
   let filename = null
+  const dispo = res.headers?.['content-disposition'] || res.headers?.['Content-Disposition']
   if (dispo) {
     const m = /filename="?([^"]+)"?/i.exec(dispo)
     if (m) filename = m[1]
@@ -151,6 +166,10 @@ export async function exportSuspectDetailPdf(suspect_id) {
   }
 }
 
+/* ============================================================
+   9. DELETE SUSPECT (Delete Person)
+============================================================ */
 export async function deleteSuspect(id) {
+  // IPC already routed to persons/delete-person/{id}
   return await deletePersonLegacy(id)
 }

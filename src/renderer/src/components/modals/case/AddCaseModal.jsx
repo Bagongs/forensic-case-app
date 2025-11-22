@@ -1,7 +1,6 @@
-/* eslint-disable no-unused-vars */
 /* eslint-disable react/prop-types */
-// src/renderer/src/components/AddCaseModal.jsx
-import { useEffect, useRef, useState } from 'react'
+// src/renderer/src/components/modals/case/AddCaseModal.jsx
+import { useEffect, useState } from 'react'
 import Modal from '../Modal'
 import HorizontalLine from '../../common/HorizontalLine'
 import FormLabel from '../../atoms/FormLabel'
@@ -33,28 +32,31 @@ export default function AddCaseModal({ open, onClose, onSave }) {
 
   const canSubmit = name.trim() && (idMode === 'gen' || manualId.trim())
 
+  const handleConfirm = () => {
+    // ✅ SESUAI CONTRACT API
+    const payload = {
+      title: name.trim(),
+      description: desc.trim(),
+      main_investigator: investigator.trim(),
+      agency_name: agency.trim(),
+      work_unit_name: workUnit.trim()
+    }
+
+    if (idMode === 'manual' && manualId.trim()) {
+      payload.case_number = manualId.trim()
+    }
+
+    // jangan auto-close di sini
+    onSave(payload)
+  }
+
   return (
     <Modal
       open={open}
       title="Add case"
       onCancel={onClose}
       confirmText="Add case"
-      onConfirm={() => {
-        const payload = {
-          title: name.trim(),
-          description: desc.trim(),
-          case_officer: investigator.trim(),
-          agency: agency.trim(),
-          work_unit: workUnit.trim()
-        }
-
-        if (idMode === 'manual' && manualId.trim()) {
-          payload.case_number = manualId.trim()
-        }
-
-        onSave(payload)
-        onClose()
-      }}
+      onConfirm={handleConfirm}
       disableConfirm={!canSubmit}
       size="lg"
     >
@@ -82,11 +84,12 @@ export default function AddCaseModal({ open, onClose, onSave }) {
             Manual Input
           </Radio>
         </div>
+
         {idMode === 'manual' && (
           <Input
             value={manualId}
             onChange={(e) => setManualId(e.target.value)}
-            placeholder="Input Case ID "
+            placeholder="Input Case ID"
           />
         )}
 
@@ -99,24 +102,23 @@ export default function AddCaseModal({ open, onClose, onSave }) {
           placeholder="Input Name"
         />
 
-        {/* Agency */}
+        {/* Agency + Work Unit */}
         <div className="flex flex-row gap-5 w-full">
           <div className="w-full space-y-2">
             <FormLabel>Agency</FormLabel>
             <Input
               value={agency}
               onChange={(e) => setAgency(e.target.value)}
-              placeholder="Input agency "
+              placeholder="Input agency"
             />
           </div>
 
-          {/* Work Unit */}
           <div className="w-full space-y-2">
             <FormLabel>Work Unit</FormLabel>
             <Input
               value={workUnit}
               onChange={(e) => setWorkUnit(e.target.value)}
-              placeholder="Input Work Unit "
+              placeholder="Input Work Unit"
             />
           </div>
         </div>

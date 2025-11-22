@@ -11,8 +11,8 @@ import Select from '../../atoms/Select'
 const DEVICE_SOURCES = ['Hp', 'Ssd', 'HardDisk', 'Pc', 'Laptop', 'DVR']
 const STATUS_OPTIONS = ['Witness', 'Reported', 'Suspected', 'Suspect', 'Defendant']
 
-function mapDeviceSourceToApi(value) {
-  switch (value) {
+function mapDeviceSourceToApi(v) {
+  switch (v) {
     case 'Hp':
       return 'Handphone'
     case 'Ssd':
@@ -75,12 +75,7 @@ export default function AddPersonModal({ open, onClose, onSave, caseOptions = []
     if (previewUrl) URL.revokeObjectURL(previewUrl)
     setPreviewUrl(null)
 
-    if (!f) {
-      e.target.value = ''
-      return
-    }
-
-    if (f.type?.startsWith('image/')) {
+    if (f && f.type.startsWith('image/')) {
       const reader = new FileReader()
       reader.onload = (ev) => setPreviewUrl(ev.target.result)
       reader.readAsDataURL(f)
@@ -106,8 +101,6 @@ export default function AddPersonModal({ open, onClose, onSave, caseOptions = []
     setError(null)
 
     try {
-      const is_unknown_person = isUnknown
-
       let evidenceFilePayload = null
       if (file) {
         const buf = await file.arrayBuffer()
@@ -121,37 +114,38 @@ export default function AddPersonModal({ open, onClose, onSave, caseOptions = []
 
       const payload = {
         case_id: Number(caseId),
-        is_unknown_person,
-        person_name: is_unknown_person ? null : name.trim(),
-        suspect_status: is_unknown_person ? null : status || null,
+        is_unknown_person: isUnknown,
+        person_name: isUnknown ? null : name.trim(),
+        suspect_status: isUnknown ? null : status || null,
+
         evidence_number: hasManualEvidence ? evidenceId.trim() : undefined,
         evidence_source: mapDeviceSourceToApi(source) || undefined,
         evidence_summary: summary.trim() || undefined,
         evidence_file: evidenceFilePayload || undefined
       }
 
-      // ✅ FIX: pakai invoke IPC suspects:create
       const res = await window.api.invoke('suspects:create', payload)
       if (res?.error) throw new Error(res.message || 'Failed to create suspect')
 
-      const suspectId = res?.data?.id ?? res?.data?.suspect_id ?? res?.data?.suspect?.id
+      // ---- get suspect id ----
+      const suspectId = res?.data?.id || res?.data?.suspect_id || res?.data?.suspect?.id || null
 
+      // ---- save notes if present ----
       const trimmedNotes = notes.trim()
       if (trimmedNotes && suspectId) {
         const nres = await window.api.invoke('suspects:saveNotes', {
           suspect_id: Number(suspectId),
           notes: trimmedNotes
         })
-        if (nres?.error) {
-          console.warn('[AddPersonModal] notes save failed:', nres.message)
-        }
+        if (nres?.error) console.warn('[AddPersonModal] notes save failed:', nres.message)
       }
 
+      // return to parent
       onSave?.({
         apiResponse: res,
         caseId,
         caseName: caseOptions.find((c) => String(c.value) === String(caseId))?.label,
-        name: is_unknown_person ? 'Unknown' : name.trim(),
+        name: isUnknown ? 'Unknown' : name.trim(),
         status,
         notes: trimmedNotes,
         evidence: {
@@ -190,6 +184,7 @@ export default function AddPersonModal({ open, onClose, onSave, caseOptions = []
       size="lg"
     >
       <div className="grid gap-3">
+        {/* Case */}
         <FormLabel>Case Name</FormLabel>
         <Select value={caseId} onChange={(e) => setCaseId(e.target.value)} disabled={submitting}>
           <option value="" disabled>
@@ -202,32 +197,27 @@ export default function AddPersonModal({ open, onClose, onSave, caseOptions = []
           ))}
         </Select>
 
+        {/* Person Type */}
         <FormLabel>Person of Interest</FormLabel>
         <div className="flex items-center gap-6">
           <Radio
             checked={poiMode === 'known'}
-            onChange={() => {
-              setPoiMode('known')
-              setStatus('')
-            }}
+            onChange={() => setPoiMode('known')}
             disabled={submitting}
           >
             Person name
           </Radio>
-
           <Radio
             checked={poiMode === 'unknown'}
-            onChange={() => {
-              setPoiMode('unknown')
-              setStatus('')
-            }}
+            onChange={() => setPoiMode('unknown')}
             disabled={submitting}
           >
             Unknown Person
           </Radio>
         </div>
 
-        {poiMode === 'known' && (
+        {/* Name & Status */}
+        {!isUnknown && (
           <>
             <FormLabel>Person Name</FormLabel>
             <Input
@@ -244,7 +234,7 @@ export default function AddPersonModal({ open, onClose, onSave, caseOptions = []
               disabled={submitting}
             >
               <option value="" disabled>
-                Select Status
+                Select status
               </option>
               {STATUS_OPTIONS.map((s) => (
                 <option key={s} value={s}>
@@ -255,6 +245,7 @@ export default function AddPersonModal({ open, onClose, onSave, caseOptions = []
           </>
         )}
 
+        {/* Evidence Number Mode */}
         <FormLabel>Evidence ID Mode</FormLabel>
         <div className="flex items-center gap-6">
           <Radio checked={idMode === 'gen'} onChange={() => setIdMode('gen')} disabled={submitting}>
@@ -281,6 +272,7 @@ export default function AddPersonModal({ open, onClose, onSave, caseOptions = []
           </>
         )}
 
+        {/* Evidence source */}
         <FormLabel>Evidence Source</FormLabel>
         <Select value={source} onChange={(e) => setSource(e.target.value)} disabled={submitting}>
           <option value="" disabled>
@@ -293,6 +285,7 @@ export default function AddPersonModal({ open, onClose, onSave, caseOptions = []
           ))}
         </Select>
 
+        {/* Evidence file */}
         <FormLabel>Evidence File</FormLabel>
         <div
           className="rounded-lg border p-4 flex items-center justify-center"
@@ -329,15 +322,17 @@ export default function AddPersonModal({ open, onClose, onSave, caseOptions = []
           </div>
         )}
 
+        {/* Summary */}
         <FormLabel>Evidence Summary</FormLabel>
         <Textarea
           rows={4}
           value={summary}
           onChange={(e) => setSummary(e.target.value)}
-          placeholder="Enter Evidence summary"
+          placeholder="Enter evidence summary"
           disabled={submitting}
         />
 
+        {/* Notes */}
         <FormLabel>Notes (Optional)</FormLabel>
         <Textarea
           rows={3}

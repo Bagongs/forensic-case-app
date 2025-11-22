@@ -37,6 +37,7 @@ export function registerCasesIpc() {
   })
 
   ipcMain.handle('cases:create', async (_event, payload) => {
+    console.log('[IPC Receive - create case]:', payload)
     try {
       return await createCaseApi(payload)
     } catch (err) {

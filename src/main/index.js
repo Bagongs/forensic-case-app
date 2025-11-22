@@ -1,5 +1,5 @@
 // src/main/index.js
-import { app, shell, BrowserWindow } from 'electron'
+import { app, shell, BrowserWindow, session } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
@@ -14,19 +14,11 @@ import { registerReportsIpc } from './ipc/reports.ipc.js'
 import { registerPersonsIpc } from './ipc/persons.ipc.js'
 import { registerUserIpc } from './ipc/user.ipc.js'
 
-/* ====== Unhandled errors safeguard ====== */
-process.on('uncaughtException', (err) => {
-  console.error('[uncaughtException]', err)
-})
-process.on('unhandledRejection', (reason) => {
-  console.error('[unhandledRejection]', reason)
-})
+process.on('uncaughtException', (err) => console.error('[uncaughtException]', err))
+process.on('unhandledRejection', (reason) => console.error('[unhandledRejection]', reason))
 
-/* ====== Single Instance Lock (hindari multi-window app start) ====== */
 const gotTheLock = app.requestSingleInstanceLock()
-if (!gotTheLock) {
-  app.quit()
-}
+if (!gotTheLock) app.quit()
 
 function createWindow() {
   const mainWindow = new BrowserWindow({
@@ -38,13 +30,13 @@ function createWindow() {
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
-      sandbox: false
+      sandbox: false,
+      contextIsolation: true,
+      nodeIntegration: false
     }
   })
 
-  mainWindow.on('ready-to-show', () => {
-    mainWindow.show()
-  })
+  mainWindow.on('ready-to-show', () => mainWindow.show())
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
     shell.openExternal(details.url)
@@ -65,7 +57,37 @@ app.whenReady().then(() => {
     optimizer.watchWindowShortcuts(window)
   })
 
-  // Registrasi semua IPC
+  session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+    const isDev = !app.isPackaged
+
+    const cspDev = [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-eval' 'unsafe-inline' blob: http://localhost:5173",
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data: blob: https: http://localhost:5173",
+      "font-src 'self' data:",
+      "connect-src 'self' http://localhost:8000 ws://localhost:5173 http://localhost:5173",
+      "worker-src 'self' blob:"
+    ].join('; ')
+
+    const cspProd = [
+      "default-src 'self'",
+      "script-src 'self'",
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data: blob: https:",
+      "font-src 'self' data:",
+      "connect-src 'self' http://localhost:8000",
+      "worker-src 'self' blob:"
+    ].join('; ')
+
+    callback({
+      responseHeaders: {
+        ...details.responseHeaders,
+        'Content-Security-Policy': [isDev ? cspDev : cspProd]
+      }
+    })
+  })
+
   registerAuthIpc()
   registerCasesIpc()
   registerCaseLogsIpc()
@@ -77,13 +99,11 @@ app.whenReady().then(() => {
 
   createWindow()
 
-  app.on('activate', function () {
+  app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
 })
 
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit()
-  }
+  if (process.platform !== 'darwin') app.quit()
 })

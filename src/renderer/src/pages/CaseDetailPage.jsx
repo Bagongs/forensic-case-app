@@ -246,12 +246,16 @@ Z`.trim()
     )
   }
 
+  // ✅ case number untuk header (fallback aman)
+  const headerCaseNumber = item.caseNumber || item.case_number || item.caseNumberText || item.id
+
   return (
     <CaseLayout title="Case Management" showBack={true}>
       {/* HEADER */}
       <div className="flex mt-8 items-start justify-between">
         <div className="flex flex-col gap-2">
-          <div className="text-xs opacity-70">{item.id}</div>
+          {/* ✅ ganti dari item.id ke case_number */}
+          <div className="text-xs opacity-70">{headerCaseNumber}</div>
 
           <div>
             <div className="text-3xl font-semibold flex items-center gap-3">
