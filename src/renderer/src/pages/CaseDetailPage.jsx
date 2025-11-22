@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
@@ -47,13 +48,15 @@ export default function CaseDetailPage() {
   const rawCaseId = Number(id)
   const caseId = Number.isFinite(rawCaseId) ? rawCaseId : null
 
-  // ===== store selectors (FINAL) =====
+  // ===== store selectors =====
   const getCaseById = useCases((s) => s.getCaseById)
   const fetchCaseDetail = useCases((s) => s.fetchCaseDetail)
   const fetchCaseLogs = useCases((s) => s.fetchCaseLogs)
   const updateCaseRemote = useCases((s) => s.updateCaseRemote)
   const saveCaseNotesRemote = useCases((s) => s.saveCaseNotesRemote)
   const editCaseNotesRemote = useCases((s) => s.editCaseNotesRemote)
+
+  // delete person (legacy person contract)
   const deletePersonRemote = useCases((s) => s.deletePersonRemote)
 
   const caseLogsMap = useCases((s) => s.caseLogs)
@@ -83,7 +86,7 @@ export default function CaseDetailPage() {
 
   const savingRef = useRef(false)
 
-  // selected person (fresh dari store) — aman tipe string/number
+  // selected person (fresh dari store)
   const selectedPerson = useCases((s) =>
     caseId
       ? s.getCaseById(caseId)?.persons?.find((p) => Number(p.id) === Number(selectedPersonId))
@@ -204,10 +207,22 @@ Z`.trim()
       const res = await window.api.invoke('cases:exportPdf', item.id)
       if (res?.error) throw new Error(res.message)
       console.log('PDF ready:', res?.filename || res)
-      // TODO: tampilkan toast / save dialog
+      // TODO: toast / save dialog
     } catch (e) {
       console.error('Export PDF failed:', e)
-      // TODO: tampilkan toast error
+      // TODO: toast error
+    }
+  }
+
+  // ===== helper delete (support 2 possible signatures) =====
+  const doDeletePerson = async (personId) => {
+    if (!personId) return
+    // store lama biasanya (caseId, personId)
+    try {
+      return await deletePersonRemote(item.id, personId)
+    } catch (e1) {
+      // store baru biasanya (personId) aja
+      return await deletePersonRemote(personId)
     }
   }
 
@@ -246,6 +261,8 @@ Z`.trim()
     )
   }
 
+  const persons = item.persons || []
+
   // ✅ case number untuk header (fallback aman)
   const headerCaseNumber = item.caseNumber || item.case_number || item.caseNumberText || item.id
 
@@ -254,7 +271,6 @@ Z`.trim()
       {/* HEADER */}
       <div className="flex mt-8 items-start justify-between">
         <div className="flex flex-col gap-2">
-          {/* ✅ ganti dari item.id ke case_number */}
           <div className="text-xs opacity-70">{headerCaseNumber}</div>
 
           <div>
@@ -322,40 +338,44 @@ Z`.trim()
           {/* PERSON SECTION */}
           <PersonSectionBox
             title="Person of Interest"
-            total={item.persons.length}
+            total={persons.length}
             borderColor="#FFFFFF"
             actionBgImage={bgButtonTransparent}
             onAddPerson={() => setAddPersonOpen(true)}
           >
-            {item.persons.map((person) => (
-              <PersonBox
-                key={person.id}
-                name={person.name}
-                roleLabel={person.status}
-                actionBgImage={bgButton}
-                onEdit={() => {
-                  setSelectedPersonId(person.id)
-                  setEditPersonOpen(true)
-                }}
-                onAddEvidence={() => {
-                  setPersonForEvidence(person)
-                  setOpenAddEv(true)
-                }}
-              >
-                {person.evidences.map((ev) => (
-                  <EvidenceCard
-                    key={ev.id}
-                    image={ev.previewDataUrl || ev.image}
-                    code={ev.fileName || ev.id}
-                    summary={ev.summary}
-                  />
-                ))}
-                {person.evidences.length === 0 && (
-                  <div className="text-sm text-[#888F99]">No evidence added.</div>
-                )}
-              </PersonBox>
-            ))}
-            {item.persons.length === 0 && <span className="text-center">No Person Interest</span>}
+            {persons.map((person) => {
+              const evidences = person.evidences || []
+              return (
+                <PersonBox
+                  key={person.id}
+                  name={person.name}
+                  roleLabel={person.status}
+                  actionBgImage={bgButton}
+                  onEdit={() => {
+                    setSelectedPersonId(person.id)
+                    setEditPersonOpen(true)
+                  }}
+                  onAddEvidence={() => {
+                    setPersonForEvidence(person)
+                    setOpenAddEv(true)
+                  }}
+                >
+                  {evidences.map((ev) => (
+                    <EvidenceCard
+                      key={ev.id}
+                      image={ev.previewDataUrl || ev.image}
+                      code={ev.fileName || ev.id}
+                      summary={ev.summary}
+                    />
+                  ))}
+                  {evidences.length === 0 && (
+                    <div className="text-sm text-[#888F99]">No evidence added.</div>
+                  )}
+                </PersonBox>
+              )
+            })}
+
+            {persons.length === 0 && <span className="text-center">No Person Interest</span>}
           </PersonSectionBox>
         </div>
 
@@ -448,13 +468,13 @@ Z`.trim()
           onClose={() => setConfirmDeleteOpen(false)}
           name={selectedPerson?.name}
           onConfirm={async () => {
-            await deletePersonRemote(item.id, selectedPersonId)
-            // store sudah auto fetchCaseDetail, jadi cukup tutup modal
+            await doDeletePerson(selectedPersonId)
+
             setConfirmDeleteOpen(false)
             setEditPersonOpen(false)
             setSelectedPersonId(null)
 
-            // optional refresh logs biar ketarik action delete di Case Log
+            // refresh logs setelah delete
             await fetchCaseLogs(item.id, { skip: 0, limit: 50 })
           }}
           colorIcon="red"
@@ -469,7 +489,6 @@ Z`.trim()
             setPersonForEvidence(null)
           }}
           onSave={async () => {
-            // ✅ FULL REFRESH setelah add evidence
             await fetchCaseDetail(item.id)
             await fetchCaseLogs(item.id, { skip: 0, limit: 50 })
 

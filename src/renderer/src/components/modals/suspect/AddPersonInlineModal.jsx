@@ -34,10 +34,10 @@ function mapDeviceSourceToApi(value) {
 export default function AddPersonInlineModal({ caseId, open, onClose }) {
   const fetchCaseDetail = useCases((s) => s.fetchCaseDetail)
 
-  const [mode, setMode] = useState('known')
+  const [mode, setMode] = useState('known') // known | unknown
   const [name, setName] = useState('')
   const [status, setStatus] = useState('')
-  const [evIdMode, setEvIdMode] = useState('gen')
+  const [evIdMode, setEvIdMode] = useState('gen') // gen | manual
   const [evId, setEvId] = useState('')
   const [source, setSource] = useState('')
   const [summary, setSummary] = useState('')
@@ -71,6 +71,7 @@ export default function AddPersonInlineModal({ caseId, open, onClose }) {
   async function onPickFile(e) {
     const f = e.target.files?.[0] || null
     setFile(f)
+
     if (previewUrl) URL.revokeObjectURL(previewUrl)
     setPreviewUrl(null)
 
@@ -79,6 +80,7 @@ export default function AddPersonInlineModal({ caseId, open, onClose }) {
       return
     }
 
+    // preview hanya jika image
     if (f.type?.startsWith('image/')) {
       const reader = new FileReader()
       reader.onload = (ev) => setPreviewUrl(ev.target.result)
@@ -89,7 +91,16 @@ export default function AddPersonInlineModal({ caseId, open, onClose }) {
   }
 
   const isUnknown = mode === 'unknown'
-  const canSubmit = isUnknown || (name.trim() && status)
+
+  const hasName = name.trim().length > 0
+  const hasStatus = !!status
+
+  const hasManualEvidence = evIdMode === 'manual' && evId.trim().length > 0
+  const hasFile = !!file
+  const hasEvidence = hasManualEvidence || hasFile
+
+  // ✅ kontrak: known wajib name+status, unknown tidak
+  const canSubmit = !!caseId && (isUnknown || (hasName && hasStatus)) && hasEvidence && !submitting
 
   const handleSubmit = async () => {
     if (!canSubmit || submitting) return
@@ -117,22 +128,25 @@ export default function AddPersonInlineModal({ caseId, open, onClose }) {
         is_unknown_person,
         person_name: is_unknown_person ? null : name.trim(),
         suspect_status: is_unknown_person ? null : status || null,
-        evidence_number: evIdMode === 'manual' && evId.trim() ? evId.trim() : undefined,
+
+        // evidence_number hanya dikirim kalau manual & ada isi
+        evidence_number: hasManualEvidence ? evId.trim() : undefined,
+
         evidence_source: mapDeviceSourceToApi(source) || undefined,
         evidence_summary: summary.trim() || undefined,
         evidence_file: evidenceFilePayload || undefined
       }
 
-      // ✅ IPC baru
-      await window.api.invoke('suspects:create', payload)
+      // ✅ Legacy Person Contract
+      const res = await window.api.invoke('persons:create', payload)
+      if (res?.error) throw new Error(res.message || 'Failed to create person')
 
-      // refresh detail
       await fetchCaseDetail(caseId)
 
       reset()
       onClose?.()
     } catch (err) {
-      console.error('Failed to create suspect/person', err)
+      console.error('Failed to create person', err)
       setError(err?.message || 'Failed to create person')
     } finally {
       setSubmitting(false)
@@ -148,7 +162,7 @@ export default function AddPersonInlineModal({ caseId, open, onClose }) {
         onClose?.()
       }}
       confirmText={submitting ? 'Submitting…' : 'Submit'}
-      disableConfirm={!canSubmit || submitting}
+      disableConfirm={!canSubmit}
       onConfirm={handleSubmit}
       size="lg"
     >
@@ -229,7 +243,7 @@ export default function AddPersonInlineModal({ caseId, open, onClose }) {
             <Input
               value={evId}
               onChange={(e) => setEvId(e.target.value)}
-              placeholder="Enter Evidence ID"
+              placeholder="Enter Evidence ID (optional if upload file)"
               disabled={submitting}
             />
           </>
@@ -247,7 +261,7 @@ export default function AddPersonInlineModal({ caseId, open, onClose }) {
           ))}
         </Select>
 
-        <FormLabel>Evidence File</FormLabel>
+        <FormLabel>Evidence File (Image / PDF)</FormLabel>
         <div
           className="rounded-lg border p-4 flex items-center justify-center gap-3"
           style={{ borderColor: 'var(--border)' }}
@@ -263,11 +277,12 @@ export default function AddPersonInlineModal({ caseId, open, onClose }) {
           </button>
           <input
             ref={fileRef}
-            accept="image/*"
+            accept="image/*,application/pdf"
             type="file"
             className="hidden"
             onChange={onPickFile}
           />
+
           {file && !previewUrl && (
             <span className="text-sm opacity-70 truncate max-w-60">{file.name}</span>
           )}
@@ -292,7 +307,13 @@ export default function AddPersonInlineModal({ caseId, open, onClose }) {
           disabled={submitting}
         />
 
+        {/* Error */}
         {error && <div className="text-xs text-red-400 mt-1">{error}</div>}
+
+        {/* Helper kecil */}
+        {!hasEvidence && (
+          <div className="text-[11px] opacity-70">Evidence file atau Evidence ID wajib diisi.</div>
+        )}
       </div>
     </Modal>
   )
