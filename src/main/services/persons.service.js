@@ -16,6 +16,7 @@ function appendField(form, key, value) {
 function appendMaybeFile(form, fieldName, fileLike) {
   if (!fileLike) return
 
+  // mode lama: string path
   if (typeof fileLike === 'string') {
     if (fs.existsSync(fileLike)) {
       form.append(fieldName, fs.createReadStream(fileLike))
@@ -23,6 +24,7 @@ function appendMaybeFile(form, fieldName, fileLike) {
     return
   }
 
+  // mode baru: { name, type, buffer }
   if (fileLike.buffer) {
     const buf = Buffer.from(fileLike.buffer)
     form.append(fieldName, buf, {
@@ -34,31 +36,22 @@ function appendMaybeFile(form, fieldName, fileLike) {
 
 /**
  * POST /api/v1/persons/create-person
- * ✅ sanitize: kirim HANYA field contract (drop evidence_id dll)
+ * Contract: create person + evidence (legacy POI)
  */
-export async function createPerson(payload = {}) {
+export async function createPerson(payload) {
   const form = new FormData()
 
-  const {
-    case_id,
-    person_name,
-    suspect_status,
-    is_unknown_person,
-    evidence_number,
-    evidence_source,
-    evidence_summary,
-    evidence_file
-  } = payload
+  // optional file
+  appendMaybeFile(form, 'evidence_file', payload.evidence_file)
 
-  appendMaybeFile(form, 'evidence_file', evidence_file)
-
-  appendField(form, 'case_id', case_id)
-  appendField(form, 'person_name', person_name)
-  appendField(form, 'suspect_status', suspect_status)
-  appendField(form, 'is_unknown_person', is_unknown_person)
-  appendField(form, 'evidence_number', evidence_number)
-  appendField(form, 'evidence_source', evidence_source)
-  appendField(form, 'evidence_summary', evidence_summary)
+  // fields
+  appendField(form, 'case_id', payload.case_id)
+  appendField(form, 'person_name', payload.person_name)
+  appendField(form, 'suspect_status', payload.suspect_status)
+  appendField(form, 'is_unknown_person', payload.is_unknown_person)
+  appendField(form, 'evidence_number', payload.evidence_number)
+  appendField(form, 'evidence_source', payload.evidence_source)
+  appendField(form, 'evidence_summary', payload.evidence_summary)
 
   const { data } = await api.post('/persons/create-person', form, {
     headers: form.getHeaders()
@@ -69,29 +62,19 @@ export async function createPerson(payload = {}) {
 
 /**
  * PUT /api/v1/persons/update-person/{person_id}
- * ✅ sanitize juga
+ * Contract: partial update POI
  */
-export async function updatePerson(personId, payload = {}) {
+export async function updatePerson(personId, payload) {
   const form = new FormData()
 
-  const {
-    person_name,
-    suspect_status,
-    is_unknown_person,
-    evidence_number,
-    evidence_source,
-    evidence_summary,
-    evidence_file
-  } = payload
+  appendMaybeFile(form, 'evidence_file', payload.evidence_file)
 
-  appendMaybeFile(form, 'evidence_file', evidence_file)
-
-  appendField(form, 'person_name', person_name)
-  appendField(form, 'suspect_status', suspect_status)
-  appendField(form, 'is_unknown_person', is_unknown_person)
-  appendField(form, 'evidence_number', evidence_number)
-  appendField(form, 'evidence_source', evidence_source)
-  appendField(form, 'evidence_summary', evidence_summary)
+  appendField(form, 'person_name', payload.person_name)
+  appendField(form, 'suspect_status', payload.suspect_status)
+  appendField(form, 'is_unknown_person', payload.is_unknown_person)
+  appendField(form, 'evidence_number', payload.evidence_number)
+  appendField(form, 'evidence_source', payload.evidence_source)
+  appendField(form, 'evidence_summary', payload.evidence_summary)
 
   const { data } = await api.put(`/persons/update-person/${personId}`, form, {
     headers: form.getHeaders()
@@ -102,8 +85,27 @@ export async function updatePerson(personId, payload = {}) {
 
 /**
  * DELETE /api/v1/persons/delete-person/{person_id}
+ * Contract: delete POI (evidence jadi orphan/Unknown)
  */
 export async function deletePerson(personId) {
   const { data } = await api.delete(`/persons/delete-person/${personId}`)
+  return data
+}
+
+/**
+ * POST /api/v1/persons/save-suspect-notes/{suspect_id}
+ * Contract: save notes baru
+ */
+export async function saveSuspectNotes({ suspect_id, notes }) {
+  const { data } = await api.post(`/persons/save-suspect-notes/${suspect_id}`, { notes })
+  return data
+}
+
+/**
+ * PUT /api/v1/persons/edit-suspect-notes/{suspect_id}
+ * Contract: edit notes existing
+ */
+export async function editSuspectNotes({ suspect_id, notes }) {
+  const { data } = await api.put(`/persons/edit-suspect-notes/${suspect_id}`, { notes })
   return data
 }
