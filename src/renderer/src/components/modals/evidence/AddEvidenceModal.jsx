@@ -10,6 +10,25 @@ import Select from '../../atoms/Select'
 const DEVICE_SOURCES = ['Hp', 'Ssd', 'HardDisk', 'Pc', 'Laptop', 'DVR']
 const STATUS_OPTIONS = ['Witness', 'Reported', 'Suspected', 'Suspect', 'Defendant']
 
+function mapDeviceSourceToApi(value) {
+  switch (value) {
+    case 'Hp':
+      return 'Handphone'
+    case 'Ssd':
+      return 'SSD'
+    case 'HardDisk':
+      return 'Harddisk'
+    case 'Pc':
+      return 'PC'
+    case 'Laptop':
+      return 'Laptop'
+    case 'DVR':
+      return 'DVR'
+    default:
+      return ''
+  }
+}
+
 export default function AddEvidenceModal({
   open,
   onClose,
@@ -32,16 +51,21 @@ export default function AddEvidenceModal({
   const [etype, setEtype] = useState('')
   const [file, setFile] = useState(null)
   const [previewDataUrl, setPreviewDataUrl] = useState(null)
+
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState(null)
+
   const fileRef = useRef(null)
 
   useEffect(() => {
     if (open) {
-      // Set default values jika modal dibuka
       setCaseId(defaultCaseId || '')
       setInvestigator(defaultInvestigator || '')
       setPersonName(defaultPerson?.name || '')
       setPoiMode(defaultPerson ? 'known' : 'unknown')
-      setStatus(defaultPerson?.status)
+      setStatus(defaultPerson?.status ?? null)
+      setError(null)
+      setSubmitting(false)
     } else {
       cleanup()
     }
@@ -50,11 +74,13 @@ export default function AddEvidenceModal({
   function cleanup() {
     setFile(null)
     setPreviewDataUrl(null)
-    setIdMode('manual')
+    setIdMode('gen')
     setEvidenceId('')
     setSource('')
     setSummary('')
     setEtype('')
+    setError(null)
+    setSubmitting(false)
   }
 
   function fileToDataURL(f) {
@@ -70,12 +96,95 @@ export default function AddEvidenceModal({
     const f = e.target.files?.[0]
     setFile(f || null)
     setPreviewDataUrl(null)
+    setError(null)
     if (f && f.type?.startsWith('image/')) {
       setPreviewDataUrl(await fileToDataURL(f))
     }
+    e.target.value = ''
   }
 
-  const canSubmit = caseId && !!file && (poiMode === 'unknown' || personName.trim().length > 0)
+  const hasCase = !!caseId
+  const hasFile = !!file
+  const hasInvestigator = investigator.trim().length > 0
+  const isUnknown = poiMode === 'unknown'
+  const hasPersonName = personName.trim().length > 0
+
+  const canSubmit =
+    hasCase && hasFile && hasInvestigator && (isUnknown || hasPersonName) && !submitting
+
+  const handleSubmit = async () => {
+    if (!canSubmit || submitting) return
+
+    setSubmitting(true)
+    setError(null)
+
+    try {
+      const is_unknown_person = isUnknown
+
+      let finalPersonName = null
+      let finalStatus = null
+
+      if (!is_unknown_person) {
+        finalPersonName = defaultPerson?.name || personName.trim()
+        finalStatus = defaultPerson?.status || status || null
+      }
+
+      let evidenceFilePayload = null
+      if (file) {
+        const buf = await file.arrayBuffer()
+        evidenceFilePayload = {
+          name: file.name,
+          type: file.type,
+          size: file.size,
+          buffer: Array.from(new Uint8Array(buf))
+        }
+      }
+
+      const payload = {
+        case_id: Number(caseId),
+        evidence_number: idMode === 'manual' && evidenceId.trim() ? evidenceId.trim() : undefined,
+        type: etype || undefined,
+        source: mapDeviceSourceToApi(source) || undefined,
+        evidence_summary: summary.trim() || undefined,
+        investigator: investigator.trim(),
+        person_name: is_unknown_person ? null : finalPersonName,
+        suspect_status: is_unknown_person ? null : finalStatus || null,
+        is_unknown_person,
+        evidence_file: evidenceFilePayload || undefined
+      }
+
+      // ✅ IPC terbaru
+      const res = await window.api.invoke('evidence:create', payload)
+      if (res?.error) throw new Error(res.message || 'Failed to create evidence')
+
+      // ✅ penting: tunggu parent selesai (misal full refetch)
+      await onSave?.({
+        apiResponse: res,
+        caseId,
+        caseName: defaultCaseName || caseOptions.find((c) => c.value === caseId)?.label,
+        idMode,
+        id: idMode === 'gen' ? undefined : evidenceId.trim(),
+        source,
+        summary: summary.trim(),
+        investigator: investigator.trim(),
+        personOfInterest: is_unknown_person ? null : finalPersonName,
+        type: etype,
+        fileName: file?.name,
+        fileSize: file?.size,
+        fileMime: file?.type,
+        previewDataUrl,
+        status: finalStatus
+      })
+
+      cleanup()
+      onClose?.()
+    } catch (err) {
+      console.error('Failed to create evidence', err)
+      setError(err?.message || 'Failed to create evidence')
+    } finally {
+      setSubmitting(false)
+    }
+  }
 
   return (
     <Modal
@@ -85,27 +194,9 @@ export default function AddEvidenceModal({
         cleanup()
         onClose?.()
       }}
-      confirmText="Submit"
+      confirmText={submitting ? 'Submitting…' : 'Submit'}
       disableConfirm={!canSubmit}
-      onConfirm={() => {
-        onSave({
-          caseId,
-          caseName: defaultCaseName || caseOptions.find((c) => c.value === caseId)?.label,
-          idMode,
-          id: idMode === 'gen' ? undefined : evidenceId.trim(),
-          source,
-          summary: summary.trim(),
-          investigator: investigator.trim(),
-          personOfInterest: poiMode === 'unknown' ? null : personName.trim(),
-          type: etype,
-          fileName: file?.name,
-          fileSize: file?.size,
-          fileMime: file?.type,
-          previewDataUrl,
-          status
-        })
-        cleanup()
-      }}
+      onConfirm={handleSubmit}
       size="lg"
     >
       <div className="grid gap-3">
@@ -114,7 +205,7 @@ export default function AddEvidenceModal({
         {defaultCaseId ? (
           <Input value={defaultCaseName} disabled readOnly />
         ) : (
-          <Select value={caseId} onChange={(e) => setCaseId(e.target.value)}>
+          <Select value={caseId} onChange={(e) => setCaseId(e.target.value)} disabled={submitting}>
             <option value="" disabled>
               Select case
             </option>
@@ -127,15 +218,20 @@ export default function AddEvidenceModal({
         )}
 
         {/* Evidence ID */}
-        <FormLabel>Evidence ID</FormLabel>
+        <FormLabel>Evidence ID Mode</FormLabel>
         <div className="flex items-center gap-6">
-          <Radio checked={idMode === 'gen'} onChange={() => setIdMode('gen')}>
+          <Radio checked={idMode === 'gen'} onChange={() => setIdMode('gen')} disabled={submitting}>
             Generating
           </Radio>
-          <Radio checked={idMode === 'manual'} onChange={() => setIdMode('manual')}>
+          <Radio
+            checked={idMode === 'manual'}
+            onChange={() => setIdMode('manual')}
+            disabled={submitting}
+          >
             Manual input
           </Radio>
         </div>
+
         {idMode === 'manual' && (
           <>
             <FormLabel>Evidence ID</FormLabel>
@@ -143,14 +239,15 @@ export default function AddEvidenceModal({
               value={evidenceId}
               onChange={(e) => setEvidenceId(e.target.value)}
               placeholder="Input Evidence ID"
+              disabled={submitting}
             />
           </>
         )}
 
         {/* Evidence Source */}
         <FormLabel>Evidence Source</FormLabel>
-        <Select value={source} onChange={(e) => setSource(e.target.value)}>
-          <option value="" selected disabled>
+        <Select value={source} onChange={(e) => setSource(e.target.value)} disabled={submitting}>
+          <option value="" disabled>
             Select device
           </option>
           {DEVICE_SOURCES.map((s) => (
@@ -168,9 +265,11 @@ export default function AddEvidenceModal({
         >
           <div className="flex items-center gap-3">
             <button
+              type="button"
               className="px-4 py-1.5 rounded-lg border text-sm bg-[#394F6F]"
               style={{ borderColor: 'var(--border)' }}
               onClick={() => fileRef.current?.click()}
+              disabled={submitting}
             >
               Upload
             </button>
@@ -204,6 +303,7 @@ export default function AddEvidenceModal({
           value={summary}
           onChange={(e) => setSummary(e.target.value)}
           placeholder="Write evidence summary"
+          disabled={submitting}
         />
 
         {/* Investigator */}
@@ -212,7 +312,7 @@ export default function AddEvidenceModal({
           value={investigator}
           onChange={(e) => setInvestigator(e.target.value)}
           placeholder="Input name"
-          disabled={!!defaultInvestigator}
+          disabled={!!defaultInvestigator || submitting}
           readOnly={!!defaultInvestigator}
         />
 
@@ -227,6 +327,7 @@ export default function AddEvidenceModal({
                 if (status === null) setStatus('')
               }
             }}
+            disabled={submitting}
           >
             Person name
           </Radio>
@@ -239,6 +340,7 @@ export default function AddEvidenceModal({
                 setStatus(null)
               }
             }}
+            disabled={submitting}
           >
             Unknown
           </Radio>
@@ -251,9 +353,10 @@ export default function AddEvidenceModal({
               value={personName}
               onChange={(e) => setPersonName(e.target.value)}
               placeholder="Name"
-              disabled={!!defaultPerson}
+              disabled={!!defaultPerson || submitting}
               readOnly={!!defaultPerson}
             />
+
             <div>
               <div className="text-sm font-semibold mb-1" style={{ color: 'var(--dim)' }}>
                 Suspect Status
@@ -261,11 +364,11 @@ export default function AddEvidenceModal({
               <select
                 className="w-full px-3 py-2 rounded-lg border bg-transparent"
                 style={{ borderColor: 'var(--border)' }}
-                value={status}
-                disabled={defaultPerson}
+                value={status || ''}
+                disabled={defaultPerson || submitting}
                 onChange={(e) => setStatus(e.target.value)}
               >
-                <option selected disabled>
+                <option value="" disabled>
                   Select Suspect Status
                 </option>
                 {STATUS_OPTIONS.map((s) => (
@@ -277,6 +380,8 @@ export default function AddEvidenceModal({
             </div>
           </>
         )}
+
+        {error && <div className="text-xs text-red-400 mt-1">{error}</div>}
       </div>
     </Modal>
   )

@@ -13,144 +13,194 @@ export default function EditPersonModal({
   onClose,
   caseId,
   person,
-  author = '',
   showDelete = false,
-  onRequestDelete = () => {} // ← NEW
+  onRequestDelete = () => {}
 }) {
-  const updatePerson = useCases((s) => s.updatePerson)
-  const addEvidenceToPerson = useCases((s) => s.addEvidenceToPerson)
+  const fetchCaseDetail = useCases((s) => s.fetchCaseDetail)
 
   // person core
   const [name, setName] = useState('')
   const [status, setStatus] = useState(null)
-  const [poiMode, setPoiMode] = useState('known')
+  const [poiMode, setPoiMode] = useState('known') // 'known' | 'unknown'
 
-  // optional new evidence
-  const [addEv, setAddEv] = useState(false)
-  const [evIdMode, setEvIdMode] = useState('gen') // gen | manual
-  const [evId, setEvId] = useState('')
-  const [source, setSource] = useState('')
-  const [summary, setSummary] = useState('')
-  const [file, setFile] = useState(null)
-  const [previewDataUrl, setPreviewDataUrl] = useState(null)
-  const [previewBlobUrl, setPreviewBlobUrl] = useState(null)
-  const fileRef = useRef(null)
+  // notes (suspect_notes di backend)
+  const [notes, setNotes] = useState('')
+  const [hadExistingNotes, setHadExistingNotes] = useState(false)
+  const [loadingNotes, setLoadingNotes] = useState(false)
 
-  // 🧩 RESET STATE SAAT OPEN BERUBAH
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState(null)
+
+  const cleanupRef = useRef(false)
+
+  // ambil suspect_id dari person (asumsi: person.id = suspect_id)
+  const suspectId = person?.suspect_id ?? person?.id
+
+  // reset semua ketika modal dibuka / person berubah
   useEffect(() => {
-    if (open) {
-      setName(person?.name || '')
-      setStatus(person?.status || null)
+    if (!open || !person) return
 
-      const mode = person?.name === 'Unknown' && person?.status == null ? 'unknown' : 'known'
-      setPoiMode(mode)
+    setError(null)
 
-      setAddEv(false)
-      setEvIdMode('gen')
-      setEvId('')
-      setSource('')
-      setSummary('')
-      setFile(null)
-      setPreviewBlobUrl(null)
-      setPreviewDataUrl(null)
-    } else {
-      // cleanup saat close
-      if (previewBlobUrl) URL.revokeObjectURL(previewBlobUrl)
-      setPreviewBlobUrl(null)
-      setPreviewDataUrl(null)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, person?.id])
+    setName(person.name || '')
+    setStatus(person.status || null)
 
-  // 🧩 HANDLE FILE PICK
-  function onPickFile(e) {
-    const f = e.target.files?.[0] || null
-    setFile(f)
-    if (previewBlobUrl) URL.revokeObjectURL(previewBlobUrl)
-    setPreviewBlobUrl(null)
-    setPreviewDataUrl(null)
-    if (!f) return
-    if (f.type?.startsWith('image/')) {
-      const blobUrl = URL.createObjectURL(f)
-      setPreviewBlobUrl(blobUrl)
-      const reader = new FileReader()
-      reader.onload = (ev) => setPreviewDataUrl(ev.target.result)
-      reader.readAsDataURL(f)
-    }
-  }
-
-  // 🔧 Ganti mode POI (Person of Interest)
-  const changePoiMode = (mode) => {
+    const mode = person.name === 'Unknown' && person.status == null ? 'unknown' : 'known'
     setPoiMode(mode)
+
+    setNotes('')
+    setHadExistingNotes(false)
+
+    const loadNotes = async () => {
+      if (!suspectId) return
+      setLoadingNotes(true)
+      try {
+        // ✅ IPC baru
+        const res = await window.api.invoke('suspects:detail', Number(suspectId))
+
+        // fleksibel: tergantung bentuk response
+        const suspectNotes =
+          res?.data?.data?.suspect_notes ?? res?.data?.suspect_notes ?? res?.suspect_notes ?? null
+
+        if (typeof suspectNotes === 'string' && suspectNotes.trim()) {
+          setNotes(suspectNotes)
+          setHadExistingNotes(true)
+        } else {
+          setNotes('')
+          setHadExistingNotes(false)
+        }
+      } catch (err) {
+        console.error('Failed to load suspect detail', err)
+      } finally {
+        setLoadingNotes(false)
+      }
+    }
+
+    loadNotes()
+  }, [open, person, suspectId])
+
+  const isUnknown = poiMode === 'unknown'
+  const canSubmit = !!suspectId && (isUnknown || name.trim().length > 0)
+
+  const handleClose = () => {
+    if (cleanupRef.current) cleanupRef.current = false
+    onClose?.()
   }
 
-  const canSubmit = name.trim().length > 0
+  const handleSave = async () => {
+    if (!canSubmit || submitting) return
+    if (!suspectId) {
+      setError('Suspect ID not found')
+      return
+    }
+
+    setSubmitting(true)
+    setError(null)
+
+    try {
+      let finalName = name.trim()
+      let finalStatus = status
+
+      if (isUnknown) {
+        finalName = 'Unknown'
+        finalStatus = null
+      }
+
+      // 1) UPDATE SUSPECT
+      const updatePayload = {
+        is_unknown_person: isUnknown,
+        person_name: isUnknown ? null : finalName,
+        suspect_status: isUnknown ? null : finalStatus || null
+      }
+
+      // ✅ IPC baru
+      await window.api.invoke('suspects:update', {
+        id: Number(suspectId),
+        payload: updatePayload
+      })
+
+      // 2) UPDATE / SAVE NOTES
+      const trimmedNotes = (notes || '').trim()
+      if (trimmedNotes) {
+        const notesBody = {
+          suspect_id: Number(suspectId),
+          notes: trimmedNotes
+        }
+
+        try {
+          if (hadExistingNotes) {
+            await window.api.invoke('suspects:editNotes', notesBody)
+          } else {
+            await window.api.invoke('suspects:saveNotes', notesBody)
+          }
+        } catch (err) {
+          console.error('Failed to save/edit suspect notes', err)
+        }
+      }
+
+      // 3) refresh case detail
+      if (caseId) {
+        try {
+          await fetchCaseDetail(caseId)
+        } catch (err) {
+          console.error('Failed to refresh case detail', err)
+        }
+      }
+
+      handleClose()
+    } catch (err) {
+      console.error('Failed to update suspect', err)
+      setError(err?.message || 'Failed to update suspect')
+    } finally {
+      setSubmitting(false)
+    }
+  }
 
   return (
     <Modal
       open={open}
       title="Edit Person of Interest"
-      onCancel={() => {
-        if (previewBlobUrl) URL.revokeObjectURL(previewBlobUrl)
-        setPreviewBlobUrl(null)
-        onClose()
-      }}
-      confirmText="Save"
-      disableConfirm={!canSubmit}
-      onConfirm={() => {
-        let finalName = name.trim()
-        let finalStatus = status
-
-        if (poiMode === 'unknown') {
-          finalName = 'Unknown'
-          finalStatus = null
-        }
-
-        updatePerson(caseId, person.id, { name: finalName, status: finalStatus }, author)
-
-        if (addEv && (file || summary.trim())) {
-          addEvidenceToPerson(caseId, person.id, {
-            id: evIdMode === 'gen' ? undefined : evId.trim(),
-            source,
-            summary: summary.trim(),
-            fileName: file?.name,
-            fileSize: file?.size,
-            fileMime: file?.type,
-            previewDataUrl
-          })
-        }
-
-        if (previewBlobUrl) URL.revokeObjectURL(previewBlobUrl)
-        setPreviewBlobUrl(null)
-        onClose?.()
-      }}
+      onCancel={handleClose}
+      confirmText={submitting ? 'Saving…' : 'Save'}
+      disableConfirm={!canSubmit || submitting}
+      onConfirm={handleSave}
       size="lg"
     >
       <div className="grid gap-3">
         <div className="flex justify-between gap-2 items-center">
           <FormLabel>Person of Interest</FormLabel>
           {showDelete && (
-            <div
+            <button
+              type="button"
               onClick={onRequestDelete}
-              className="bg-[#59120C] border border-[#9D120F] p-2 flex items-center justify-center"
+              className="bg-[#59120C] border border-[#9D120F] p-2 flex items-center justify-center rounded-sm"
             >
               <FaTrashAlt />
-            </div>
+            </button>
           )}
         </div>
-        {/* 🔘 Radio Buttons */}
+
+        {/* Mode POI */}
         <div className="flex items-center gap-6">
-          <Radio checked={poiMode === 'known'} onChange={() => changePoiMode('known')}>
+          <Radio
+            checked={poiMode === 'known'}
+            onChange={() => setPoiMode('known')}
+            disabled={submitting}
+          >
             Person name
           </Radio>
-          <Radio checked={poiMode === 'unknown'} onChange={() => changePoiMode('unknown')}>
+          <Radio
+            checked={poiMode === 'unknown'}
+            onChange={() => setPoiMode('unknown')}
+            disabled={submitting}
+          >
             Unknown Person
           </Radio>
         </div>
 
-        {poiMode == 'known' && (
+        {/* Detail Person */}
+        {poiMode === 'known' && (
           <>
-            {/* 🧍 Person Name */}
             <div>
               <div className="text-sm font-semibold mb-1" style={{ color: 'var(--dim)' }}>
                 Person Name
@@ -161,11 +211,10 @@ export default function EditPersonModal({
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Enter name"
-                disabled={poiMode === 'unknown'}
+                disabled={submitting}
               />
             </div>
 
-            {/* 🏷️ Status Field */}
             <div>
               <div className="text-sm font-semibold mb-1" style={{ color: 'var(--dim)' }}>
                 Status
@@ -175,7 +224,7 @@ export default function EditPersonModal({
                 style={{ borderColor: 'var(--border)' }}
                 value={status || ''}
                 onChange={(e) => setStatus(e.target.value)}
-                disabled={poiMode === 'unknown'}
+                disabled={submitting}
               >
                 <option value="" disabled>
                   Select Status
@@ -189,6 +238,24 @@ export default function EditPersonModal({
             </div>
           </>
         )}
+
+        {/* Notes */}
+        <div>
+          <div className="text-sm font-semibold mb-1" style={{ color: 'var(--dim)' }}>
+            Notes (for this suspect)
+          </div>
+          <textarea
+            rows={4}
+            className="w-full px-3 py-2 rounded-lg border bg-transparent resize-none"
+            style={{ borderColor: 'var(--border)' }}
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder={loadingNotes ? 'Loading notes…' : 'Write suspect notes (optional)'}
+            disabled={submitting || loadingNotes}
+          />
+        </div>
+
+        {error && <div className="text-xs text-red-400 mt-1">{error}</div>}
       </div>
     </Modal>
   )

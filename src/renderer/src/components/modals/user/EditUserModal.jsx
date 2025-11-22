@@ -24,15 +24,22 @@ export default function EditUserModal({ open, onClose, onSave, user }) {
     }
   }, [user])
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!name || !email) return alert('Name & Email required')
-    if (password && password !== confirmPassword)
-      return alert('Passwords do not match')
+    if (password && password !== confirmPassword) return alert('Passwords do not match')
 
-    const patch = { name, email, tag }
-    if (password) patch.password = password
+    const patch = {
+      fullname: name,
+      email,
+      tag
+    }
 
-    onSave(user.id, patch)
+    if (password) {
+      patch.password = password
+      patch.confirm_password = confirmPassword
+    }
+
+    await onSave(user.id, patch)
     onClose()
   }
 
@@ -57,7 +64,7 @@ export default function EditUserModal({ open, onClose, onSave, user }) {
             type={showPass ? 'text' : 'password'}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="Password"
+            placeholder="Password (optional)"
           />
           <button
             type="button"

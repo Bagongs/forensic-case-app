@@ -1,4 +1,3 @@
-// src/renderer/src/components/EditCaseModal.jsx
 /* eslint-disable react/prop-types */
 import { useEffect, useState } from 'react'
 import Modal from '../Modal'
@@ -33,10 +32,12 @@ export default function EditCaseModal({ open, onClose, initial, onSave }) {
       confirmText="Save changes"
       disableConfirm={!canSubmit}
       onConfirm={() => {
-        onSave({
+        onSave?.({
           name: name.trim(),
           description: description.trim(),
-          investigator: investigator.trim()
+          investigator: investigator.trim(),
+          agency: agency.trim(),
+          workUnit: workUnit.trim()
         })
       }}
       size="lg"
@@ -68,6 +69,7 @@ export default function EditCaseModal({ open, onClose, initial, onSave }) {
             style={{ borderColor: 'var(--border)' }}
           />
         </div>
+
         <div>
           <div className="text-sm font-semibold mb-1" style={{ color: 'var(--dim)' }}>
             Case ID
@@ -80,7 +82,9 @@ export default function EditCaseModal({ open, onClose, initial, onSave }) {
             style={{ borderColor: 'var(--border)' }}
           />
         </div>
+
         <HorizontalLine color={'#394F6F'} />
+
         <div>
           <div className="text-sm font-semibold mb-1" style={{ color: 'var(--dim)' }}>
             Main Investigator
@@ -93,6 +97,7 @@ export default function EditCaseModal({ open, onClose, initial, onSave }) {
             style={{ borderColor: 'var(--border)' }}
           />
         </div>
+
         <div className="flex flex-row gap-5">
           <div className="w-full">
             <div className="text-sm font-semibold mb-1" style={{ color: 'var(--dim)' }}>
@@ -106,6 +111,7 @@ export default function EditCaseModal({ open, onClose, initial, onSave }) {
               style={{ borderColor: 'var(--border)' }}
             />
           </div>
+
           <div className="w-full">
             <div className="text-sm font-semibold mb-1" style={{ color: 'var(--dim)' }}>
               Work Unit

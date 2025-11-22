@@ -1,5 +1,5 @@
 /* eslint-disable react/prop-types */
-import { useMemo, useState, useRef, useEffect, useLayoutEffect } from 'react'
+import { useMemo, useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { PiArrowsDownUpBold } from 'react-icons/pi'
@@ -41,6 +41,7 @@ const PAGE_SIZES = [5, 10, 15]
 const fmt = (iso) => {
   if (!iso) return '-'
   const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return String(iso)
   const dd = String(d.getDate()).padStart(2, '0')
   const mm = String(d.getMonth() + 1).padStart(2, '0')
   const yyyy = String(d.getFullYear())
@@ -67,7 +68,16 @@ function StatusCell({ value = 'Open' }) {
 /* ====== MAIN COMPONENT ====== */
 export default function CaseListPage() {
   const nav = useNavigate()
-  const { cases, addCase } = useCases()
+
+  // ✅ selector biar rerender lebih ringan
+  const cases = useCases((s) => s.cases)
+  const summary = useCases((s) => s.summary)
+  const pagination = useCases((s) => s.pagination)
+  const loading = useCases((s) => s.loading)
+  const error = useCases((s) => s.error)
+  const fetchSummary = useCases((s) => s.fetchSummary)
+  const fetchCases = useCases((s) => s.fetchCases)
+  const createCaseRemote = useCases((s) => s.createCaseRemote)
 
   const [q, setQ] = useState('')
   const [modal, setModal] = useState(false)
@@ -79,52 +89,94 @@ export default function CaseListPage() {
   const [statusFilter, setStatusFilter] = useState([])
   const filterBtnRef = useRef(null)
 
-  const stats = useMemo(() => {
-    const open = cases.filter((c) => c.status === 'Open').length
-    const closed = cases.filter((c) => c.status === 'Closed').length
-    const reopen = cases.filter((c) => c.status === 'Re-Open').length
-    return { open, closed, reopen }
-  }, [cases])
+  // summary sekali saat mount
+  useEffect(() => {
+    fetchSummary()
+  }, [fetchSummary])
 
-  // filtering & sorting
-  const filtered = useMemo(() => {
-    let arr = cases.filter(
-      (c) =>
-        (statusFilter.length === 0 || statusFilter.includes(c.status)) &&
-        (c.name.toLowerCase().includes(q.toLowerCase()) ||
-          String(c.id).toLowerCase().includes(q.toLowerCase()))
-    )
-
-    if (sortOrder) {
-      arr = [...arr].sort((a, b) => {
-        const da = new Date(a.createdAt).getTime()
-        const db = new Date(b.createdAt).getTime()
-        return sortOrder === 'asc' ? da - db : db - da
-      })
+  // fetch list case saat query/paging/sort/filter berubah
+  useEffect(() => {
+    const params = {
+      skip: (page - 1) * pageSize,
+      limit: pageSize
     }
 
-    return arr
-  }, [cases, q, sortOrder, statusFilter])
+    if (q.trim()) params.search = q.trim()
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize))
+    // Contract API: status single value
+    if (statusFilter.length === 1) {
+      params.status = statusFilter[0]
+    }
+
+    if (sortOrder) {
+      params.sort_by = 'created_at'
+      params.sort_order = sortOrder
+    }
+
+    fetchCases(params)
+  }, [q, page, pageSize, sortOrder, statusFilter, fetchCases])
+
+  const stats = useMemo(() => {
+    if (summary) {
+      return {
+        open: summary.open_cases ?? 0,
+        closed: summary.closed_cases ?? 0,
+        reopen: summary.reopened_cases ?? 0
+      }
+    }
+    // fallback lokal
+    const open = cases.filter((c) => (c.status || c.case_status) === 'Open').length
+    const closed = cases.filter((c) => (c.status || c.case_status) === 'Closed').length
+    const reopen = cases.filter((c) => (c.status || c.case_status) === 'Re-Open').length
+    return { open, closed, reopen }
+  }, [summary, cases])
+
+  const totalCases = pagination?.total ?? cases.length ?? 0
+  const totalPages = Math.max(1, Math.ceil(totalCases / pageSize))
   const safePage = Math.min(page, totalPages)
-  const start = (safePage - 1) * pageSize
-  const currentRows = filtered.slice(start, start + pageSize)
 
-  useEffect(() => setPage(1), [q, pageSize, sortOrder, statusFilter])
+  // ✅ clamp kalau totalPages turun
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages)
+  }, [page, totalPages])
 
-  const handleSaveCase = (payload) => {
-    const id = addCase(payload)
-    setModal(false)
-    nav(`/cases/${id}`)
+  const handleSaveCase = async (payload) => {
+    try {
+      const created = await createCaseRemote(payload)
+      setModal(false)
+      if (created?.id) {
+        nav(`/cases/${created.id}`)
+      }
+    } catch (err) {
+      console.error('Failed to create case', err)
+    }
+  }
+
+  // ✅ reset page di handler, bukan effect
+  const onSearchChange = (e) => {
+    setQ(e.target.value)
+    setPage(1)
   }
 
   const toggleSort = () => {
     setSortOrder((prev) => {
-      if (prev === null) return 'desc'
-      if (prev === 'desc') return 'asc'
-      return null
+      let next = null
+      if (prev === null) next = 'desc'
+      else if (prev === 'desc') next = 'asc'
+      else next = null
+      return next
     })
+    setPage(1)
+  }
+
+  const onChangeStatusFilter = useCallback((next) => {
+    setStatusFilter(next)
+    setPage(1)
+  }, [])
+
+  const onChangePageSize = (v) => {
+    setPageSize(v)
+    setPage(1)
   }
 
   return (
@@ -142,7 +194,7 @@ export default function CaseListPage() {
           <div className="relative w-[427px]">
             <input
               value={q}
-              onChange={(e) => setQ(e.target.value)}
+              onChange={onSearchChange}
               placeholder="Search case"
               className="w-full pl-3 pr-3 py-1 border border-[#C3CFE0] bg-transparent"
               style={{
@@ -174,7 +226,7 @@ export default function CaseListPage() {
         open={filterOpen}
         onClose={() => setFilterOpen(false)}
         selected={statusFilter}
-        onChange={setStatusFilter}
+        onChange={onChangeStatusFilter}
         anchorRef={filterBtnRef}
       />
 
@@ -183,6 +235,21 @@ export default function CaseListPage() {
         className="relative border rounded-sm overflow-hidden"
         style={{ borderColor: COLORS.border, background: COLORS.tableBody }}
       >
+        {loading && (
+          <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-10 text-sm">
+            Loading cases…
+          </div>
+        )}
+
+        {error && (
+          <div
+            className="px-4 py-2 text-xs text-red-400 border-b"
+            style={{ borderColor: COLORS.border }}
+          >
+            {String(error)}
+          </div>
+        )}
+
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left" style={{ background: COLORS.theadBg }}>
@@ -219,40 +286,51 @@ export default function CaseListPage() {
               ))}
             </tr>
           </thead>
+
           <tbody>
-            {currentRows.map((row) => (
-              <tr key={row.id} className="hover:bg-white/5">
-                <td className="px-4 py-3 border-b" style={{ borderColor: COLORS.border }}>
-                  {row.id}
-                </td>
-                <td className="px-4 py-3 border-b" style={{ borderColor: COLORS.border }}>
-                  {row.name}
-                </td>
-                <td className="px-4 py-3 border-b" style={{ borderColor: COLORS.border }}>
-                  {row.investigator || '-'}
-                </td>
-                <td className="px-4 py-3 border-b" style={{ borderColor: COLORS.border }}>
-                  {row.agency || '-'}
-                </td>
-                <td className="px-4 py-3 border-b" style={{ borderColor: COLORS.border }}>
-                  {fmt(row.createdAt)}
-                </td>
-                <td className="px-4 py-3 border-b" style={{ borderColor: COLORS.border }}>
-                  <StatusCell value={row.status || 'Open'} />
-                </td>
-                <td className="px-4 py-3 border-b" style={{ borderColor: COLORS.border }}>
-                  <button
-                    onClick={() => nav(`/cases/${row.id}`)}
-                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded"
-                    style={{ background: COLORS.detailBtn }}
-                  >
-                    <img src={iconSearch} className="w-4 h-4 opacity-90" />
-                    <span>Detail</span>
-                  </button>
-                </td>
-              </tr>
-            ))}
-            {currentRows.length === 0 && (
+            {cases.map((row) => {
+              const id = row.id ?? row.case_id
+              const name = row.name ?? row.case_name ?? row.title
+              const investigator = row.investigator ?? row.investigator_name ?? '-'
+              const agency = row.agency ?? row.agency_name ?? '-'
+              const createdAt = row.createdAt ?? row.created_at ?? row.date_created
+              const status = row.status ?? row.case_status ?? 'Open'
+
+              return (
+                <tr key={id} className="hover:bg-white/5">
+                  <td className="px-4 py-3 border-b" style={{ borderColor: COLORS.border }}>
+                    {id}
+                  </td>
+                  <td className="px-4 py-3 border-b" style={{ borderColor: COLORS.border }}>
+                    {name}
+                  </td>
+                  <td className="px-4 py-3 border-b" style={{ borderColor: COLORS.border }}>
+                    {investigator}
+                  </td>
+                  <td className="px-4 py-3 border-b" style={{ borderColor: COLORS.border }}>
+                    {agency}
+                  </td>
+                  <td className="px-4 py-3 border-b" style={{ borderColor: COLORS.border }}>
+                    {fmt(createdAt)}
+                  </td>
+                  <td className="px-4 py-3 border-b" style={{ borderColor: COLORS.border }}>
+                    <StatusCell value={status} />
+                  </td>
+                  <td className="px-4 py-3 border-b" style={{ borderColor: COLORS.border }}>
+                    <button
+                      onClick={() => nav(`/cases/${id}`)}
+                      className="inline-flex items-center gap-2 px-3 py-1.5 rounded"
+                      style={{ background: COLORS.detailBtn }}
+                    >
+                      <img src={iconSearch} className="w-4 h-4 opacity-90" />
+                      <span>Detail</span>
+                    </button>
+                  </td>
+                </tr>
+              )
+            })}
+
+            {cases.length === 0 && !loading && (
               <tr>
                 <td colSpan={7} className="px-4 py-6 text-center" style={{ color: COLORS.dim }}>
                   No cases
@@ -268,12 +346,8 @@ export default function CaseListPage() {
           style={{ borderColor: COLORS.border }}
         >
           <div className="flex items-center gap-3">
-            <PageSizeDropdown
-              value={pageSize}
-              onChange={(v) => setPageSize(v)}
-              icon={dropdownIcon}
-            />
-            <TotalCaseCard total={cases.length} />
+            <PageSizeDropdown value={pageSize} onChange={onChangePageSize} icon={dropdownIcon} />
+            <TotalCaseCard total={totalCases} />
           </div>
           <Pagination page={safePage} totalPages={totalPages} onChange={setPage} />
         </div>
@@ -338,13 +412,14 @@ function PageSizeDropdown({ value, onChange, icon }) {
         createPortal(
           <div
             ref={menuRef}
-            className="fixed z-1000 rounded-sm overflow-hidden shadow-lg"
+            className="fixed rounded-sm overflow-hidden shadow-lg"
             style={{
               left: pos.left,
               top: pos.top,
               width: pos.width,
               background: '#111720',
-              border: '1.5px solid #C3CFE0'
+              border: '1.5px solid #C3CFE0',
+              zIndex: 1000
             }}
           >
             {PAGE_SIZES.map((s) => (
@@ -393,7 +468,7 @@ function FilterDropdown({ open, onClose, selected, onChange, anchorRef }) {
         left: rect.left
       })
     }
-  }, [open])
+  }, [open, anchorRef])
 
   useEffect(() => {
     if (!open) return
@@ -403,7 +478,7 @@ function FilterDropdown({ open, onClose, selected, onChange, anchorRef }) {
     }
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [open])
+  }, [open, onClose, anchorRef])
 
   const OPTIONS = ['Open', 'Closed', 'Re-Open']
   if (!open) return null
@@ -411,14 +486,15 @@ function FilterDropdown({ open, onClose, selected, onChange, anchorRef }) {
   return createPortal(
     <div
       ref={menuRef}
-      className="fixed z-2000 border rounded-sm shadow-lg"
+      className="fixed border rounded-sm shadow-lg"
       style={{
         top: pos.top,
         left: pos.left,
         width: 240,
         background: '#0C121C',
         border: 'none',
-        color: '#fff'
+        color: '#fff',
+        zIndex: 2000
       }}
     >
       <div

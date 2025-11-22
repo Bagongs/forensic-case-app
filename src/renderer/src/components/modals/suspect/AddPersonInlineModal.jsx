@@ -12,17 +12,41 @@ import Select from '../../atoms/Select'
 const DEVICE_SOURCES = ['Hp', 'Ssd', 'HardDisk', 'Pc', 'Laptop', 'DVR']
 const STATUS_OPTIONS = ['Witness', 'Reported', 'Suspected', 'Suspect', 'Defendant']
 
+function mapDeviceSourceToApi(value) {
+  switch (value) {
+    case 'Hp':
+      return 'Handphone'
+    case 'Ssd':
+      return 'SSD'
+    case 'HardDisk':
+      return 'Harddisk'
+    case 'Pc':
+      return 'PC'
+    case 'Laptop':
+      return 'Laptop'
+    case 'DVR':
+      return 'DVR'
+    default:
+      return ''
+  }
+}
+
 export default function AddPersonInlineModal({ caseId, open, onClose }) {
-  const { addPersonToCase } = useCases()
+  const fetchCaseDetail = useCases((s) => s.fetchCaseDetail)
+
   const [mode, setMode] = useState('known')
   const [name, setName] = useState('')
-  const [status, setStatus] = useState(null)
+  const [status, setStatus] = useState('')
   const [evIdMode, setEvIdMode] = useState('gen')
   const [evId, setEvId] = useState('')
   const [source, setSource] = useState('')
   const [summary, setSummary] = useState('')
   const [file, setFile] = useState(null)
   const [previewUrl, setPreviewUrl] = useState(null)
+
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState(null)
+
   const fileRef = useRef(null)
 
   useEffect(() => {
@@ -33,13 +57,15 @@ export default function AddPersonInlineModal({ caseId, open, onClose }) {
     if (previewUrl) URL.revokeObjectURL(previewUrl)
     setMode('known')
     setName('')
-    setStatus(null)
+    setStatus('')
     setEvIdMode('gen')
     setEvId('')
     setSource('')
     setFile(null)
     setPreviewUrl(null)
     setSummary('')
+    setSubmitting(false)
+    setError(null)
   }
 
   async function onPickFile(e) {
@@ -48,7 +74,11 @@ export default function AddPersonInlineModal({ caseId, open, onClose }) {
     if (previewUrl) URL.revokeObjectURL(previewUrl)
     setPreviewUrl(null)
 
-    if (!f) return
+    if (!f) {
+      e.target.value = ''
+      return
+    }
+
     if (f.type?.startsWith('image/')) {
       const reader = new FileReader()
       reader.onload = (ev) => setPreviewUrl(ev.target.result)
@@ -58,7 +88,56 @@ export default function AddPersonInlineModal({ caseId, open, onClose }) {
     e.target.value = ''
   }
 
-  const canSubmit = mode === 'unknown' || name.trim()
+  const isUnknown = mode === 'unknown'
+  const canSubmit = isUnknown || (name.trim() && status)
+
+  const handleSubmit = async () => {
+    if (!canSubmit || submitting) return
+    if (!caseId) return
+
+    setSubmitting(true)
+    setError(null)
+
+    try {
+      const is_unknown_person = isUnknown
+
+      let evidenceFilePayload = null
+      if (file) {
+        const buf = await file.arrayBuffer()
+        evidenceFilePayload = {
+          name: file.name,
+          type: file.type,
+          size: file.size,
+          buffer: Array.from(new Uint8Array(buf))
+        }
+      }
+
+      const payload = {
+        case_id: Number(caseId),
+        is_unknown_person,
+        person_name: is_unknown_person ? null : name.trim(),
+        suspect_status: is_unknown_person ? null : status || null,
+        evidence_number: evIdMode === 'manual' && evId.trim() ? evId.trim() : undefined,
+        evidence_source: mapDeviceSourceToApi(source) || undefined,
+        evidence_summary: summary.trim() || undefined,
+        evidence_file: evidenceFilePayload || undefined
+      }
+
+      // ✅ IPC baru
+      await window.api.invoke('suspects:create', payload)
+
+      // refresh detail
+      await fetchCaseDetail(caseId)
+
+      reset()
+      onClose?.()
+    } catch (err) {
+      console.error('Failed to create suspect/person', err)
+      setError(err?.message || 'Failed to create person')
+    } finally {
+      setSubmitting(false)
+    }
+  }
 
   return (
     <Modal
@@ -68,27 +147,9 @@ export default function AddPersonInlineModal({ caseId, open, onClose }) {
         reset()
         onClose?.()
       }}
-      confirmText="Submit"
-      disableConfirm={!canSubmit}
-      onConfirm={() => {
-        addPersonToCase(caseId, {
-          name: mode === 'unknown' ? 'Unknown' : name.trim(),
-          status,
-          evidence: file
-            ? {
-                id: evIdMode === 'gen' ? undefined : evId.trim(),
-                source,
-                fileName: file.name,
-                fileSize: file.size,
-                mime: file.type,
-                previewDataUrl: previewUrl,
-                summary: summary.trim() || '(no summary)'
-              }
-            : undefined
-        })
-        reset()
-        onClose?.()
-      }}
+      confirmText={submitting ? 'Submitting…' : 'Submit'}
+      disableConfirm={!canSubmit || submitting}
+      onConfirm={handleSubmit}
       size="lg"
     >
       <div className="grid gap-3">
@@ -98,18 +159,19 @@ export default function AddPersonInlineModal({ caseId, open, onClose }) {
             checked={mode === 'known'}
             onChange={() => {
               setMode('known')
-              setStatus('') // reset status kalau sebelumnya unknown
+              setStatus('')
             }}
+            disabled={submitting}
           >
             Person name
           </Radio>
-
           <Radio
             checked={mode === 'unknown'}
             onChange={() => {
               setMode('unknown')
-              setStatus(null) // 🔥 null kalau unknown
+              setStatus('')
             }}
+            disabled={submitting}
           >
             Unknown Person
           </Radio>
@@ -122,10 +184,16 @@ export default function AddPersonInlineModal({ caseId, open, onClose }) {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Enter name"
+              disabled={submitting}
             />
+
             <FormLabel>Status</FormLabel>
-            <Select value={status} onChange={(e) => setStatus(e.target.value)}>
-              <option selected disabled>
+            <Select
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+              disabled={submitting}
+            >
+              <option value="" disabled>
                 Select Suspect Status
               </option>
               {STATUS_OPTIONS.map((s) => (
@@ -139,13 +207,22 @@ export default function AddPersonInlineModal({ caseId, open, onClose }) {
 
         <FormLabel>Evidence ID Mode</FormLabel>
         <div className="flex items-center gap-6">
-          <Radio checked={evIdMode === 'gen'} onChange={() => setEvIdMode('gen')}>
+          <Radio
+            checked={evIdMode === 'gen'}
+            onChange={() => setEvIdMode('gen')}
+            disabled={submitting}
+          >
             Generating
           </Radio>
-          <Radio checked={evIdMode === 'manual'} onChange={() => setEvIdMode('manual')}>
+          <Radio
+            checked={evIdMode === 'manual'}
+            onChange={() => setEvIdMode('manual')}
+            disabled={submitting}
+          >
             Manual input
           </Radio>
         </div>
+
         {evIdMode === 'manual' && (
           <>
             <FormLabel>Evidence ID</FormLabel>
@@ -153,13 +230,14 @@ export default function AddPersonInlineModal({ caseId, open, onClose }) {
               value={evId}
               onChange={(e) => setEvId(e.target.value)}
               placeholder="Enter Evidence ID"
+              disabled={submitting}
             />
           </>
         )}
 
         <FormLabel>Evidence Source</FormLabel>
-        <Select value={source} onChange={(e) => setSource(e.target.value)}>
-          <option value="" selected disabled>
+        <Select value={source} onChange={(e) => setSource(e.target.value)} disabled={submitting}>
+          <option value="" disabled>
             Select device
           </option>
           {DEVICE_SOURCES.map((s) => (
@@ -171,13 +249,15 @@ export default function AddPersonInlineModal({ caseId, open, onClose }) {
 
         <FormLabel>Evidence File</FormLabel>
         <div
-          className="rounded-lg border p-4 flex items-center justify-center"
+          className="rounded-lg border p-4 flex items-center justify-center gap-3"
           style={{ borderColor: 'var(--border)' }}
         >
           <button
+            type="button"
             className="px-4 py-1.5 rounded-lg border text-sm bg-[#394F6F]"
             style={{ borderColor: 'var(--border)' }}
             onClick={() => fileRef.current?.click()}
+            disabled={submitting}
           >
             Upload
           </button>
@@ -189,7 +269,7 @@ export default function AddPersonInlineModal({ caseId, open, onClose }) {
             onChange={onPickFile}
           />
           {file && !previewUrl && (
-            <span className="ml-3 text-sm opacity-70 truncate max-w-60">{file.name}</span>
+            <span className="text-sm opacity-70 truncate max-w-60">{file.name}</span>
           )}
         </div>
 
@@ -209,7 +289,10 @@ export default function AddPersonInlineModal({ caseId, open, onClose }) {
           value={summary}
           onChange={(e) => setSummary(e.target.value)}
           placeholder="Write evidence summary"
+          disabled={submitting}
         />
+
+        {error && <div className="text-xs text-red-400 mt-1">{error}</div>}
       </div>
     </Modal>
   )

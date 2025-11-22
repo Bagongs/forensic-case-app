@@ -27,7 +27,7 @@ export default function AddUserModal({ open, onClose, onSave }) {
     }
   }, [open])
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!name || !email || !password || !confirmPassword) {
       alert('Please fill all required fields')
       return
@@ -37,7 +37,14 @@ export default function AddUserModal({ open, onClose, onSave }) {
       return
     }
 
-    onSave({ name, email, password, tag })
+    await onSave({
+      fullname: name,
+      email,
+      password,
+      confirm_password: confirmPassword,
+      tag
+    })
+
     onClose()
   }
 

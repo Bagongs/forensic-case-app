@@ -6,26 +6,29 @@ import { useAuth } from '../store/auth'
 export default function LoginPage() {
   const nav = useNavigate()
   const location = useLocation()
-  // const { login, busy: storeBusy, error: storeError } = useAuth()
+  const { login, loading, error: storeError } = useAuth()
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
 
-  // const busy = storeBusy
-
   async function handleSubmit(e) {
     e.preventDefault()
     setError('')
-    // const { ok, error: errMsg } = await login({ email, password })
-    // if (!ok) {
-    //   setError(errMsg || 'Login gagal')
-    //   return
-    // }
-    // kalau ada rute asal (ketika guard me-redirect), balikin ke sana; else → /analytics
+
+    const { ok, error: errMsg } = await login({ email, password })
+    if (!ok) {
+      setError(errMsg || 'Login gagal')
+      return
+    }
+
+    // kalau ada rute asal (ketika guard me-redirect), balikin ke sana; else → /cases
     const to = location.state?.from?.pathname || '/cases'
     nav(to, { replace: true })
   }
+
+  const busy = loading
+  const finalError = error || storeError
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center px-4">
@@ -57,7 +60,7 @@ export default function LoginPage() {
               letterSpacing: '.04em'
             }}
           >
-            Data Analytics Platform
+            Case Analytics Platform
           </h1>
         </div>
 
@@ -97,16 +100,16 @@ export default function LoginPage() {
                 />
               </div>
 
-              {/* {(error || storeError) && (
-                <p className="text-sm" style={{ color: '#ff6b6b' }}>
-                  {error || storeError}
+              {finalError && (
+                <p className="text-sm text-center" style={{ color: '#ff6b6b' }}>
+                  {finalError}
                 </p>
-              )} */}
+              )}
 
               <div className="flex justify-center pt-2">
                 <button
                   type="submit"
-                  // disabled={busy}
+                  disabled={busy}
                   className="h-11 px-10 font-bold transition disabled:opacity-60"
                   style={{
                     background: '#1C2635',
@@ -120,8 +123,7 @@ export default function LoginPage() {
                   }}
                 >
                   <span className="tracking-wide" style={{ color: 'var(--gold)' }}>
-                    {/* {busy ? 'SIGNING IN…' : 'LOGIN'} */}
-                    LOGIN
+                    {busy ? 'SIGNING IN…' : 'LOGIN'}
                   </span>
                 </button>
               </div>

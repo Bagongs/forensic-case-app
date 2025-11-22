@@ -1,8 +1,7 @@
-// src/renderer/src/pages/user/UserManagement.jsx
+// src/renderer/src/pages/UserManagement.jsx
 /* eslint-disable react/prop-types */
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { useNavigate } from 'react-router-dom'
 
 import CaseLayout from './CaseLayout'
 import MiniButton, { MiniButtonContent } from '../components/common/MiniButton'
@@ -42,32 +41,42 @@ const PAGE_SIZES = [5, 10, 15]
 
 /* ===== Page ===== */
 export default function UserManagement() {
-  const nav = useNavigate()
-  const { users, addUser, editUser, removeUser } = useUsers()
+  const users = useUsers((s) => s.users)
+  const pagination = useUsers((s) => s.pagination)
+  const loading = useUsers((s) => s.loading)
+  const error = useUsers((s) => s.error)
+
+  const fetchUsers = useUsers((s) => s.fetchUsers)
+  const createUserRemote = useUsers((s) => s.createUserRemote)
+  const updateUserRemote = useUsers((s) => s.updateUserRemote)
+  const deleteUserRemote = useUsers((s) => s.deleteUserRemote)
 
   const [q, setQ] = useState('')
   const [pageSize, setPageSize] = useState(PAGE_SIZES[0])
   const [page, setPage] = useState(1)
+
   const [openAdd, setOpenAdd] = useState(false)
   const [editingUser, setEditingUser] = useState(null)
   const [deleteUser, setDeleteUser] = useState(null)
 
-  const filtered = useMemo(() => {
-    const s = q.toLowerCase()
-    return users.filter(
-      (u) =>
-        u.name?.toLowerCase().includes(s) ||
-        u.email?.toLowerCase().includes(s) ||
-        String(u.tag || '').toLowerCase().includes(s)
-    )
-  }, [users, q])
+  // fetch list dari backend setiap search/paging berubah
+  useEffect(() => {
+    const params = {
+      search: q.trim() || undefined,
+      skip: (page - 1) * pageSize,
+      limit: pageSize
+    }
+    fetchUsers(params).catch(() => {})
+  }, [q, page, pageSize, fetchUsers])
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize))
+  // reset ke page 1 saat search/pageSize berubah
+  useEffect(() => {
+    setPage(1)
+  }, [q, pageSize])
+
+  const totalUsers = pagination?.total ?? users.length ?? 0
+  const totalPages = Math.max(1, Math.ceil(totalUsers / pageSize))
   const safePage = Math.min(page, totalPages)
-  const start = (safePage - 1) * pageSize
-  const rows = filtered.slice(start, start + pageSize)
-
-  useEffect(() => setPage(1), [q, pageSize])
 
   return (
     <CaseLayout title="User Management" showBack={true}>
@@ -98,6 +107,23 @@ export default function UserManagement() {
         className="relative border rounded-sm overflow-hidden"
         style={{ borderColor: COLORS.border, background: COLORS.tableBodyBg }}
       >
+        {/* Loading overlay */}
+        {loading && (
+          <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-10 text-sm">
+            Loading users…
+          </div>
+        )}
+
+        {/* Error bar */}
+        {error && (
+          <div
+            className="px-4 py-2 text-xs text-red-400 border-b"
+            style={{ borderColor: COLORS.border }}
+          >
+            {String(error)}
+          </div>
+        )}
+
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left" style={{ background: COLORS.theadBg }}>
@@ -114,7 +140,7 @@ export default function UserManagement() {
           </thead>
 
           <tbody>
-            {rows.map((u) => (
+            {users.map((u) => (
               <tr key={u.id} className="hover:bg-white/5">
                 <td className="px-4 py-3 border-b" style={{ borderColor: COLORS.border }}>
                   {u.name}
@@ -154,7 +180,7 @@ export default function UserManagement() {
               </tr>
             ))}
 
-            {rows.length === 0 && (
+            {users.length === 0 && !loading && (
               <tr>
                 <td colSpan={4} className="px-4 py-6 text-center" style={{ color: COLORS.dim }}>
                   No users
@@ -175,7 +201,7 @@ export default function UserManagement() {
               onChange={(v) => setPageSize(v)}
               icon={dropdownIcon}
             />
-            <TotalCard label="Total User" total={users.length} />
+            <TotalCard label="Total User" total={totalUsers} />
           </div>
           <Pagination page={safePage} totalPages={totalPages} onChange={setPage} />
         </div>
@@ -183,7 +209,15 @@ export default function UserManagement() {
 
       {/* Modals */}
       {openAdd && (
-        <AddUserModal open={openAdd} onClose={() => setOpenAdd(false)} onSave={addUser} />
+        <AddUserModal
+          open={openAdd}
+          onClose={() => setOpenAdd(false)}
+          onSave={async (payload) => {
+            await createUserRemote(payload)
+            setOpenAdd(false)
+            setPage(1)
+          }}
+        />
       )}
 
       {editingUser && (
@@ -191,7 +225,10 @@ export default function UserManagement() {
           open={!!editingUser}
           user={editingUser}
           onClose={() => setEditingUser(null)}
-          onSave={editUser}
+          onSave={async (payload) => {
+            await updateUserRemote(editingUser.id, payload)
+            setEditingUser(null)
+          }}
         />
       )}
 
@@ -200,8 +237,8 @@ export default function UserManagement() {
           open={!!deleteUser}
           name={deleteUser.name}
           onClose={() => setDeleteUser(null)}
-          onConfirm={() => {
-            removeUser(deleteUser.id)
+          onConfirm={async () => {
+            await deleteUserRemote(deleteUser.id)
             setDeleteUser(null)
           }}
         />

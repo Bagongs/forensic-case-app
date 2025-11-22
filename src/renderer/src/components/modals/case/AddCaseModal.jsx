@@ -40,15 +40,19 @@ export default function AddCaseModal({ open, onClose, onSave }) {
       onCancel={onClose}
       confirmText="Add case"
       onConfirm={() => {
-        onSave({
-          name: name.trim(),
+        const payload = {
+          title: name.trim(),
           description: desc.trim(),
-          id: idMode === 'gen' ? undefined : manualId.trim(),
-          idMode,
-          investigator: investigator.trim(),
+          case_officer: investigator.trim(),
           agency: agency.trim(),
-          workUnit: workUnit.trim()
-        })
+          work_unit: workUnit.trim()
+        }
+
+        if (idMode === 'manual' && manualId.trim()) {
+          payload.case_number = manualId.trim()
+        }
+
+        onSave(payload)
         onClose()
       }}
       disableConfirm={!canSubmit}
