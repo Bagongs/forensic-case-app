@@ -30,8 +30,13 @@ const PAGE_SIZES = [5, 10, 15]
 export default function EvidenceListPage() {
   const nav = useNavigate()
 
-  const { evidences, summary, pagination, loading, error, fetchEvidences, fetchEvidenceSummary } =
-    useEvidences()
+  const evidences = useEvidences((s) => s.evidences)
+  const summary = useEvidences((s) => s.summary)
+  const pagination = useEvidences((s) => s.pagination)
+  const loading = useEvidences((s) => s.loading)
+  const error = useEvidences((s) => s.error)
+  const fetchEvidences = useEvidences((s) => s.fetchEvidences)
+  const fetchEvidenceSummary = useEvidences((s) => s.fetchEvidenceSummary)
 
   const cases = useCases((s) => s.cases)
   const fetchCases = useCases((s) => s.fetchCases)
@@ -45,14 +50,14 @@ export default function EvidenceListPage() {
   // load summary (kalau endpoint ada)
   useEffect(() => {
     fetchEvidenceSummary().catch(() => {})
-  }, [])
+  }, [fetchEvidenceSummary])
 
   // ensure cases loaded for modal
   useEffect(() => {
     if (!cases || cases.length === 0) {
       fetchCases?.({ skip: 0, limit: 1000 }).catch(() => {})
     }
-  }, [])
+  }, [cases, fetchCases])
 
   // reset page ketika search/pageSize berubah
   useEffect(() => setPage(1), [q, pageSize])
@@ -64,9 +69,8 @@ export default function EvidenceListPage() {
       limit: pageSize
     }
     if (q.trim()) params.search = q.trim()
-
     fetchEvidences(params).catch(() => {})
-  }, [q, page, pageSize])
+  }, [q, page, pageSize, fetchEvidences])
 
   const rows = evidences || []
 
@@ -95,11 +99,6 @@ export default function EvidenceListPage() {
     [cases]
   )
 
-  // ✅ AddEvidenceModal sudah POST evidence sendiri.
-  // Jadi di sini hanya:
-  // - close modal
-  // - refresh list & summary
-  // - navigate ke detail evidence baru
   const handleSaveEvidence = async (payload = {}) => {
     try {
       const res = payload?.apiResponse
@@ -120,11 +119,14 @@ export default function EvidenceListPage() {
 
   const fmtDate = (iso) => {
     if (!iso) return '-'
-    try {
-      return new Date(iso).toLocaleDateString('id-ID')
-    } catch {
-      return iso
-    }
+    const d = new Date(iso)
+    if (Number.isNaN(d.getTime())) return String(iso)
+    const dd = String(d.getDate()).padStart(2, '0')
+    const mm = String(d.getMonth() + 1).padStart(2, '0')
+    const yyyy = d.getFullYear()
+    const hh = String(d.getHours()).padStart(2, '0')
+    const min = String(d.getMinutes()).padStart(2, '0')
+    return `${dd}/${mm}/${yyyy} ${hh}:${min}`
   }
 
   return (
@@ -162,7 +164,6 @@ export default function EvidenceListPage() {
         className="relative border rounded-sm overflow-hidden"
         style={{ borderColor: COLORS.border, background: COLORS.tableBody }}
       >
-        {/* loader overlay */}
         {loading && (
           <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-10 text-sm">
             Loading evidences…
@@ -194,6 +195,7 @@ export default function EvidenceListPage() {
               )}
             </tr>
           </thead>
+
           <tbody>
             {rows.map((row) => (
               <tr key={row.id} className="hover:bg-white/5">
@@ -207,18 +209,24 @@ export default function EvidenceListPage() {
                     {row.evidenceNumber || row.id}
                   </div>
                 </td>
+
+                {/* ✅ FIX: caseName sudah dari title */}
                 <td className="px-4 py-3 border-b" style={{ borderColor: COLORS.border }}>
-                  {row.caseName}
+                  {row.caseName || '-'}
                 </td>
+
                 <td className="px-4 py-3 border-b" style={{ borderColor: COLORS.border }}>
                   {row.agency || '-'}
                 </td>
+
                 <td className="px-4 py-3 border-b" style={{ borderColor: COLORS.border }}>
                   {row.investigator || '-'}
                 </td>
+
                 <td className="px-4 py-3 border-b" style={{ borderColor: COLORS.border }}>
                   {fmtDate(row.createdAt)}
                 </td>
+
                 <td className="px-4 py-3 border-b" style={{ borderColor: COLORS.border }}>
                   <button
                     onClick={() => nav(`/evidence/${row.id}`)}
@@ -248,10 +256,11 @@ export default function EvidenceListPage() {
         >
           <div className="flex items-center gap-6 text-xs opacity-70">
             <div className="flex items-center gap-2">
-              <span className="w-1.5 h-4 rounded bg-indigo-300 inline-block" /> generated case id
+              <span className="w-1.5 h-4 rounded bg-indigo-300 inline-block" /> generated evidence
+              id
             </div>
             <div className="flex items-center gap-2">
-              <span className="w-1.5 h-4 rounded bg-pink-300 inline-block" /> Manual case id
+              <span className="w-1.5 h-4 rounded bg-pink-300 inline-block" /> manual evidence id
             </div>
           </div>
 

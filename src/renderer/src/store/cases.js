@@ -28,7 +28,17 @@ const unwrap = (res) => {
 
 const unwrapTotal = (res, fallback = 0) => {
   if (!res || typeof res !== 'object') return fallback
-  return res.total ?? res.meta?.total ?? fallback
+  return res.total ?? res.meta?.total ?? res.pagination?.total ?? fallback
+}
+
+/** ✅ AMAN: ambil data list dari semua bentuk response */
+const extractList = (raw) => {
+  if (!raw) return []
+  if (Array.isArray(raw)) return raw
+  if (Array.isArray(raw.items)) return raw.items
+  if (Array.isArray(raw.data)) return raw.data
+  if (Array.isArray(raw.list)) return raw.list
+  return []
 }
 
 /* Normalisasi status dari API */
@@ -151,7 +161,6 @@ const normalizeCasePayload = (input, { forUpdate = false } = {}) => {
 /* ============================================================
    STORE
 ============================================================ */
-
 export const useCases = create((set, get) => ({
   cases: [],
   summary: null,
@@ -194,14 +203,19 @@ export const useCases = create((set, get) => ({
     set({ loading: true, error: null })
     try {
       const res = await window.api.invoke('cases:list', params)
-      const list = unwrap(res) || []
+
+      // raw bisa array / object (items/data/list)
+      const raw = unwrap(res)
+      const list = extractList(raw)
 
       const mapped = list.map(mapApiCaseListItem)
+
+      const total = unwrapTotal(raw, null) ?? unwrapTotal(res, null) ?? mapped.length
 
       set({
         cases: mapped,
         pagination: {
-          total: unwrapTotal(res, mapped.length),
+          total,
           skip: params.skip ?? 0,
           limit: params.limit ?? mapped.length
         },
