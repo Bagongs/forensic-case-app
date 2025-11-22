@@ -196,6 +196,33 @@ export default function SuspectDetailPage() {
     )
   }
 
+  const onExportPdf = async () => {
+    try {
+      const res = await window.api.invoke('suspects:exportPdf', suspectNumId)
+      if (res?.error) throw new Error(res.message || 'Export failed')
+
+      const buffer = res.buffer
+      if (!buffer) throw new Error('PDF buffer empty')
+
+      const u8 = new Uint8Array(buffer)
+      const blob = new Blob([u8], { type: 'application/pdf' })
+      const url = URL.createObjectURL(blob)
+
+      const a = document.createElement('a')
+      a.href = url
+      a.download = res.filename || `suspect_detail_${suspectNumId}.pdf`
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+
+      URL.revokeObjectURL(url)
+    } catch (e) {
+      console.error('[SuspectDetailPage] export pdf failed:', e)
+      // kalau kamu punya toast global, call di sini
+      // toast.error(e.message)
+    }
+  }
+
   return (
     <CaseLayout title="Suspect Management" showBack={true}>
       {/* HEADER */}
@@ -231,7 +258,7 @@ export default function SuspectDetailPage() {
               textColor="text-white"
             />
           </MiniButton>
-          <MiniButton>
+          <MiniButton onClick={onExportPdf}>
             <MiniButtonContent bg={bgButton} text="Export PDF" textColor="text-black" />
           </MiniButton>
         </div>

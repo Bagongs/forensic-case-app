@@ -34,13 +34,9 @@ export async function createSuspect(payload) {
   const form = new FormData()
 
   // === FILE HANDLING: evidence_file & suspect_image (kalau dipakai) ===
-  // evidence_file bisa dikirim sebagai:
-  // - string path (lama)
-  // - object { name, type, size, buffer: number[] } (baru dari renderer)
   if (payload.evidence_file) {
     const file = payload.evidence_file
     if (typeof file === 'string') {
-      // mode lama: path di disk
       if (fs.existsSync(file)) {
         form.append('evidence_file', fs.createReadStream(file))
       }
@@ -69,7 +65,6 @@ export async function createSuspect(payload) {
   }
 
   // === FIELD BIASA ===
-  // kita append manual supaya lebih eksplisit & hindari double append file
   appendField(form, 'case_id', payload.case_id)
   appendField(form, 'is_unknown_person', payload.is_unknown_person)
   appendField(form, 'person_name', payload.person_name)
@@ -77,7 +72,6 @@ export async function createSuspect(payload) {
   appendField(form, 'evidence_number', payload.evidence_number)
   appendField(form, 'evidence_source', payload.evidence_source)
   appendField(form, 'evidence_summary', payload.evidence_summary)
-  // kalau ada field lain, bisa ditambah di sini
 
   const res = await api.post('/suspects/create-suspect', form, {
     headers: form.getHeaders()
@@ -89,7 +83,6 @@ export async function createSuspect(payload) {
 export async function updateSuspect(id, payload) {
   const form = new FormData()
 
-  // FILE (optional): suspect_image, kalau nanti kamu pakai di Edit Suspect
   if (payload.suspect_image) {
     const img = payload.suspect_image
     if (typeof img === 'string') {
@@ -105,11 +98,9 @@ export async function updateSuspect(id, payload) {
     }
   }
 
-  // FIELD biasa:
   appendField(form, 'is_unknown_person', payload.is_unknown_person)
   appendField(form, 'person_name', payload.person_name)
   appendField(form, 'suspect_status', payload.suspect_status)
-  // kalau ada field lain (misal extra metadata) tambahkan di sini
 
   const res = await api.put(`/suspects/update-suspect/${id}`, form, {
     headers: form.getHeaders()
@@ -118,15 +109,46 @@ export async function updateSuspect(id, payload) {
   return res.data
 }
 
-// Notes
-export async function saveSuspectNotes(payload) {
-  const res = await api.post('/suspects/save-suspect-notes', payload)
+/**
+ * Save notes baru:
+ * POST /api/v1/persons/save-suspect-notes/{suspect_id}
+ */
+export async function saveSuspectNotes({ suspect_id, notes }) {
+  const res = await api.post(`/persons/save-suspect-notes/${suspect_id}`, { notes })
   return res.data
 }
 
-export async function editSuspectNotes(payload) {
-  const res = await api.put('/suspects/edit-suspect-notes', payload)
+/**
+ * Edit notes existing:
+ * PUT /api/v1/persons/edit-suspect-notes/{suspect_id}
+ */
+export async function editSuspectNotes({ suspect_id, notes }) {
+  const res = await api.put(`/persons/edit-suspect-notes/${suspect_id}`, { notes })
   return res.data
+}
+
+/**
+ * Export suspect detail PDF:
+ * GET /api/v1/suspects/export-suspect-detail-pdf/{suspect_id}
+ * Return buffer + filename (kalau ada di header).
+ */
+export async function exportSuspectDetailPdf(suspect_id) {
+  const res = await api.get(`/suspects/export-suspect-detail-pdf/${suspect_id}`, {
+    responseType: 'arraybuffer'
+  })
+
+  // coba ambil filename dari content-disposition
+  const dispo = res.headers?.['content-disposition'] || res.headers?.['Content-Disposition']
+  let filename = null
+  if (dispo) {
+    const m = /filename="?([^"]+)"?/i.exec(dispo)
+    if (m) filename = m[1]
+  }
+
+  return {
+    buffer: res.data,
+    filename
+  }
 }
 
 export async function deleteSuspect(id) {

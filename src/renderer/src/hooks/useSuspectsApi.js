@@ -19,6 +19,8 @@ export function useSuspectsApi() {
 
     editNotes: (payload) => invoke('suspects:editNotes', payload),
 
+    exportPdf: (suspectId) => invoke('suspects:exportPdf', suspectId),
+
     deleteSuspect: (id) => invoke('suspects:delete', id)
   }
 }

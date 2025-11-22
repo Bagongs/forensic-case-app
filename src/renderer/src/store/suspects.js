@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 // src/renderer/src/store/suspects.js
 import { create } from 'zustand'
 
@@ -6,9 +5,6 @@ import { create } from 'zustand'
    UTILS
 ============================================================ */
 
-// unwrap response IPC/service
-// - IPC kamu return res.data dari axios main
-// - bentuknya masih: { status, message, data, total, page, size }
 const unwrap = (res) => {
   if (!res) return null
   if (res.error) throw new Error(res.message || 'IPC Error')
@@ -38,14 +34,6 @@ const mapApiSuspectListItem = (api) => ({
 
 /* ============================================================
    MAPPING: Suspect Detail
-   response detail kamu:
-   {
-     data: {
-       id, person_name, suspect_status, investigator, case_name,
-       created_at_case, evidence:[ {evidence_count, list_evidence:[...] } ],
-       suspect_notes
-     }
-   }
 ============================================================ */
 const mapApiSuspectDetail = (resDetail) => {
   const d = resDetail?.data || resDetail
@@ -93,7 +81,6 @@ export const useSuspects = create((set, get) => ({
 
   /* ============================================================
      LIST
-     IPC: 'suspects:list' -> GET /suspects/
   ============================================================ */
   async fetchSuspects(params = {}) {
     set({ loading: true, error: null })
@@ -125,7 +112,6 @@ export const useSuspects = create((set, get) => ({
 
   /* ============================================================
      SUMMARY
-     IPC: 'suspects:summary' -> GET /suspects/get-suspect-summary
   ============================================================ */
   async fetchSuspectSummary() {
     set({ loading: true, error: null })
@@ -147,7 +133,6 @@ export const useSuspects = create((set, get) => ({
 
   /* ============================================================
      DETAIL
-     IPC: 'suspects:detail' -> GET /suspects/get-suspect-detail/{id}
   ============================================================ */
   async fetchSuspectDetail(id) {
     set({ loading: true, error: null })
@@ -170,7 +155,6 @@ export const useSuspects = create((set, get) => ({
 
   /* ============================================================
      CREATE
-     IPC: 'suspects:create' -> POST /suspects/create-suspect
   ============================================================ */
   async createSuspectRemote(payload) {
     set({ loading: true, error: null })
@@ -178,8 +162,6 @@ export const useSuspects = create((set, get) => ({
       const res = await window.api.invoke('suspects:create', payload)
       const created = unwrap(res)
 
-      // setelah create, refresh list biar sinkron
-      // (di page juga boleh refresh ulang)
       set({ loading: false })
       return created
     } catch (err) {
@@ -194,7 +176,6 @@ export const useSuspects = create((set, get) => ({
 
   /* ============================================================
      UPDATE
-     IPC: 'suspects:update'
   ============================================================ */
   async updateSuspectRemote(id, payload) {
     set({ loading: true, error: null })
@@ -215,14 +196,22 @@ export const useSuspects = create((set, get) => ({
   },
 
   /* ============================================================
-     NOTES
+     NOTES (contract baru via IPC yang sudah diarahkan ke /persons/...)
   ============================================================ */
   async saveSuspectNotesRemote(payload) {
     set({ loading: true, error: null })
     try {
       const res = await window.api.invoke('suspects:saveNotes', payload)
+      const out = unwrap(res)
+
+      // refresh detail kalau lagi kebuka
+      const currentDetail = get().suspectDetail
+      if (currentDetail?.id === payload?.suspect_id) {
+        await get().fetchSuspectDetail(payload.suspect_id)
+      }
+
       set({ loading: false })
-      return unwrap(res)
+      return out
     } catch (err) {
       set({ loading: false, error: err?.message || 'Failed to save notes' })
       throw err
@@ -233,17 +222,50 @@ export const useSuspects = create((set, get) => ({
     set({ loading: true, error: null })
     try {
       const res = await window.api.invoke('suspects:editNotes', payload)
+      const out = unwrap(res)
+
+      // refresh detail kalau lagi kebuka
+      const currentDetail = get().suspectDetail
+      if (currentDetail?.id === payload?.suspect_id) {
+        await get().fetchSuspectDetail(payload.suspect_id)
+      }
+
       set({ loading: false })
-      return unwrap(res)
+      return out
     } catch (err) {
       set({ loading: false, error: err?.message || 'Failed to edit notes' })
       throw err
     }
   },
 
+  // ✅ alias nama yang dipakai di SuspectDetailPage kamu sekarang
+  saveNotesRemote(payload) {
+    return get().saveSuspectNotesRemote(payload)
+  },
+  editNotesRemote(payload) {
+    return get().editSuspectNotesRemote(payload)
+  },
+
+  /* ============================================================
+     EXPORT PDF (contract baru)
+     IPC: 'suspects:exportPdf'
+     return: { ok:true, buffer:ArrayBuffer, filename?:string }
+  ============================================================ */
+  async exportSuspectPdfRemote(suspectId) {
+    set({ loading: true, error: null })
+    try {
+      const res = await window.api.invoke('suspects:exportPdf', suspectId)
+      if (res?.error) throw new Error(res.message || 'Failed to export PDF')
+      set({ loading: false })
+      return res
+    } catch (err) {
+      set({ loading: false, error: err?.message || 'Failed to export PDF' })
+      throw err
+    }
+  },
+
   /* ============================================================
      DELETE
-     IPC: 'suspects:delete'
   ============================================================ */
   async deleteSuspectRemote(id) {
     set({ loading: true, error: null })

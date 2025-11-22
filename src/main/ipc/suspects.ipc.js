@@ -8,6 +8,7 @@ import {
   updateSuspect,
   saveSuspectNotes,
   editSuspectNotes,
+  exportSuspectDetailPdf,
   deleteSuspect
 } from '../services/suspects.service.js'
 
@@ -52,6 +53,7 @@ export function registerSuspectsIpc() {
     }
   })
 
+  // notes save
   ipcMain.handle('suspects:saveNotes', async (_event, payload) => {
     try {
       return await saveSuspectNotes(payload)
@@ -60,11 +62,25 @@ export function registerSuspectsIpc() {
     }
   })
 
+  // notes edit
   ipcMain.handle('suspects:editNotes', async (_event, payload) => {
     try {
       return await editSuspectNotes(payload)
     } catch (err) {
       return { error: true, message: err?.response?.data?.message || err.message }
+    }
+  })
+
+  // ✅ export pdf
+  ipcMain.handle('suspects:exportPdf', async (_event, suspect_id) => {
+    try {
+      const res = await exportSuspectDetailPdf(suspect_id)
+      return { ok: true, ...res }
+    } catch (err) {
+      return {
+        error: true,
+        message: err?.response?.data?.detail || err?.response?.data?.message || err.message
+      }
     }
   })
 

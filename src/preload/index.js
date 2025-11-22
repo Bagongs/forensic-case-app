@@ -1,10 +1,6 @@
 // src/preload/index.js
 import { contextBridge, ipcRenderer } from 'electron'
 
-/**
- * WHITELIST channel IPC yang boleh diakses renderer.
- * Ini best practice security untuk production Electron.
- */
 const VALID_CHANNELS = new Set([
   // auth
   'auth:login',
@@ -41,6 +37,7 @@ const VALID_CHANNELS = new Set([
   'suspects:update',
   'suspects:saveNotes',
   'suspects:editNotes',
+  'suspects:exportPdf',
 
   // reports
   'reports:caseSummary',
@@ -58,10 +55,6 @@ const VALID_CHANNELS = new Set([
   'users:delete'
 ])
 
-/**
- * 1) API utama: invoke(channel, args)
- * Dipakai semua hooks baru kita.
- */
 contextBridge.exposeInMainWorld('api', {
   invoke: (channel, args) => {
     if (!VALID_CHANNELS.has(channel)) {
@@ -71,11 +64,6 @@ contextBridge.exposeInMainWorld('api', {
   }
 })
 
-/**
- * 2) BACKWARD COMPAT (opsional)
- * Kalau masih ada page lama pakai window.authApi / window.api.cases.*, ini menjaga agar tidak rusak.
- * Wrapper ini SUDAH DISINKRONKAN dengan IPC baru (tanpa token).
- */
 contextBridge.exposeInMainWorld('authApi', {
   login: (email, password) => ipcRenderer.invoke('auth:login', { email, password }),
   logout: () => ipcRenderer.invoke('auth:logout'),
@@ -116,7 +104,8 @@ contextBridge.exposeInMainWorld('apiLegacy', {
     create: (payload) => ipcRenderer.invoke('suspects:create', payload),
     update: (id, payload) => ipcRenderer.invoke('suspects:update', { id, payload }),
     saveNotes: (payload) => ipcRenderer.invoke('suspects:saveNotes', payload),
-    editNotes: (payload) => ipcRenderer.invoke('suspects:editNotes', payload)
+    editNotes: (payload) => ipcRenderer.invoke('suspects:editNotes', payload),
+    exportPdf: (id) => ipcRenderer.invoke('suspects:exportPdf', id)
   },
 
   reports: {
