@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import Modal from '../Modal'
 import { useCases } from '../../../store/cases'
+import { usePersons } from '../../../store/persons'
 import FormLabel from '../../atoms/FormLabel'
 import Radio from '../../atoms/Radio'
 import Input from '../../atoms/Input'
@@ -27,17 +28,20 @@ function mapDeviceSourceToApi(value) {
     case 'DVR':
       return 'DVR'
     default:
-      return ''
+      return undefined
   }
 }
 
 export default function AddPersonInlineModal({ caseId, open, onClose }) {
   const fetchCaseDetail = useCases((s) => s.fetchCaseDetail)
+  const fetchCaseLogs = useCases((s) => s.fetchCaseLogs)
+
+  const createPersonRemote = usePersons((s) => s.createPersonRemote)
 
   const [mode, setMode] = useState('known') // known | unknown
   const [name, setName] = useState('')
   const [status, setStatus] = useState('')
-  const [evIdMode, setEvIdMode] = useState('gen') // gen | manual
+  const [evIdMode, setEvIdMode] = useState('gen')
   const [evId, setEvId] = useState('')
   const [source, setSource] = useState('')
   const [summary, setSummary] = useState('')
@@ -61,9 +65,9 @@ export default function AddPersonInlineModal({ caseId, open, onClose }) {
     setEvIdMode('gen')
     setEvId('')
     setSource('')
+    setSummary('')
     setFile(null)
     setPreviewUrl(null)
-    setSummary('')
     setSubmitting(false)
     setError(null)
   }
@@ -80,7 +84,6 @@ export default function AddPersonInlineModal({ caseId, open, onClose }) {
       return
     }
 
-    // preview hanya jika image
     if (f.type?.startsWith('image/')) {
       const reader = new FileReader()
       reader.onload = (ev) => setPreviewUrl(ev.target.result)
@@ -91,28 +94,23 @@ export default function AddPersonInlineModal({ caseId, open, onClose }) {
   }
 
   const isUnknown = mode === 'unknown'
-
   const hasName = name.trim().length > 0
   const hasStatus = !!status
-
   const hasManualEvidence = evIdMode === 'manual' && evId.trim().length > 0
   const hasFile = !!file
   const hasEvidence = hasManualEvidence || hasFile
 
-  // ✅ kontrak: known wajib name+status, unknown tidak
+  // ✅ sesuai contract: case_id + (unknown || (name+status)) + (file atau evidence_number)
   const canSubmit = !!caseId && (isUnknown || (hasName && hasStatus)) && hasEvidence && !submitting
 
   const handleSubmit = async () => {
-    if (!canSubmit || submitting) return
-    if (!caseId) return
+    if (!canSubmit || submitting || !caseId) return
 
     setSubmitting(true)
     setError(null)
 
     try {
-      const is_unknown_person = isUnknown
-
-      let evidenceFilePayload = null
+      let evidenceFilePayload
       if (file) {
         const buf = await file.arrayBuffer()
         evidenceFilePayload = {
@@ -125,23 +123,25 @@ export default function AddPersonInlineModal({ caseId, open, onClose }) {
 
       const payload = {
         case_id: Number(caseId),
-        is_unknown_person,
-        person_name: is_unknown_person ? null : name.trim(),
-        suspect_status: is_unknown_person ? null : status || null,
-
-        // evidence_number hanya dikirim kalau manual & ada isi
+        is_unknown_person: isUnknown,
+        person_name: isUnknown ? undefined : name.trim(),
+        suspect_status: isUnknown ? undefined : status, // wajib kalau known
         evidence_number: hasManualEvidence ? evId.trim() : undefined,
-
-        evidence_source: mapDeviceSourceToApi(source) || undefined,
+        evidence_source: mapDeviceSourceToApi(source),
         evidence_summary: summary.trim() || undefined,
-        evidence_file: evidenceFilePayload || undefined
+        evidence_file: evidenceFilePayload
       }
 
-      // ✅ Legacy Person Contract
-      const res = await window.api.invoke('persons:create', payload)
-      if (res?.error) throw new Error(res.message || 'Failed to create person')
+      // ✅ PENTING: jangan kirim argumen kedua (hindari field liar ke backend)
+      const res = await createPersonRemote(payload)
 
+      if (res?.error) {
+        throw new Error(res.message || 'Failed to create person')
+      }
+
+      // ✅ full refresh setelah sukses
       await fetchCaseDetail(caseId)
+      await fetchCaseLogs(caseId, { skip: 0, limit: 50 })
 
       reset()
       onClose?.()
@@ -243,7 +243,7 @@ export default function AddPersonInlineModal({ caseId, open, onClose }) {
             <Input
               value={evId}
               onChange={(e) => setEvId(e.target.value)}
-              placeholder="Enter Evidence ID (optional if upload file)"
+              placeholder="Enter Evidence ID"
               disabled={submitting}
             />
           </>
@@ -261,7 +261,7 @@ export default function AddPersonInlineModal({ caseId, open, onClose }) {
           ))}
         </Select>
 
-        <FormLabel>Evidence File (Image / PDF)</FormLabel>
+        <FormLabel>Evidence File</FormLabel>
         <div
           className="rounded-lg border p-4 flex items-center justify-center gap-3"
           style={{ borderColor: 'var(--border)' }}
@@ -282,7 +282,6 @@ export default function AddPersonInlineModal({ caseId, open, onClose }) {
             className="hidden"
             onChange={onPickFile}
           />
-
           {file && !previewUrl && (
             <span className="text-sm opacity-70 truncate max-w-60">{file.name}</span>
           )}
@@ -307,13 +306,7 @@ export default function AddPersonInlineModal({ caseId, open, onClose }) {
           disabled={submitting}
         />
 
-        {/* Error */}
         {error && <div className="text-xs text-red-400 mt-1">{error}</div>}
-
-        {/* Helper kecil */}
-        {!hasEvidence && (
-          <div className="text-[11px] opacity-70">Evidence file atau Evidence ID wajib diisi.</div>
-        )}
       </div>
     </Modal>
   )
