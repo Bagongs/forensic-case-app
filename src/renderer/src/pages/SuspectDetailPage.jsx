@@ -1,10 +1,9 @@
 import { useParams } from 'react-router-dom'
 import CaseLayout from './CaseLayout'
 import MiniButton, { MiniButtonContent } from '../components/common/MiniButton'
-import { useCases } from '../store/cases'
 import bgButton from '../assets/image/bg-button.svg'
 import bgButtonTransparent from '../assets/image/bg-button-transparent.svg'
-import { useRef, useState } from 'react'
+import { useRef, useState, useEffect, useMemo } from 'react'
 import { FaEdit, FaRegSave } from 'react-icons/fa'
 import iconAddEvidance from '../assets/icons/icon-add-evidance.svg'
 import NotesBox from '../components/box/NotesBox'
@@ -12,30 +11,83 @@ import { LiaEditSolid } from 'react-icons/lia'
 import editBg from '../assets/image/edit.svg'
 import EditPersonModal from '../components/modals/suspect/EditPersonModal'
 import AddEvidenceModal from '../components/modals/evidence/AddEvidenceModal'
+import { useCases } from '../store/cases' // hanya untuk caseOptions default di modal
+import { useSuspects } from '../store/suspects' // ✅ suspects store
 
 export default function SuspectDetailPage() {
   const { suspectId } = useParams()
+  const suspectNumId = Number(suspectId)
+
+  // cases store cuma buat default dropdown/modal
   const cases = useCases((s) => s.cases)
-  const updatePerson = useCases((s) => s.updatePerson)
-  const addEvidenceToPerson = useCases((s) => s.addEvidenceToPerson)
 
-  // cari case & person berdasarkan suspectId
-  let caseData = null
-  let person = null
-  for (const c of cases) {
-    const found = (c.persons || []).find((p) => p.id === suspectId)
-    if (found) {
-      caseData = c
-      person = found
-      break
-    }
-  }
+  const { fetchSuspectDetail, saveNotesRemote, editNotesRemote, loading, error } = useSuspects()
 
-  const [notes, setNotes] = useState(person?.notes || '')
+  const [detail, setDetail] = useState(null)
+  const [notes, setNotes] = useState('')
   const [isEditing, setIsEditing] = useState(false)
   const [openModalEdit, setOpenModalEdit] = useState(false)
   const [openAddEv, setOpenAddEv] = useState(false)
   const savingRef = useRef(false)
+
+  // fetch suspect detail
+  useEffect(() => {
+    let mounted = true
+    ;(async () => {
+      try {
+        const res = await fetchSuspectDetail(suspectNumId)
+        if (!mounted) return
+        setDetail(res)
+        const apiNotes = res?.suspect_notes ?? res?.data?.suspect_notes ?? ''
+        setNotes(apiNotes || '')
+      } catch (e) {
+        console.error('[SuspectDetailPage] fetch detail failed:', e)
+      }
+    })()
+    return () => {
+      mounted = false
+    }
+  }, [suspectNumId, fetchSuspectDetail])
+
+  // ===== mapping detail → UI shape (tanpa ubah UI) =====
+  const mapped = useMemo(() => {
+    const d = detail?.data || detail || null
+    if (!d) return null
+
+    const person = {
+      id: d.id,
+      name: d.person_name || 'Unknown',
+      status: d.suspect_status || d.status || 'Unknown',
+      notes: d.suspect_notes || '',
+      evidences: []
+    }
+
+    // response evidence: array wrapper
+    const evWrap = d.evidence || []
+    const evList = evWrap.flatMap((w) => w.list_evidence || [])
+    person.evidences = evList.map((ev) => ({
+      id: ev.id,
+      fileName: ev.file_path ? ev.file_path.split('/').pop() : ev.evidence_number || 'Evidence',
+      summary: ev.evidence_summary || '-',
+      previewDataUrl: ev.preview_url || ev.preview_image || null,
+      img: ev.file_path || null,
+      source: ev.evidence_source || ev.evidence_number || '-',
+      createdAt: ev.created_at
+    }))
+
+    const caseData = {
+      id: d.case_id,
+      name: d.case_name || '-',
+      investigator: d.investigator || '-',
+      createdAt: d.created_at_case || d.created_at || new Date().toISOString(),
+      date: d.created_at_case || d.created_at || null
+    }
+
+    return { person, caseData }
+  }, [detail])
+
+  const person = mapped?.person
+  const caseData = mapped?.caseData
   const evidences = person?.evidences ?? []
 
   const actionLabel = isEditing ? 'Save' : notes.trim() ? 'Edit' : 'Add'
@@ -46,7 +98,7 @@ export default function SuspectDetailPage() {
   )
 
   const onNotesAction = async () => {
-    if (!person || !caseData) return
+    if (!person) return
     if (!isEditing) {
       setIsEditing(true)
       return
@@ -54,24 +106,49 @@ export default function SuspectDetailPage() {
     if (savingRef.current) return
     savingRef.current = true
     try {
-      updatePerson(caseData.id, person.id, { notes })
+      const payload = {
+        suspect_id: person.id,
+        notes
+      }
+
+      // ✅ sesuai kontrak: jika belum ada notes → save, else edit
+      const hasNotesBefore = !!(detail?.data?.suspect_notes || detail?.suspect_notes)
+      if (!hasNotesBefore) {
+        await saveNotesRemote(payload)
+      } else {
+        await editNotesRemote(payload)
+      }
+
       setIsEditing(false)
+
+      // refresh detail biar evidence/notes sinkron
+      const res = await fetchSuspectDetail(suspectNumId)
+      setDetail(res)
     } catch (e) {
-      console.error('Failed to save summary:', e)
+      console.error('Failed to save notes:', e)
     } finally {
       savingRef.current = false
     }
   }
 
-  if (!caseData || !person) {
+  if (!mapped) {
     return (
       <CaseLayout title="Suspect Management" showBack={true}>
         <div className="text-center text-[#C7D2E1] mt-10">
-          Suspect not found for ID: <b>{suspectId}</b>
+          {loading ? (
+            'Loading suspect detail…'
+          ) : (
+            <>
+              Suspect not found for ID: <b>{suspectId}</b>
+            </>
+          )}
         </div>
+
+        {error && <div className="text-center text-red-400 text-sm mt-3">{String(error)}</div>}
       </CaseLayout>
     )
   }
+
   const badgeStatus = (status = 'Unknown') => {
     if (!status || status == 'Unknown') {
       return
@@ -194,7 +271,7 @@ export default function SuspectDetailPage() {
         <div className="grid gap-4 pr-2 overflow-y-auto" style={{ maxHeight: 240 }}>
           {evidences.map((e) => (
             <div key={e.id} className="flex gap-4 items-start">
-              {e.previewDataUrl ? (
+              {e.previewDataUrl || e.img ? (
                 <img
                   src={e.previewDataUrl || e.img || 'https://placehold.co/180x110?text=No+Image'}
                   alt="evidence"
@@ -246,6 +323,8 @@ export default function SuspectDetailPage() {
           onClose={() => setOpenModalEdit(false)}
           caseId={caseData.id}
           person={person}
+          // prop opsional biar modal bisa pakai endpoint baru kalau kamu update modalnya
+          suspectId={person.id}
         />
       )}
 
@@ -253,14 +332,28 @@ export default function SuspectDetailPage() {
         <AddEvidenceModal
           open={openAddEv}
           onClose={() => setOpenAddEv(false)}
-          onSave={(data) => {
-            addEvidenceToPerson(caseData.id, person.id, data)
-            setOpenAddEv(false)
+          onSave={async (data) => {
+            // bukti baru untuk suspect biasanya lewat evidence module kamu.
+            // kalau evidence:create memang sudah sesuai kontrak:
+            try {
+              await window.api.invoke('evidence:create', {
+                ...data,
+                suspect_id: person.id,
+                case_id: caseData.id
+              })
+              const res = await fetchSuspectDetail(suspectNumId)
+              setDetail(res)
+            } catch (e) {
+              console.error('[AddEvidenceModal] failed:', e)
+            } finally {
+              setOpenAddEv(false)
+            }
           }}
           defaultCaseId={caseData.id}
           defaultCaseName={caseData.name}
           defaultInvestigator={caseData.investigator}
           defaultPerson={person}
+          caseOptions={(cases ?? []).map((c) => ({ value: c.id, label: c.name }))}
         />
       )}
     </CaseLayout>

@@ -1,3 +1,6 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable no-unused-vars */
+/* eslint-disable react/prop-types */
 import { useMemo, useState, useEffect, useRef, useLayoutEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
@@ -5,13 +8,14 @@ import CaseLayout from './CaseLayout'
 import StatsCard from '../components/StatsCard'
 import MiniButton, { MiniButtonContent } from '../components/common/MiniButton'
 import AddPersonModal from '../components/modals/suspect/AddPersonModal'
-import { useCases } from '../store/cases'
 import bgPerson from '../assets/image/stats/person.png'
 import bgEvidance from '../assets/image/stats/evidance.png'
 import iconFilter from '../assets/icons/icon-filter.svg'
 import iconSearch from '../assets/icons/icon-search.svg'
 import bgButton from '../assets/image/bg-button.svg'
 import Pagination from '../components/common/Pagination'
+
+import { useSuspects } from '../store/suspects'
 
 /* ====== CONSTANTS ====== */
 const COLORS = {
@@ -35,8 +39,16 @@ const PAGE_SIZES = [5, 10, 15]
 
 export default function SuspectListPage() {
   const nav = useNavigate()
-  const cases = useCases((s) => s.cases)
-  const addPersonToCase = useCases((s) => s.addPersonToCase)
+  const {
+    suspects,
+    summary,
+    pagination,
+    loading,
+    error,
+    fetchSuspects,
+    fetchSuspectSummary,
+    createSuspectRemote
+  } = useSuspects()
 
   const [q, setQ] = useState('')
   const [modal, setModal] = useState(false)
@@ -48,47 +60,53 @@ export default function SuspectListPage() {
   const [statusFilter, setStatusFilter] = useState([])
   const filterBtnRef = useRef(null)
 
-  // Flatten persons
-  const rows = useMemo(() => {
-    const out = []
-    for (const c of cases ?? []) {
-      const persons = c.persons ?? []
-      for (const p of persons) {
-        out.push({
-          id: p.id,
-          name: p.name,
-          status: p.status,
-          caseId: c.id,
-          caseName: c.name,
-          investigator: c.investigator || '-',
-          evidencesCount: (p.evidences ?? []).length
-        })
+  // Fetch summary once
+  useEffect(() => {
+    fetchSuspectSummary().catch(() => {})
+  }, [])
+
+  // Fetch suspects when search/filter/pagination changes
+  useEffect(() => {
+    const params = {
+      skip: (page - 1) * pageSize,
+      limit: pageSize
+    }
+
+    if (q.trim()) params.search = q.trim()
+    if (statusFilter.length === 1) params.status = statusFilter[0]
+
+    fetchSuspects(params).catch(() => {})
+  }, [q, page, pageSize, statusFilter])
+
+  // Reset page when filter/search changes
+  useEffect(() => setPage(1), [q, pageSize, statusFilter])
+
+  const rows = suspects
+
+  // Stats dari summary kalau ada, fallback lokal
+  const stats = useMemo(() => {
+    if (summary) {
+      return {
+        totalPerson:
+          summary.total_person ?? summary.total_suspects ?? summary.totalPerson ?? rows.length,
+        totalEvidence: summary.total_evidence ?? summary.totalEvidence ?? 0
       }
     }
-    return out
-  }, [cases])
+    return { totalPerson: rows.length, totalEvidence: 0 }
+  }, [summary, rows])
 
-  // Stats
-  const stats = useMemo(() => {
-    const totalPerson = rows.length
-    const totalEvidence = rows.reduce((sum, r) => sum + r.evidencesCount, 0)
-    return { totalPerson, totalEvidence }
-  }, [rows])
-
-  // Filter pencarian + status
+  // Filter pencarian + status (UI sama seperti sebelumnya)
   const filtered = useMemo(() => {
     const term = q.trim().toLowerCase()
     let arr = rows
 
-    // 🧹 filter by status (jika user memilih filter status)
     if (statusFilter.length > 0) {
       arr = arr.filter((r) => statusFilter.includes(r.status))
     }
 
-    // 🚫 sembunyikan status Unknown / null / kosong
+    // sembunyikan Unknown (tetap sesuai UI lama kamu)
     arr = arr.filter((r) => r.status && r.status.toLowerCase() !== 'unknown')
 
-    // 🔍 search
     if (term) {
       arr = arr.filter(
         (r) =>
@@ -102,40 +120,52 @@ export default function SuspectListPage() {
     return arr
   }, [rows, q, statusFilter])
 
-  // Pagination
-  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize))
+  const totalSuspects = pagination?.total ?? filtered.length
+  const totalPages = Math.max(1, Math.ceil(totalSuspects / pageSize))
   const safePage = Math.min(page, totalPages)
-  const start = (safePage - 1) * pageSize
-  const currentRows = filtered.slice(start, start + pageSize)
-  useEffect(() => setPage(1), [q, pageSize, statusFilter])
 
-  // case options
-  const caseOptions = useMemo(
-    () => (cases ?? []).map((c) => ({ value: c.id, label: c.name })),
-    [cases]
-  )
-
-  const handleSavePerson = (payload) => {
-    if (!payload?.caseId) {
-      console.warn('[AddPersonModal] Missing caseId in payload')
-      setModal(false)
-      return
+  // case options untuk modal (unik dari list suspects)
+  const caseOptions = useMemo(() => {
+    const map = new Map()
+    for (const s of rows) {
+      if (!map.has(s.caseId)) map.set(s.caseId, s.caseName)
     }
+    return Array.from(map.entries()).map(([value, label]) => ({ value, label }))
+  }, [rows])
 
-    const newId = addPersonToCase(payload.caseId, {
-      name: payload.name,
-      status: payload.status,
-      notes: payload.notes,
-      evidence: payload.evidence
-    })
+  const handleSavePerson = async (payload) => {
+    try {
+      const apiPayload = {
+        case_id: Number(payload.caseId),
+        person_name: payload.name?.trim(),
+        suspect_status: payload.status,
+        is_unknown_person: !payload.name
+      }
 
-    setModal(false)
-    if (newId) setTimeout(() => nav(`/suspects/${newId}`), 150)
+      // optional evidence
+      if (payload.evidence) {
+        apiPayload.evidence_number = payload.evidence.evidence_number
+        apiPayload.evidence_source = payload.evidence.source
+        apiPayload.evidence_summary = payload.evidence.summary
+        apiPayload.evidence_file = payload.evidence.file
+      }
+
+      const created = await createSuspectRemote(apiPayload)
+
+      setModal(false)
+      await fetchSuspects({ skip: 0, limit: pageSize })
+
+      const newId = created?.id || created?.suspect_id
+      if (newId) nav(`/suspects/${newId}`)
+    } catch (err) {
+      console.error('[SuspectListPage] create suspect failed:', err)
+      setModal(false)
+    }
   }
 
   const badgeStatus = (status = 'Unknown') => {
     const s = STATUS_OPTIONS.find((opt) => opt.name.toLowerCase() === status.toLowerCase())
-    if (!s || s == 'Unknown') return
+    if (!s || status.toLowerCase() === 'unknown') return null
     return (
       <div
         className="px-4 py-1 text-[13px] font-semibold text-center rounded-full"
@@ -203,6 +233,22 @@ export default function SuspectListPage() {
         className="relative border rounded-sm overflow-hidden"
         style={{ borderColor: COLORS.border, background: COLORS.tableBody }}
       >
+        {/* Loader overlay */}
+        {loading && (
+          <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-10 text-sm">
+            Loading suspects…
+          </div>
+        )}
+
+        {error && (
+          <div
+            className="px-4 py-2 text-xs text-red-400 border-b"
+            style={{ borderColor: COLORS.border }}
+          >
+            {String(error)}
+          </div>
+        )}
+
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left" style={{ background: COLORS.theadBg }}>
@@ -218,7 +264,7 @@ export default function SuspectListPage() {
             </tr>
           </thead>
           <tbody>
-            {currentRows.map((row, i) => (
+            {filtered.map((row, i) => (
               <tr key={row.id ?? `${row.caseId}-${i}`} className="hover:bg-white/5">
                 <td className="px-4 py-3 border-b" style={{ borderColor: COLORS.border }}>
                   {row.name}
@@ -244,7 +290,7 @@ export default function SuspectListPage() {
                 </td>
               </tr>
             ))}
-            {currentRows.length === 0 && (
+            {filtered.length === 0 && !loading && (
               <tr>
                 <td colSpan={5} className="px-4 py-6 text-center" style={{ color: COLORS.dim }}>
                   {rows.length === 0 ? 'No person' : 'No result for your search'}
@@ -272,16 +318,13 @@ export default function SuspectListPage() {
   )
 }
 
-/* ====== Filter Dropdown ====== */
-// eslint-disable-next-line react/prop-types
+/* ====== Filter Dropdown (UI sama) ====== */
 function FilterDropdown({ open, onClose, selected, onChange, anchorRef }) {
   const menuRef = useRef(null)
   const [pos, setPos] = useState({ top: 0, left: 0 })
 
   useLayoutEffect(() => {
-    // eslint-disable-next-line react/prop-types
     if (open && anchorRef?.current) {
-      // eslint-disable-next-line react/prop-types
       const rect = anchorRef.current.getBoundingClientRect()
       setPos({ top: rect.bottom + 8, left: rect.left })
     }
@@ -290,7 +333,6 @@ function FilterDropdown({ open, onClose, selected, onChange, anchorRef }) {
   useEffect(() => {
     if (!open) return
     const handleClickOutside = (e) => {
-      // eslint-disable-next-line react/prop-types
       if (menuRef.current?.contains(e.target) || anchorRef.current?.contains(e.target)) return
       onClose()
     }
@@ -313,7 +355,6 @@ function FilterDropdown({ open, onClose, selected, onChange, anchorRef }) {
         color: '#fff'
       }}
     >
-      {/* Header */}
       <div
         className="flex items-center justify-between px-4 py-3 border-b"
         style={{ background: '#162337', borderBottom: '0.1px solid #E8C902' }}
@@ -324,16 +365,13 @@ function FilterDropdown({ open, onClose, selected, onChange, anchorRef }) {
         </button>
       </div>
 
-      {/* Options */}
       <div className="flex flex-col gap-3 px-4 py-4">
         {STATUS_OPTIONS.map((opt) => {
-          // eslint-disable-next-line react/prop-types
           const isChecked = selected.includes(opt.name)
           return (
             <div
               key={opt.name}
               onClick={() => {
-                // eslint-disable-next-line react/prop-types
                 if (isChecked) onChange(selected.filter((s) => s !== opt.name))
                 else onChange([...selected, opt.name])
               }}
