@@ -12,7 +12,7 @@ export default function CaseLayout({ title, showBack = false, children }) {
     return (
       <Link
         to={to}
-        className="relative px-16 py-3 text-sm font-semibold transition-all duration-300"
+        className="relative px-[70px] py-3 text-sm font-semibold transition-all duration-300"
         style={{
           background: isActive
             ? 'linear-gradient(to top, #022752 0%, #1D4987 100%)'
@@ -35,7 +35,7 @@ export default function CaseLayout({ title, showBack = false, children }) {
         className="absolute top-0 left-0 w-screen h-auto object-cover -z-10"
       />
       <div className="relative max-w-7xl mx-auto px-5 py-6">
-        <div className="absolute flex justify-end items-center -space-x-9 mb-5 right-16">
+        <div className="absolute flex justify-end items-center -space-x-9 mb-5 right-6">
           {tab('/cases', 'Case Management')}
           {tab('/evidence', 'Evidence Management')}
           {tab('/suspects', 'Suspect Management')}
@@ -53,7 +53,9 @@ export default function CaseLayout({ title, showBack = false, children }) {
           {title}
         </h1>
         {children}
-        <ProfileCorner label="Admin" active={pathname.includes('/user-management')} />
+        <div className="fixed top-8 right-4 z-0">
+          <ProfileCorner label="Admin" active={pathname.includes('/user-management')} />
+        </div>
       </div>
     </div>
   )
