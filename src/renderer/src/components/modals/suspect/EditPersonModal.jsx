@@ -55,10 +55,8 @@ export default function EditPersonModal({
       if (!suspectId) return
       setLoadingNotes(true)
       try {
-        // ✅ IPC baru
         const res = await window.api.invoke('suspects:detail', Number(suspectId))
 
-        // fleksibel: tergantung bentuk response
         const suspectNotes =
           res?.data?.data?.suspect_notes ?? res?.data?.suspect_notes ?? res?.suspect_notes ?? null
 
@@ -80,7 +78,11 @@ export default function EditPersonModal({
   }, [open, person, suspectId])
 
   const isUnknown = poiMode === 'unknown'
-  const canSubmit = !!suspectId && (isUnknown || name.trim().length > 0)
+  const hasName = name.trim().length > 0
+  const hasStatus = !!status
+
+  // ✅ kontrak: kalau known, wajib name + status
+  const canSubmit = !!suspectId && (isUnknown || (hasName && hasStatus)) && !submitting
 
   const handleClose = () => {
     if (cleanupRef.current) cleanupRef.current = false
@@ -113,11 +115,11 @@ export default function EditPersonModal({
         suspect_status: isUnknown ? null : finalStatus || null
       }
 
-      // ✅ IPC baru
-      await window.api.invoke('suspects:update', {
+      const updRes = await window.api.invoke('suspects:update', {
         id: Number(suspectId),
         payload: updatePayload
       })
+      if (updRes?.error) throw new Error(updRes.message || 'Failed to update suspect')
 
       // 2) UPDATE / SAVE NOTES
       const trimmedNotes = (notes || '').trim()
@@ -127,14 +129,13 @@ export default function EditPersonModal({
           notes: trimmedNotes
         }
 
-        try {
-          if (hadExistingNotes) {
-            await window.api.invoke('suspects:editNotes', notesBody)
-          } else {
-            await window.api.invoke('suspects:saveNotes', notesBody)
-          }
-        } catch (err) {
-          console.error('Failed to save/edit suspect notes', err)
+        const noteRes = hadExistingNotes
+          ? await window.api.invoke('suspects:editNotes', notesBody)
+          : await window.api.invoke('suspects:saveNotes', notesBody)
+
+        if (noteRes?.error) {
+          // notes error tidak menggagalkan update suspect, tapi tetap tampilkan warning
+          console.warn('[EditPersonModal] notes update failed:', noteRes.message)
         }
       }
 

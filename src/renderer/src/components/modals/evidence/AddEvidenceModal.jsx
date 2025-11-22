@@ -140,11 +140,17 @@ export default function AddEvidenceModal({
         }
       }
 
+      const mappedSource = mapDeviceSourceToApi(source) || undefined
+
       const payload = {
         case_id: Number(caseId),
         evidence_number: idMode === 'manual' && evidenceId.trim() ? evidenceId.trim() : undefined,
         type: etype || undefined,
-        source: mapDeviceSourceToApi(source) || undefined,
+
+        // ✅ amanin naming kontrak berbeda
+        source: mappedSource,
+        evidence_source: mappedSource,
+
         evidence_summary: summary.trim() || undefined,
         investigator: investigator.trim(),
         person_name: is_unknown_person ? null : finalPersonName,
@@ -153,11 +159,9 @@ export default function AddEvidenceModal({
         evidence_file: evidenceFilePayload || undefined
       }
 
-      // ✅ IPC terbaru
       const res = await window.api.invoke('evidence:create', payload)
       if (res?.error) throw new Error(res.message || 'Failed to create evidence')
 
-      // ✅ penting: tunggu parent selesai (misal full refetch)
       await onSave?.({
         apiResponse: res,
         caseId,
@@ -200,7 +204,6 @@ export default function AddEvidenceModal({
       size="lg"
     >
       <div className="grid gap-3">
-        {/* Case Related */}
         <FormLabel>Case Related</FormLabel>
         {defaultCaseId ? (
           <Input value={defaultCaseName} disabled readOnly />
@@ -217,7 +220,6 @@ export default function AddEvidenceModal({
           </Select>
         )}
 
-        {/* Evidence ID */}
         <FormLabel>Evidence ID Mode</FormLabel>
         <div className="flex items-center gap-6">
           <Radio checked={idMode === 'gen'} onChange={() => setIdMode('gen')} disabled={submitting}>
@@ -244,7 +246,6 @@ export default function AddEvidenceModal({
           </>
         )}
 
-        {/* Evidence Source */}
         <FormLabel>Evidence Source</FormLabel>
         <Select value={source} onChange={(e) => setSource(e.target.value)} disabled={submitting}>
           <option value="" disabled>
@@ -257,7 +258,6 @@ export default function AddEvidenceModal({
           ))}
         </Select>
 
-        {/* Evidence File */}
         <FormLabel>Evidence File</FormLabel>
         <div
           className="rounded-lg border p-4 flex items-center justify-center"
@@ -296,7 +296,6 @@ export default function AddEvidenceModal({
           </div>
         )}
 
-        {/* Summary */}
         <FormLabel>Evidence Summary</FormLabel>
         <Textarea
           rows={4}
@@ -306,7 +305,6 @@ export default function AddEvidenceModal({
           disabled={submitting}
         />
 
-        {/* Investigator */}
         <FormLabel>Investigator</FormLabel>
         <Input
           value={investigator}
@@ -316,7 +314,6 @@ export default function AddEvidenceModal({
           readOnly={!!defaultInvestigator}
         />
 
-        {/* Person of Interest */}
         <FormLabel>Person of Interest</FormLabel>
         <div className="flex items-center gap-6">
           <Radio

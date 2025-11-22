@@ -11,7 +11,6 @@ import Select from '../../atoms/Select'
 const DEVICE_SOURCES = ['Hp', 'Ssd', 'HardDisk', 'Pc', 'Laptop', 'DVR']
 const STATUS_OPTIONS = ['Witness', 'Reported', 'Suspected', 'Suspect', 'Defendant']
 
-// Mapping label UI -> value yang diharapkan API
 function mapDeviceSourceToApi(value) {
   switch (value) {
     case 'Hp':
@@ -33,10 +32,10 @@ function mapDeviceSourceToApi(value) {
 
 export default function AddPersonModal({ open, onClose, onSave, caseOptions = [] }) {
   const [caseId, setCaseId] = useState('')
-  const [poiMode, setPoiMode] = useState('known') // 'known' | 'unknown'
+  const [poiMode, setPoiMode] = useState('known')
   const [name, setName] = useState('')
   const [status, setStatus] = useState('')
-  const [idMode, setIdMode] = useState('gen') // 'gen' | 'manual'
+  const [idMode, setIdMode] = useState('gen')
   const [evidenceId, setEvidenceId] = useState('')
   const [source, setSource] = useState('')
   const [summary, setSummary] = useState('')
@@ -87,7 +86,6 @@ export default function AddPersonModal({ open, onClose, onSave, caseOptions = []
       reader.readAsDataURL(f)
     }
 
-    // reset value biar bisa upload file yang sama lagi
     e.target.value = ''
   }
 
@@ -99,10 +97,6 @@ export default function AddPersonModal({ open, onClose, onSave, caseOptions = []
   const hasFile = !!file
   const hasEvidence = hasManualEvidence || hasFile
 
-  // Kontrak API:
-  // - case_id wajib
-  // - jika is_unknown_person=false → person_name + suspect_status wajib
-  // - minimal salah satu: evidence_number atau evidence_file
   const canSubmit = hasCase && (isUnknown || (hasName && hasStatus)) && hasEvidence && !submitting
 
   const handleSubmit = async () => {
@@ -114,7 +108,6 @@ export default function AddPersonModal({ open, onClose, onSave, caseOptions = []
     try {
       const is_unknown_person = isUnknown
 
-      // siapkan payload file untuk IPC → main
       let evidenceFilePayload = null
       if (file) {
         const buf = await file.arrayBuffer()
@@ -122,7 +115,7 @@ export default function AddPersonModal({ open, onClose, onSave, caseOptions = []
           name: file.name,
           type: file.type,
           size: file.size,
-          buffer: Array.from(new Uint8Array(buf)) // supaya serializable lewat IPC
+          buffer: Array.from(new Uint8Array(buf))
         }
       }
 
@@ -131,34 +124,29 @@ export default function AddPersonModal({ open, onClose, onSave, caseOptions = []
         is_unknown_person,
         person_name: is_unknown_person ? null : name.trim(),
         suspect_status: is_unknown_person ? null : status || null,
-        evidence_number: idMode === 'manual' && evidenceId.trim() ? evidenceId.trim() : undefined,
+        evidence_number: hasManualEvidence ? evidenceId.trim() : undefined,
         evidence_source: mapDeviceSourceToApi(source) || undefined,
         evidence_summary: summary.trim() || undefined,
         evidence_file: evidenceFilePayload || undefined
       }
 
-      // 1) Create suspect
-      const res = await window.api.suspects.create(payload)
+      // ✅ FIX: pakai invoke IPC suspects:create
+      const res = await window.api.invoke('suspects:create', payload)
+      if (res?.error) throw new Error(res.message || 'Failed to create suspect')
 
-      // ambil suspect_id dari response
       const suspectId = res?.data?.id ?? res?.data?.suspect_id ?? res?.data?.suspect?.id
 
-      // 2) Kalau user isi Notes → kirim ke /suspects/save-suspect-notes
       const trimmedNotes = notes.trim()
       if (trimmedNotes && suspectId) {
-        try {
-          await window.api.suspects.saveNotes({
-            suspect_id: Number(suspectId),
-            notes: trimmedNotes
-          })
-        } catch (err) {
-          // tidak menggagalkan create suspect,
-          // hanya log error (bisa kamu upgrade nanti untuk tampil toast)
-          console.error('Failed to save suspect notes', err)
+        const nres = await window.api.invoke('suspects:saveNotes', {
+          suspect_id: Number(suspectId),
+          notes: trimmedNotes
+        })
+        if (nres?.error) {
+          console.warn('[AddPersonModal] notes save failed:', nres.message)
         }
       }
 
-      // 3) Tetap panggil onSave untuk parent (kalau dipakai)
       onSave?.({
         apiResponse: res,
         caseId,
@@ -202,7 +190,6 @@ export default function AddPersonModal({ open, onClose, onSave, caseOptions = []
       size="lg"
     >
       <div className="grid gap-3">
-        {/* CASE SELECT */}
         <FormLabel>Case Name</FormLabel>
         <Select value={caseId} onChange={(e) => setCaseId(e.target.value)} disabled={submitting}>
           <option value="" disabled>
@@ -215,14 +202,13 @@ export default function AddPersonModal({ open, onClose, onSave, caseOptions = []
           ))}
         </Select>
 
-        {/* PERSON MODE */}
         <FormLabel>Person of Interest</FormLabel>
         <div className="flex items-center gap-6">
           <Radio
             checked={poiMode === 'known'}
             onChange={() => {
               setPoiMode('known')
-              setStatus('') // reset status kalau sebelumnya unknown
+              setStatus('')
             }}
             disabled={submitting}
           >
@@ -241,7 +227,6 @@ export default function AddPersonModal({ open, onClose, onSave, caseOptions = []
           </Radio>
         </div>
 
-        {/* PERSON DETAIL */}
         {poiMode === 'known' && (
           <>
             <FormLabel>Person Name</FormLabel>
@@ -270,7 +255,6 @@ export default function AddPersonModal({ open, onClose, onSave, caseOptions = []
           </>
         )}
 
-        {/* EVIDENCE ID MODE */}
         <FormLabel>Evidence ID Mode</FormLabel>
         <div className="flex items-center gap-6">
           <Radio checked={idMode === 'gen'} onChange={() => setIdMode('gen')} disabled={submitting}>
@@ -297,7 +281,6 @@ export default function AddPersonModal({ open, onClose, onSave, caseOptions = []
           </>
         )}
 
-        {/* EVIDENCE SOURCE */}
         <FormLabel>Evidence Source</FormLabel>
         <Select value={source} onChange={(e) => setSource(e.target.value)} disabled={submitting}>
           <option value="" disabled>
@@ -310,7 +293,6 @@ export default function AddPersonModal({ open, onClose, onSave, caseOptions = []
           ))}
         </Select>
 
-        {/* EVIDENCE FILE */}
         <FormLabel>Evidence File</FormLabel>
         <div
           className="rounded-lg border p-4 flex items-center justify-center"
@@ -347,7 +329,6 @@ export default function AddPersonModal({ open, onClose, onSave, caseOptions = []
           </div>
         )}
 
-        {/* EVIDENCE SUMMARY */}
         <FormLabel>Evidence Summary</FormLabel>
         <Textarea
           rows={4}
@@ -357,7 +338,6 @@ export default function AddPersonModal({ open, onClose, onSave, caseOptions = []
           disabled={submitting}
         />
 
-        {/* NOTES */}
         <FormLabel>Notes (Optional)</FormLabel>
         <Textarea
           rows={3}
