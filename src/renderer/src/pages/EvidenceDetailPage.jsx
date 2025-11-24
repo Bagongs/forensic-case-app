@@ -1,6 +1,6 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { useCases } from '../store/cases'
 import { useEvidences } from '../store/evidences'
 import MiniButton, { MiniButtonContent } from '../components/common/MiniButton'
 import StageContentModal from '../components/modals/evidence/StageContentModal'
@@ -54,7 +54,7 @@ export default function EvidenceDetailPage() {
   const nav = useNavigate()
 
   // store lama (masih dipakai untuk update evidence via modal)
-  const updateEvidence = useEvidences((s) => s.updateEvidence)
+  const updateEvidenceRemote = useEvidences((s) => s.updateEvidence)
 
   // store baru untuk detail evidence (IPC evidence:detail)
   const {
@@ -915,33 +915,26 @@ export default function EvidenceDetailPage() {
         <EditEvidenceModal
           open={editOpen}
           onClose={() => setEditOpen(false)}
-          onSave={(updated) => {
-            updateEvidence(
-              updated.id,
-              {
-                summary: updated.summary,
-                source: updated.source,
-                investigator: updated.investigator,
-                personOfInterest: updated.personOfInterest,
-                fileName: updated.fileName,
-                fileSize: updated.fileSize,
-                fileMime: updated.fileMime,
-                previewDataUrl: updated.previewDataUrl
-              },
-              {
-                // personPatch
-                name:
-                  updated.poiMode === 'unknown'
-                    ? 'Unknown'
-                    : updated.personName?.trim() || 'Unknown',
-                status: updated.poiMode === 'unknown' ? null : updated.status || null
-              }
-            )
-            setEditOpen(false)
-          }}
           evidenceData={evidence}
           caseName={caseRef?.name}
           personData={personRef}
+          onSave={async (updated) => {
+            await updateEvidenceRemote(detail.id, {
+              payload: {
+                source: updated.source,
+                evidence_summary: updated.summary,
+                investigator: updated.investigator,
+
+                is_unknown_person: updated.poiMode === 'unknown',
+                person_name: updated.poiMode === 'unknown' ? undefined : updated.personName?.trim(),
+                suspect_status:
+                  updated.poiMode === 'unknown' ? undefined : updated.status || undefined,
+
+                evidence_file: updated.file || undefined
+              }
+            })
+            setEditOpen(false)
+          }}
         />
       </div>
     </CaseLayout>

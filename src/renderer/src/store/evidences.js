@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 // src/renderer/src/store/evidences.js
 import { create } from 'zustand'
 
@@ -27,11 +26,6 @@ const extractList = (raw) => {
 
 /* ============================================================
    MAPPING: Evidence List Item
-   Response contoh:
-   {
-     id, case_id, evidence_number, title,
-     investigator, agency, created_at
-   }
 ============================================================ */
 const mapApiEvidenceListItem = (api) => {
   const evidenceNumber = api.evidence_number ?? api.evidenceNumber ?? ''
@@ -41,15 +35,10 @@ const mapApiEvidenceListItem = (api) => {
     id: api.id ?? api.evidence_id,
     caseId: api.case_id ?? api.caseId,
     evidenceNumber,
-
-    // ✅ FIX UTAMA: caseName dari title (sesuai contract)
-    caseName: api.title ?? api.case_title ?? api.caseName ?? '-',
-
+    caseName: api.title ?? api.case_title ?? api.caseName ?? '-', // ✅ from title
     investigator: api.investigator ?? api.main_investigator ?? '-',
     agency: api.agency ?? api.agency_name ?? '-',
     createdAt: api.created_at ?? api.created_date ?? api.date_created ?? null,
-
-    // buat indikator warna di tabel
     source: isGenerated ? 'generated' : 'manual'
   }
 }
@@ -64,40 +53,92 @@ export const useEvidences = create((set, get) => ({
   error: null,
   detail: null,
 
-  pagination: {
-    total: 0,
-    skip: 0,
-    limit: 10
-  },
+  pagination: { total: 0, skip: 0, limit: 10 },
 
-  /* ============================================================
-     EVIDENCE SUMMARY (optional)
-     kalau endpoint summary belum ada, tetap aman.
-  ============================================================ */
   async fetchEvidenceSummary() {
     try {
       const res = await window.api.invoke('evidence:summary')
       set({ summary: unwrap(res) })
-    } catch (err) {
-      // silent fail (biar page tetap jalan)
+    } catch {
       set({ summary: null })
     }
   },
 
   /* ============================================================
-     EVIDENCE LIST
-     GET /evidence/get-evidence-list
-     params: { skip, limit, search }
+     FINAL UPDATE (Contract Compliant)
   ============================================================ */
+  updateEvidence: async (evidenceId, raw = {}) => {
+    set({ loading: true, error: null })
+    try {
+      const payload = raw.payload || raw || {}
+      const finalPayload = {}
+
+      const putIfValid = (k, v) => {
+        if (v === undefined || v === null) return
+        if (typeof v === 'string' && v.trim() === '') return
+        finalPayload[k] = v
+      }
+
+      putIfValid('case_id', payload.case_id)
+      putIfValid('evidence_number', payload.evidence_number)
+      putIfValid('type', payload.type)
+      putIfValid('source', payload.source)
+      putIfValid('evidence_summary', payload.evidence_summary)
+      putIfValid('investigator', payload.investigator)
+      putIfValid('suspect_id', payload.suspect_id)
+
+      // POI logic
+      if (payload.is_unknown_person === true) {
+        finalPayload.is_unknown_person = true
+      } else if (payload.is_unknown_person === false) {
+        finalPayload.is_unknown_person = false
+        putIfValid('person_name', payload.person_name)
+        putIfValid('suspect_status', payload.suspect_status)
+      }
+
+      // file conversion (File → buffer)
+      if (payload.evidence_file) {
+        const f = payload.evidence_file
+        if (f instanceof File) {
+          const buf = await f.arrayBuffer()
+          finalPayload.evidence_file = {
+            name: f.name,
+            type: f.type,
+            size: f.size,
+            buffer: Array.from(new Uint8Array(buf))
+          }
+        } else if (f?.buffer) {
+          finalPayload.evidence_file = f
+        }
+      }
+
+      const res = await window.api.invoke('evidence:update', {
+        evidenceId,
+        payload: finalPayload
+      })
+
+      if (res?.error) {
+        throw new Error(res.detail || res.message || 'Failed to update evidence')
+      }
+
+      await get().fetchEvidenceDetail(evidenceId)
+
+      set({ loading: false })
+      return res
+    } catch (err) {
+      console.error('[updateEvidence ERROR]', err)
+      set({ loading: false, error: err?.message || 'Failed to update evidence' })
+      throw err
+    }
+  },
+
   async fetchEvidences(params = {}) {
     set({ loading: true, error: null })
     try {
       const res = await window.api.invoke('evidence:list', params)
-
-      const raw = res // simpan buat total
+      const raw = res
       const data = unwrap(res)
       const list = extractList(data)
-
       const mapped = list.map(mapApiEvidenceListItem)
 
       set({
@@ -117,38 +158,14 @@ export const useEvidences = create((set, get) => ({
     }
   },
 
-  /* =======================
-     SUMMARY (optional)
-     IPC: 'evidence:summary'
-  ======================= */
-  // async fetchEvidenceSummary() {
-  //   set({ loading: true, error: null })
-  //   try {
-  //     const res = await window.api.invoke('evidence:summary')
-  //     const sum = unwrap(res)
-  //     set({ summary: sum, loading: false })
-  //     return sum
-  //   } catch (err) {
-  //     console.warn('fetchEvidenceSummary skipped:', err?.message)
-  //     set({ loading: false })
-  //     return null
-  //   }
-  // },
-
-  /* =======================
-     NEW: DETAIL
-     IPC: 'evidence:detail'
-  ======================= */
   async fetchEvidenceDetail(evidenceId) {
     set({ loading: true, error: null })
     try {
       const res = await window.api.invoke('evidence:detail', evidenceId)
       const detail = unwrap(res)
-
-      set({ detail, loading: false }) // sekarang aman
+      set({ detail, loading: false })
       return detail
     } catch (err) {
-      console.error('fetchEvidenceDetail error:', err)
       set({ loading: false, error: err?.message || 'Failed to fetch evidence detail' })
       throw err
     }

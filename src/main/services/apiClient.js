@@ -1,6 +1,6 @@
 // src/main/services/apiClient.js
 import axios from 'axios'
-import { getTokens, updateTokens, clearSession } from '../session.js'
+import { getTokens, clearSession } from '../session.js'
 import { refreshTokenRequest } from './auth.service.js'
 
 const api = axios.create({
@@ -36,9 +36,15 @@ function logError(error) {
 api.interceptors.request.use(
   (config) => {
     const { accessToken } = getTokens()
-    if (accessToken) {
+
+    // ⛔ JANGAN kirim Authorization untuk refresh endpoint
+    const isRefreshEndpoint = typeof config.url === 'string' && config.url.includes('/auth/refresh')
+
+    if (!isRefreshEndpoint && accessToken) {
+      config.headers = config.headers || {}
       config.headers.Authorization = `Bearer ${accessToken}`
     }
+
     logRequest(config)
     return config
   },
@@ -48,7 +54,9 @@ api.interceptors.request.use(
   }
 )
 
-// FLAG untuk mencegah infinite loop refresh
+// ============================
+// REFRESH QUEUE (ANTI DOBEL)
+// ============================
 let isRefreshing = false
 let failedQueue = []
 
@@ -63,23 +71,26 @@ function processQueue(error, token = null) {
 // === RESPONSE INTERCEPTOR ===
 api.interceptors.response.use(
   (response) => {
-    // ✅ log sukses
     logResponse(response)
     return response
   },
-
   async (error) => {
-    // ✅ log error dulu biar kelihatan di terminal
     logError(error)
 
     const original = error.config || {}
 
-    // Kalau error bukan 401 → lempar ke renderer
+    // kalau bukan 401 atau sudah retry → stop
     if (error.response?.status !== 401 || original._retry) {
       return Promise.reject(error)
     }
 
-    // Mulai refresh token
+    // jangan refresh kalau 401 dari refresh endpoint sendiri
+    if (typeof original.url === 'string' && original.url.includes('/auth/refresh')) {
+      clearSession()
+      return Promise.reject(error)
+    }
+
+    // kalau lagi refresh, antri
     if (isRefreshing) {
       return new Promise((resolve, reject) => {
         failedQueue.push({ resolve, reject })
@@ -87,7 +98,7 @@ api.interceptors.response.use(
         .then((newToken) => {
           original.headers = original.headers || {}
           original.headers.Authorization = 'Bearer ' + newToken
-          return api(original) // request interceptor akan log ulang [API →]
+          return api(original)
         })
         .catch((err) => Promise.reject(err))
     }
@@ -96,26 +107,22 @@ api.interceptors.response.use(
     isRefreshing = true
 
     const { refreshToken } = getTokens()
-
     if (!refreshToken) {
       clearSession()
+      isRefreshing = false
       return Promise.reject(error)
     }
 
     try {
+      // refreshTokenRequest SUDAH updateTokens() di service
       const newTokens = await refreshTokenRequest(refreshToken)
-
-      updateTokens({
-        accessToken: newTokens.access_token,
-        refreshToken: newTokens.refresh_token
-      })
 
       processQueue(null, newTokens.access_token)
 
       original.headers = original.headers || {}
       original.headers.Authorization = `Bearer ${newTokens.access_token}`
 
-      return api(original) // request interceptor log ulang, response interceptor log [API ←]
+      return api(original)
     } catch (err) {
       processQueue(err, null)
       clearSession()

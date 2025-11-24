@@ -7,10 +7,7 @@ import { Buffer } from 'node:buffer'
 /** Helper tambah field ke FormData */
 function appendField(form, key, value) {
   if (value === undefined || value === null) return
-  if (value instanceof File) {
-    form.append(key, value)
-    return
-  }
+  if (typeof value === 'string' && value.trim() === '') return // ✅ skip empty string
   if (typeof value === 'boolean') {
     form.append(key, value ? 'true' : 'false')
   } else {
@@ -59,12 +56,8 @@ function appendBase64File(form, fieldName, fileArg, fallbackName = 'file.bin') {
   }
 
   if (!base64) return
-
   const buf = Buffer.from(base64, 'base64')
-  form.append(fieldName, buf, {
-    filename: name,
-    contentType: mime
-  })
+  form.append(fieldName, buf, { filename: name, contentType: mime })
 }
 
 /** =======================
@@ -86,7 +79,6 @@ export async function getEvidenceSummary() {
 export async function createEvidence(payload) {
   const form = new FormData()
 
-  // FILE: evidence_file bisa string path atau object buffer
   if (payload.evidence_file) {
     const file = payload.evidence_file
     if (typeof file === 'string') {
@@ -102,7 +94,6 @@ export async function createEvidence(payload) {
     }
   }
 
-  // FIELD BIASA
   appendField(form, 'case_id', payload.case_id)
   appendField(form, 'evidence_number', payload.evidence_number)
   appendField(form, 'type', payload.type)
@@ -112,6 +103,7 @@ export async function createEvidence(payload) {
   appendField(form, 'person_name', payload.person_name)
   appendField(form, 'suspect_status', payload.suspect_status)
   appendField(form, 'is_unknown_person', payload.is_unknown_person)
+  appendField(form, 'suspect_id', payload.suspect_id)
 
   const res = await api.post('/evidence/create-evidence', form, {
     headers: form.getHeaders()
@@ -120,10 +112,15 @@ export async function createEvidence(payload) {
   return res.data
 }
 
-/** UPDATE Evidence */
+/** =======================
+ *  UPDATE Evidence (FINAL)
+ *  PUT /api/v1/evidence/update-evidence/{evidence_id}
+ *  all fields optional (partial update)
+ * ======================= */
 export async function updateEvidence(evidenceId, payload) {
   const form = new FormData()
 
+  // FILE optional
   if (payload.evidence_file) {
     const file = payload.evidence_file
     if (typeof file === 'string') {
@@ -139,14 +136,24 @@ export async function updateEvidence(evidenceId, payload) {
     }
   }
 
-  appendField(form, 'evidence_number', payload.evidence_number)
+  // FIELD optional
+  appendField(form, 'case_id', payload.case_id)
+
+  // ✅ evidence_number only if non-empty
+  if (payload.evidence_number !== undefined && payload.evidence_number !== null) {
+    const evNum = String(payload.evidence_number).trim()
+    if (evNum) form.append('evidence_number', evNum)
+  }
+
   appendField(form, 'type', payload.type)
   appendField(form, 'source', payload.source)
   appendField(form, 'evidence_summary', payload.evidence_summary)
   appendField(form, 'investigator', payload.investigator)
+
   appendField(form, 'person_name', payload.person_name)
   appendField(form, 'suspect_status', payload.suspect_status)
   appendField(form, 'is_unknown_person', payload.is_unknown_person)
+  appendField(form, 'suspect_id', payload.suspect_id)
 
   const res = await api.put(`/evidence/update-evidence/${evidenceId}`, form, {
     headers: form.getHeaders()
@@ -178,15 +185,13 @@ export async function createCustodyAcquisition(evidenceId, payload) {
   appendField(form, 'evidence_detail', payload.evidence_detail ?? payload.detail)
   appendField(form, 'notes', payload.notes)
 
-  // steps bisa array string atau array object { desc / steps }
   const steps = payload.steps || []
   steps.forEach((s) => {
     if (!s) return
-    const val = typeof s === 'string' ? s : (s.desc ?? s.steps ?? s.step ?? '') // fallback dari shape lama
+    const val = typeof s === 'string' ? s : (s.desc ?? s.steps ?? s.step ?? '')
     if (val) form.append('steps', val)
   })
 
-  // photos: kita ambil dari payload.photos atau dari steps.previewDataUrl
   let photos = payload.photos
   if (!photos || !photos.length) {
     photos = steps
@@ -219,11 +224,10 @@ export async function createCustodyPreparation(evidenceId, payload) {
   appendField(form, 'evidence_detail', payload.evidence_detail ?? payload.detail)
   appendField(form, 'notes', payload.notes)
 
-  // bisa langsung dikirim hypothesis/tools atau dibangun dari pairs
   const pairs = payload.pairs || []
   const hypothesisArr =
-    payload.hypothesis || pairs.map((p) => p.investigation || p.hypothesis || '').filter((x) => x)
-  const toolsArr = payload.tools || pairs.map((p) => p.tools || '').filter((x) => x)
+    payload.hypothesis || pairs.map((p) => p.investigation || p.hypothesis || '').filter(Boolean)
+  const toolsArr = payload.tools || pairs.map((p) => p.tools || '').filter(Boolean)
 
   hypothesisArr.forEach((h) => form.append('hypothesis', h))
   toolsArr.forEach((t) => form.append('tools', t))
@@ -249,9 +253,7 @@ export async function createCustodyExtraction(evidenceId, payload) {
   appendField(form, 'evidence_detail', payload.evidence_detail ?? payload.detail)
   appendField(form, 'notes', payload.notes)
 
-  // ambil file pertama saja (sesuai UI)
   const file = (payload.files && payload.files[0]) || payload.file || null
-
   if (file) {
     if (file.base64) {
       appendBase64File(form, 'extraction_file', file, file.name || 'extraction.bin')
@@ -277,12 +279,6 @@ export async function createCustodyExtraction(evidenceId, payload) {
  *  CUSTODY: ANALYSIS
  *  POST /evidence/{id}/custody/analysis
  * ======================= */
-/** =======================
- *  CUSTODY: ANALYSIS
- *  POST /evidence/{id}/custody/analysis
- * ======================= */
-// Optional helper, kalau memang kamu pakai
-
 export async function createCustodyAnalysis(evidenceId, payload) {
   const form = new FormData()
 
@@ -293,7 +289,6 @@ export async function createCustodyAnalysis(evidenceId, payload) {
   appendField(form, 'evidence_detail', payload.detail)
   appendField(form, 'notes', payload.notes)
 
-  // hypothesis/tools/result
   if (Array.isArray(payload.analysisPairs)) {
     payload.analysisPairs.forEach((p) => {
       form.append('hypothesis', p.investigation || '')
@@ -302,7 +297,6 @@ export async function createCustodyAnalysis(evidenceId, payload) {
     })
   }
 
-  // multiple base64 files (analysis reports)
   if (Array.isArray(payload.files)) {
     payload.files.forEach((f, idx) => {
       appendBase64File(form, 'files', f, f.name || `report-${idx + 1}.pdf`)
@@ -318,7 +312,6 @@ export async function createCustodyAnalysis(evidenceId, payload) {
 export async function updateCustodyNotes(evidenceId, reportId, notes) {
   const form = new FormData()
   form.append('notes', notes)
-
   const res = await api.put(`/evidence/${evidenceId}/custody/${reportId}/notes`, form)
   return res.data
 }

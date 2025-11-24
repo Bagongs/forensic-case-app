@@ -6,14 +6,13 @@ import { setSession, clearSession, getSession } from '../session.js'
 export function registerAuthIpc() {
   ipcMain.handle('auth:login', async (_, { email, password }) => {
     try {
+      // loginRequest return { user, access_token, refresh_token }
       const res = await loginRequest(email, password)
 
-      // res mengikuti Contract API:
-      // { status, message, data: { user, access_token, refresh_token } }
       const payload = {
-        user: res?.data?.user ?? res?.data ?? null,
-        accessToken: res?.data?.access_token ?? res?.access_token ?? null,
-        refreshToken: res?.data?.refresh_token ?? res?.refresh_token ?? null
+        user: res.user ?? null,
+        accessToken: res.access_token ?? null,
+        refreshToken: res.refresh_token ?? null
       }
 
       setSession(payload)
@@ -30,7 +29,9 @@ export function registerAuthIpc() {
 
   ipcMain.handle('auth:getProfile', async () => {
     try {
-      return await getCurrentUserProfile()
+      // getCurrentUserProfile sudah return user object
+      const user = await getCurrentUserProfile()
+      return user
     } catch (err) {
       return {
         error: true,

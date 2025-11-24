@@ -7,14 +7,14 @@ import Input from '../../atoms/Input'
 import Textarea from '../../atoms/Textarea'
 import Select from '../../atoms/Select'
 
-const DEVICE_SOURCES = ['Handphone', 'Laptop', 'PC', 'SSD', 'HDD', 'DVR', 'Flashdisk']
+const DEVICE_SOURCES = ['Handphone', 'SSD', 'Harddisk', 'PC', 'Laptop', 'DVR']
 const STATUS_OPTIONS = ['Witness', 'Reported', 'Suspected', 'Suspect', 'Defendant']
 
 export default function EditEvidenceModal({
   open,
   onClose,
   onSave,
-  evidenceData = {}, // full object dari evidence
+  evidenceData = {},
   caseName = '',
   personData = {}
 }) {
@@ -26,32 +26,21 @@ export default function EditEvidenceModal({
   const [personName, setPersonName] = useState('')
   const [file, setFile] = useState(null)
   const [previewDataUrl, setPreviewDataUrl] = useState(null)
+
   const fileRef = useRef(null)
 
-  // isi default value ketika modal dibuka
   useEffect(() => {
     if (open && evidenceData) {
       setSource(evidenceData.source || '')
       setSummary(evidenceData.summary || '')
       setInvestigator(evidenceData.investigator || '')
-      setPersonName(personData.name)
-      setStatus(personData.status)
-      // if (evidenceData.personOfInterest) {
-      //   setPoiMode('known')
-      //   setPersonName(evidenceData.personOfInterest)
-      // } else {
-      //   setPoiMode('unknown')
-      //   setPersonName('')
-      // }
-      setPoiMode(personData.name != 'Unknown' ? 'known' : 'unknown')
+      setPersonName(personData.name || '')
+      setStatus(personData.status || null)
+      setPoiMode(personData.name && personData.name !== 'Unknown' ? 'known' : 'unknown')
       setPreviewDataUrl(evidenceData.previewDataUrl || evidenceData.previewUrl || null)
+      setFile(null)
     }
-  }, [open, evidenceData])
-
-  const cleanup = () => {
-    setFile(null)
-    setPreviewDataUrl(null)
-  }
+  }, [open, evidenceData, personData])
 
   const fileToDataURL = (f) =>
     new Promise((res, rej) => {
@@ -62,57 +51,54 @@ export default function EditEvidenceModal({
     })
 
   async function onPickFile(e) {
-    const f = e.target.files?.[0]
-    setFile(f || null)
+    const f = e.target.files?.[0] || null
+    setFile(f)
+
     if (f && f.type?.startsWith('image/')) {
       setPreviewDataUrl(await fileToDataURL(f))
     } else {
       setPreviewDataUrl(null)
     }
+
+    e.target.value = ''
   }
 
   return (
     <Modal
       open={open}
       title="Edit Evidence"
-      onCancel={() => {
-        cleanup()
-        onClose?.()
-      }}
+      onCancel={() => onClose?.()}
       confirmText="Save"
       cancelText="Cancel"
       onConfirm={() => {
-        onSave({
+        onSave?.({
           ...evidenceData,
           source,
           summary,
           investigator,
-          personOfInterest: poiMode === 'unknown' ? null : personName.trim(),
-          fileName: file?.name || evidenceData.fileName,
-          fileSize: file?.size || evidenceData.fileSize,
-          fileMime: file?.type || evidenceData.fileMime,
-          previewDataUrl,
+
           poiMode,
           personName,
-          status
+          status,
+
+          // kirim File mentah
+          file,
+          previewDataUrl
         })
-        cleanup()
+        onClose?.()
       }}
       size="lg"
     >
       <div className="grid gap-3">
-        {/* === Case Related === */}
         <FormLabel>Case Related</FormLabel>
         <Input value={caseName} disabled readOnly />
 
-        {/* === Evidence ID === */}
         <FormLabel>Evidence ID</FormLabel>
         <Input value={evidenceData.id || ''} disabled readOnly />
 
-        {/* === Evidence Source === */}
         <FormLabel>Evidence Source</FormLabel>
         <Select value={source} onChange={(e) => setSource(e.target.value)}>
-          <option value="" selected disabled>
+          <option value="" disabled>
             Select device
           </option>
           {DEVICE_SOURCES.map((s) => (
@@ -122,7 +108,6 @@ export default function EditEvidenceModal({
           ))}
         </Select>
 
-        {/* === Evidence File === */}
         <FormLabel>Evidence</FormLabel>
         <div
           className="rounded-lg border p-4 flex items-center justify-center"
@@ -130,13 +115,20 @@ export default function EditEvidenceModal({
         >
           <div className="flex items-center gap-3">
             <button
+              type="button"
               className="px-4 py-1.5 rounded-lg border text-sm bg-[#394F6F]"
               style={{ borderColor: 'var(--border)' }}
               onClick={() => fileRef.current?.click()}
             >
               Upload
             </button>
-            <input ref={fileRef} type="file" className="hidden" onChange={onPickFile} />
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*,application/pdf"
+              className="hidden"
+              onChange={onPickFile}
+            />
             {(file || evidenceData.fileName) && (
               <span className="text-sm opacity-70 truncate max-w-60">
                 {file?.name || evidenceData.fileName}
@@ -147,15 +139,10 @@ export default function EditEvidenceModal({
 
         {previewDataUrl && (
           <div className="rounded-lg border p-3" style={{ borderColor: 'var(--border)' }}>
-            <img
-              src={previewDataUrl}
-              alt="preview"
-              className="max-h-56 rounded-lg object-contain mx-auto"
-            />
+            <img src={previewDataUrl} alt="preview" className="max-h-56 rounded-lg mx-auto" />
           </div>
         )}
 
-        {/* === Summary === */}
         <FormLabel>Evidence Summary</FormLabel>
         <Textarea
           rows={4}
@@ -164,7 +151,6 @@ export default function EditEvidenceModal({
           placeholder="Write evidence summary"
         />
 
-        {/* === Investigator === */}
         <FormLabel>Investigator</FormLabel>
         <Input
           value={investigator}
@@ -172,14 +158,13 @@ export default function EditEvidenceModal({
           placeholder="Input investigator name"
         />
 
-        {/* === Person of Interest === */}
         <FormLabel>Person of Interest</FormLabel>
         <div className="flex items-center gap-6">
           <Radio
             checked={poiMode === 'known'}
             onChange={() => {
               setPoiMode('known')
-              setStatus('') // reset status kalau sebelumnya unknown
+              setStatus('')
             }}
           >
             Person Name
@@ -189,7 +174,7 @@ export default function EditEvidenceModal({
             checked={poiMode === 'unknown'}
             onChange={() => {
               setPoiMode('unknown')
-              setStatus(null) // 🔥 otomatis null kalau unknown
+              setStatus(null)
             }}
           >
             Unknown Person
@@ -205,26 +190,22 @@ export default function EditEvidenceModal({
               placeholder="Input person name"
             />
 
-            <div>
-              <div className="text-sm font-semibold mb-1" style={{ color: 'var(--dim)' }}>
-                Suspect Status
-              </div>
-              <select
-                className="w-full px-3 py-2 rounded-lg border bg-transparent"
-                style={{ borderColor: 'var(--border)' }}
-                value={status === null || status === 'Unknown' ? '' : status}
-                onChange={(e) => setStatus(e.target.value)}
-              >
-                <option value="" disabled>
-                  Select Suspect Status
+            <FormLabel>Suspect Status</FormLabel>
+            <select
+              className="w-full px-3 py-2 rounded-lg border bg-transparent"
+              style={{ borderColor: 'var(--border)' }}
+              value={status === null || status === 'Unknown' ? '' : status}
+              onChange={(e) => setStatus(e.target.value)}
+            >
+              <option value="" disabled>
+                Select Suspect Status
+              </option>
+              {STATUS_OPTIONS.map((s) => (
+                <option key={s} value={s}>
+                  {s}
                 </option>
-                {STATUS_OPTIONS.map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
-                ))}
-              </select>
-            </div>
+              ))}
+            </select>
           </>
         )}
       </div>

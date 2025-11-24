@@ -9,7 +9,8 @@ import {
   createCustodyAcquisition,
   createCustodyPreparation,
   createCustodyExtraction,
-  createCustodyAnalysis
+  createCustodyAnalysis,
+  updateCustodyNotes
 } from '../services/evidence.service.js'
 
 export function registerEvidenceIpc() {
@@ -17,7 +18,12 @@ export function registerEvidenceIpc() {
     try {
       return await getEvidenceList(params)
     } catch (err) {
-      return { error: true, message: err?.response?.data?.message || err.message }
+      return {
+        error: true,
+        status: err?.response?.status,
+        detail: err?.response?.data?.detail,
+        message: err?.response?.data?.message || err.message
+      }
     }
   })
 
@@ -25,7 +31,12 @@ export function registerEvidenceIpc() {
     try {
       return await getEvidenceSummary()
     } catch (err) {
-      return { error: true, message: err?.response?.data?.message || err.message }
+      return {
+        error: true,
+        status: err?.response?.status,
+        detail: err?.response?.data?.detail,
+        message: err?.response?.data?.message || err.message
+      }
     }
   })
 
@@ -33,32 +44,42 @@ export function registerEvidenceIpc() {
     try {
       return await createEvidence(payload)
     } catch (err) {
-      return { error: true, message: err?.response?.data?.message || err.message }
+      return {
+        error: true,
+        status: err?.response?.status,
+        detail: err?.response?.data?.detail,
+        message: err?.response?.data?.message || err.message
+      }
     }
   })
 
+  // ✅ FINAL UPDATE
   ipcMain.handle('evidence:update', async (_event, { evidenceId, payload }) => {
     try {
       return await updateEvidence(evidenceId, payload)
     } catch (err) {
-      return { error: true, message: err?.response?.data?.message || err.message }
+      return {
+        error: true,
+        status: err?.response?.status,
+        detail: err?.response?.data?.detail,
+        message: err?.response?.data?.message || err.message
+      }
     }
   })
 
-  /* =======================
-      DETAIL
-  ======================= */
   ipcMain.handle('evidence:detail', async (_event, evidenceId) => {
     try {
       return await getEvidenceDetail(evidenceId)
     } catch (err) {
-      return { error: true, message: err?.response?.data?.message || err.message }
+      return {
+        error: true,
+        status: err?.response?.status,
+        detail: err?.response?.data?.detail,
+        message: err?.response?.data?.message || err.message
+      }
     }
   })
 
-  /* =======================
-      CUSTODY: ACQUISITION
-  ======================= */
   ipcMain.handle('evidence:custody:acquisition', async (_event, { evidenceId, payload }) => {
     try {
       return await createCustodyAcquisition(evidenceId, payload)
@@ -67,9 +88,6 @@ export function registerEvidenceIpc() {
     }
   })
 
-  /* =======================
-      CUSTODY: PREPARATION
-  ======================= */
   ipcMain.handle('evidence:custody:preparation', async (_event, { evidenceId, payload }) => {
     try {
       return await createCustodyPreparation(evidenceId, payload)
@@ -78,9 +96,6 @@ export function registerEvidenceIpc() {
     }
   })
 
-  /* =======================
-      CUSTODY: EXTRACTION
-  ======================= */
   ipcMain.handle('evidence:custody:extraction', async (_event, { evidenceId, payload }) => {
     try {
       return await createCustodyExtraction(evidenceId, payload)
@@ -89,9 +104,6 @@ export function registerEvidenceIpc() {
     }
   })
 
-  /* =======================
-      CUSTODY: ANALYSIS
-  ======================= */
   ipcMain.handle('evidence:custody:analysis', async (_event, { evidenceId, payload }) => {
     try {
       return await createCustodyAnalysis(evidenceId, payload)
@@ -99,16 +111,15 @@ export function registerEvidenceIpc() {
       return { error: true, message: err?.response?.data?.message || err.message }
     }
   })
-    /* =======================
-      CUSTODY: UPDATE NOTES
-  ======================= */
-  ipcMain.handle('evidence:custody:update-notes', async (_event, { evidenceId, reportId, notes }) => {
-    try {
-      const { updateCustodyNotes } = await import('../services/evidence.service.js')
-      return await updateCustodyNotes(evidenceId, reportId, notes)
-    } catch (err) {
-      return { error: true, message: err?.response?.data?.message || err.message }
-    }
-  })
 
+  ipcMain.handle(
+    'evidence:custody:update-notes',
+    async (_event, { evidenceId, reportId, notes }) => {
+      try {
+        return await updateCustodyNotes(evidenceId, reportId, notes)
+      } catch (err) {
+        return { error: true, message: err?.response?.data?.message || err.message }
+      }
+    }
+  )
 }
