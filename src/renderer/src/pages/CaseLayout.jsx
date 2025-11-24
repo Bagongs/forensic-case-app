@@ -54,7 +54,7 @@ export default function CaseLayout({ title, showBack = false, children }) {
         </h1>
         {children}
       </div>
-      <div className="absolute top-8 right-5 z-0">
+      <div className="absolute top-8 right-5 z-50">
         <ProfileCorner label="Admin" active={pathname.includes('/user-management')} />
       </div>
     </div>

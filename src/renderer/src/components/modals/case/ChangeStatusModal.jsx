@@ -1,12 +1,12 @@
 /* eslint-disable react/prop-types */
 import { useEffect, useState } from 'react'
 import Modal from '../Modal'
-import { useCases } from '../../../store/cases'
+import { useCaseLogsApi } from '../../../hooks/useCaseLogsApi'
 
 const OPTIONS = ['Open', 'Re-Open', 'Closed']
 
-export default function ChangeStatusModal({ open, onClose, caseId, currentStatus = 'Open' }) {
-  const changeCaseStatusRemote = useCases((s) => s.changeCaseStatusRemote)
+export default function ChangeStatusModal({ open, onClose, caseId, currentStatus = 'Open', onChanged}) {
+  const { changeStatus } = useCaseLogsApi()
 
   const [sel, setSel] = useState(currentStatus)
   const [notes, setNotes] = useState('')
@@ -27,10 +27,11 @@ export default function ChangeStatusModal({ open, onClose, caseId, currentStatus
     setSubmitting(true)
     setError(null)
     try {
-      await changeCaseStatusRemote(caseId, {
+      await changeStatus(caseId, {
         status: sel,
         notes: notes.trim()
       })
+      onChanged?.()
       onClose?.()
     } catch (err) {
       console.error('Failed to change status', err)
@@ -85,6 +86,7 @@ export default function ChangeStatusModal({ open, onClose, caseId, currentStatus
             className="w-full px-3 py-2 rounded-lg border bg-transparent resize-none"
             style={{ borderColor: 'var(--border)' }}
             disabled={submitting}
+            data-optional="true"
           />
         </div>
 

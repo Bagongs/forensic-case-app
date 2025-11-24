@@ -114,6 +114,7 @@ export default function CaseDetailPage() {
 
   // ===== logs view =====
   const logsRaw = (caseId && caseLogsMap?.[caseId]) || []
+  console.log('logsRaw', logsRaw)
   const logs = useMemo(
     () =>
       logsRaw
@@ -438,6 +439,10 @@ Z`.trim()
           caseId={item.id}
           currentStatus={item.status}
           author={item.investigator || ''}
+          onChanged={async () => {
+            await fetchCaseDetail(item.id)
+            await fetchCaseLogs(item.id, { skip: 0, limit: 50 })
+          }}
         />
       )}
 
@@ -448,7 +453,8 @@ Z`.trim()
           initial={item}
           onSave={async (patch) => {
             await updateCaseRemote(item.id, patch)
-            setEditOpen(false)
+            ;(setEditOpen(false), await fetchCaseDetail(item.id))
+            await fetchCaseLogs(item.id, { skip: 0, limit: 50 })
           }}
         />
       )}

@@ -12,6 +12,7 @@ export default function CaseLogBox({
   cut = 16,
   onViewNotes
 }) {
+  console.log('Logs', logs)
   return (
     <BoxAllSide className="w-full" cut={cut} borderColor={borderColor} borderW={borderW} bg={bg}>
       {/* Header */}
@@ -46,15 +47,9 @@ export default function CaseLogBox({
             {/* Content */}
             <div className="text-[#E7E9EE] text-[14px] font-[Noto Sans] leading-relaxed">
               <div className="font-semibold">{log.status}</div>
-              {log.by && <div>By: {log.by}</div>}
+              {log.by && <div>{log.by}</div>}
               {log.date && <div>{log.date}</div>}
-              {log.change && (
-                <div>
-                  Change:
-                  <br />
-                  {log.change}
-                </div>
-              )}
+              {log.change && <div>{log.change}</div>}
               {log.hasNotes && (
                 <button
                   className="mt-1 bg-[#1E2A3C] text-[13px]"

@@ -4,6 +4,7 @@ import Modal from '../Modal'
 import HorizontalLine from '../../common/HorizontalLine'
 
 export default function EditCaseModal({ open, onClose, initial, onSave }) {
+  console.log('Initial ', initial)
   const [name, setName] = useState(initial?.name || '')
   const [id, setId] = useState(initial?.id || '')
   const [description, setDescription] = useState(initial?.description || '')
@@ -33,11 +34,13 @@ export default function EditCaseModal({ open, onClose, initial, onSave }) {
       disableConfirm={!canSubmit}
       onConfirm={() => {
         onSave?.({
-          name: name.trim(),
+          title: name.trim(),
           description: description.trim(),
-          investigator: investigator.trim(),
-          agency: agency.trim(),
-          workUnit: workUnit.trim()
+          main_investigator: investigator.trim(),
+          agency_name: agency.trim(),
+          work_unit_name: workUnit.trim(),
+          agency_id: initial.agency_id,
+          work_unit_id: initial.work_unit_id
         })
       }}
       size="lg"

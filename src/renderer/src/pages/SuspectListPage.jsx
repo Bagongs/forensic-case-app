@@ -46,8 +46,7 @@ export default function SuspectListPage() {
     loading,
     error,
     fetchSuspects,
-    fetchSuspectSummary,
-    createSuspectRemote
+    fetchSuspectSummary
   } = useSuspects()
 
   const [q, setQ] = useState('')
@@ -72,10 +71,16 @@ export default function SuspectListPage() {
       limit: pageSize
     }
 
+    // search
     if (q.trim()) params.search = q.trim()
-    if (statusFilter.length === 1) params.status = statusFilter[0]
+
+    // FIX: kirim status sebagai string: "Suspect,Reported"
+    if (statusFilter.length > 0) {
+      params.status = statusFilter.join(',')
+    }
 
     fetchSuspects(params).catch(() => {})
+    console.log("Status filter:", statusFilter)
   }, [q, page, pageSize, statusFilter])
 
   // Reset page when filter/search changes
@@ -83,48 +88,26 @@ export default function SuspectListPage() {
 
   const rows = suspects
 
-  // Stats dari summary kalau ada, fallback lokal
+  // Stats summary or fallback
   const stats = useMemo(() => {
     if (summary) {
       return {
         totalPerson:
-          summary.total_person ?? summary.total_suspects ?? summary.totalPerson ?? rows.length,
+          summary.total_person ??
+          summary.total_suspects ??
+          summary.totalPerson ??
+          rows.length,
         totalEvidence: summary.total_evidence ?? summary.totalEvidence ?? 0
       }
     }
     return { totalPerson: rows.length, totalEvidence: 0 }
   }, [summary, rows])
 
-  // Filter pencarian + status (UI sama seperti sebelumnya)
-  const filtered = useMemo(() => {
-    const term = q.trim().toLowerCase()
-    let arr = rows
-
-    if (statusFilter.length > 0) {
-      arr = arr.filter((r) => statusFilter.includes(r.status))
-    }
-
-    // sembunyikan Unknown (tetap sesuai UI lama kamu)
-    arr = arr.filter((r) => r.status && r.status.toLowerCase() !== 'unknown')
-
-    if (term) {
-      arr = arr.filter(
-        (r) =>
-          r.name?.toLowerCase().includes(term) ||
-          r.caseName?.toLowerCase().includes(term) ||
-          r.status?.toLowerCase().includes(term) ||
-          r.investigator?.toLowerCase().includes(term)
-      )
-    }
-
-    return arr
-  }, [rows, q, statusFilter])
-
-  const totalSuspects = pagination?.total ?? filtered.length
+  const totalSuspects = pagination?.total ?? rows.length
   const totalPages = Math.max(1, Math.ceil(totalSuspects / pageSize))
   const safePage = Math.min(page, totalPages)
 
-  // case options untuk modal (unik dari list suspects)
+  // case options
   const caseOptions = useMemo(() => {
     const map = new Map()
     for (const s of rows) {
@@ -133,32 +116,20 @@ export default function SuspectListPage() {
     return Array.from(map.entries()).map(([value, label]) => ({ value, label }))
   }, [rows])
 
+  // menerima hasil modal
   const handleSavePerson = async (payload) => {
     try {
-      const apiPayload = {
-        case_id: Number(payload.caseId),
-        person_name: payload.name?.trim(),
-        suspect_status: payload.status,
-        is_unknown_person: !payload.name
-      }
-
-      // optional evidence
-      if (payload.evidence) {
-        apiPayload.evidence_number = payload.evidence.evidence_number
-        apiPayload.evidence_source = payload.evidence.source
-        apiPayload.evidence_summary = payload.evidence.summary
-        apiPayload.evidence_file = payload.evidence.file
-      }
-
-      const created = await createSuspectRemote(apiPayload)
-
       setModal(false)
       await fetchSuspects({ skip: 0, limit: pageSize })
 
-      const newId = created?.id || created?.suspect_id
+      const newId =
+        payload?.apiResponse?.data?.id ||
+        payload?.apiResponse?.data?.suspect_id ||
+        payload?.apiResponse?.data?.suspect?.id
+
       if (newId) nav(`/suspects/${newId}`)
     } catch (err) {
-      console.error('[SuspectListPage] create suspect failed:', err)
+      console.error('[SuspectListPage] handleSavePerson failed:', err)
       setModal(false)
     }
   }
@@ -233,7 +204,6 @@ export default function SuspectListPage() {
         className="relative border rounded-sm overflow-hidden"
         style={{ borderColor: COLORS.border, background: COLORS.tableBody }}
       >
-        {/* Loader overlay */}
         {loading && (
           <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-10 text-sm">
             Loading suspects…
@@ -264,7 +234,7 @@ export default function SuspectListPage() {
             </tr>
           </thead>
           <tbody>
-            {filtered.map((row, i) => (
+            {rows.map((row, i) => (
               <tr key={row.id ?? `${row.caseId}-${i}`} className="hover:bg-white/5">
                 <td className="px-4 py-3 border-b" style={{ borderColor: COLORS.border }}>
                   {row.name}
@@ -290,10 +260,11 @@ export default function SuspectListPage() {
                 </td>
               </tr>
             ))}
-            {filtered.length === 0 && !loading && (
+
+            {rows.length === 0 && !loading && (
               <tr>
                 <td colSpan={5} className="px-4 py-6 text-center" style={{ color: COLORS.dim }}>
-                  {rows.length === 0 ? 'No person' : 'No result for your search'}
+                  No person found
                 </td>
               </tr>
             )}
@@ -318,7 +289,7 @@ export default function SuspectListPage() {
   )
 }
 
-/* ====== Filter Dropdown (UI sama) ====== */
+/* ====== Filter Dropdown ====== */
 function FilterDropdown({ open, onClose, selected, onChange, anchorRef }) {
   const menuRef = useRef(null)
   const [pos, setPos] = useState({ top: 0, left: 0 })

@@ -47,6 +47,7 @@ const mapApiSuspectDetail = (resDetail) => {
     status: d.suspect_status || d.status || 'Unknown',
     investigator: d.investigator || '-',
     caseName: d.case_name || '-',
+    caseId: d.case_id || '-',
     createdAtCase: d.created_at_case || null,
     suspectNotes: d.suspect_notes || null,
     evidences: evidences.map((ev) => ({

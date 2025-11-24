@@ -5,7 +5,7 @@ import iconAddEvidance from '../../assets/icons/icon-add-evidance.svg'
 
 export function PersonBox({ name, roleLabel, children, onEdit, onAddEvidence, actionBgImage }) {
   const badgeStatus = (status = 'Unknown') => {
-    if (!status || status == 'Unknown') return
+    if (!status || status == 'Unknown' || status == 'Person of Interest') return
     const s = status.toLowerCase()
     let bg = '#222',
       color = '#fff',

@@ -5,6 +5,7 @@ import { useCases } from '../../../store/cases'
 import { FaTrashAlt } from 'react-icons/fa'
 import FormLabel from '../../atoms/FormLabel'
 import Radio from '../../atoms/Radio'
+import { useSuspects } from '../../../store/suspects'
 
 const STATUS_OPTIONS = ['Witness', 'Reported', 'Suspected', 'Suspect', 'Defendant']
 
@@ -14,7 +15,8 @@ export default function EditPersonModal({
   caseId,
   person,
   showDelete = false,
-  onRequestDelete = () => {}
+  onRequestDelete = () => {},
+  onSaved = () => {}   // 🟩 tambah ini
 }) {
   const fetchCaseDetail = useCases((s) => s.fetchCaseDetail)
 
@@ -139,15 +141,16 @@ export default function EditPersonModal({
         }
       }
 
-      // 3) refresh case detail
       if (caseId) {
         try {
-          await fetchCaseDetail(caseId)
+          console.log('rehit fetch')
+          const res = await fetchCaseDetail(caseId)
+          console.log('Rehit Resp : ', res)
         } catch (err) {
           console.error('Failed to refresh case detail', err)
         }
       }
-
+      onSaved?.()
       handleClose()
     } catch (err) {
       console.error('Failed to update suspect', err)
@@ -253,6 +256,7 @@ export default function EditPersonModal({
             onChange={(e) => setNotes(e.target.value)}
             placeholder={loadingNotes ? 'Loading notes…' : 'Write suspect notes (optional)'}
             disabled={submitting || loadingNotes}
+            data-optional="true"
           />
         </div>
 

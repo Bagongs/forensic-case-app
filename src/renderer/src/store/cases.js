@@ -64,7 +64,9 @@ const mapApiCaseListItem = (api) => ({
   status: normalizeStatus(api.status || api.case_status || 'Open'),
 
   agency: api.agency_name ?? api.agency ?? '',
+  agency_id: api.agency_id ?? api.agency ?? '',
   workUnit: api.work_unit_name ?? api.work_unit ?? '',
+  work_unit_id: api.work_unit_id ?? api.agency ?? '',
   investigator: api.main_investigator ?? api.case_officer ?? api.investigator ?? '',
 
   createdAt: api.created_at ?? api.created_date ?? new Date().toISOString(),
@@ -118,6 +120,8 @@ const mapApiCaseDetail = (detail, existing) => {
     status: normalizeStatus(apiCase.status ?? apiCase.case_status ?? base.status),
     agency: apiCase.agency_name ?? apiCase.agency ?? base.agency,
     workUnit: apiCase.work_unit_name ?? apiCase.work_unit ?? base.workUnit,
+    work_unit_id: apiCase.work_unit_id ?? apiCase.work_unit_id ?? base.work_unit_id,
+    agency_id: apiCase.agency_id ?? apiCase.agency_id ?? base.agency_id,
     investigator:
       apiCase.main_investigator ??
       apiCase.case_officer ??
@@ -146,6 +150,8 @@ const normalizeCasePayload = (input, { forUpdate = false } = {}) => {
 
     agency_name: input.agency_name ?? input.agency ?? input.agencyName,
     work_unit_name: input.work_unit_name ?? input.work_unit ?? input.workUnit,
+    work_unit_id: input.work_unit_id ?? input.work_unit ?? input.workUnit,
+    agency_id: input.agency_id ?? input.work_unit ?? input.workUnit,
     case_number: input.case_number ?? input.id ?? null
   }
 
@@ -234,6 +240,7 @@ export const useCases = create((set, get) => ({
     set({ loading: true, error: null })
     try {
       const res = await window.api.invoke('cases:detail', caseId)
+      console.log('case detail', res)
       const detail = unwrap(res)
 
       const current = get().cases
@@ -286,6 +293,8 @@ export const useCases = create((set, get) => ({
         caseId,
         payload: apiPatch
       })
+      console.log('Payload update case', apiPatch)
+      console.log('Update Case resp', res)
 
       const updated = unwrap(res)
       const current = get().cases
@@ -346,13 +355,14 @@ export const useCases = create((set, get) => ({
     try {
       const res = await window.api.invoke('caseLogs:list', { caseId, params })
       const apiLogs = unwrap(res) || []
+      console.log('case log : ', res)
 
       const viewLogs = apiLogs.map((log) => ({
         id: log.id,
         status: log.action || log.status,
-        by: log.performed_by || log.by || '',
+        by: log?.edit?.[0].changed_by || log.by || '',
         date: log.created_at || log.date,
-        change: log.change_detail || log.change || undefined,
+        change: log?.edit?.[0].change_detail || log.change || undefined,
         hasNotes: !!log.notes,
         notes: log.notes
       }))

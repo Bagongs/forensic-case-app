@@ -65,6 +65,7 @@ export default function EditUserModal({ open, onClose, onSave, user }) {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="Password (optional)"
+            data-optional="true"
           />
           <button
             type="button"

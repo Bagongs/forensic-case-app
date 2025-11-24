@@ -120,7 +120,7 @@ export default function EvidenceDetailPage() {
     evidence = {
       id: data.evidence_number,
       summary: data.description,
-      source: data.evidence_type,
+      source: data.source,
       investigator: data.investigator,
       previewUrl: null,
       previewDataUrl: null,
@@ -503,6 +503,7 @@ export default function EvidenceDetailPage() {
       </CaseLayout>
     )
   }
+  console.log('caseref : ', caseRef)
 
   // ============================
   // NORMAL RENDER

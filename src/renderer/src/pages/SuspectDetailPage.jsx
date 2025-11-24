@@ -38,7 +38,8 @@ export default function SuspectDetailPage() {
         const res = await fetchSuspectDetail(suspectNumId)
         if (!mounted) return
         setDetail(res)
-        const apiNotes = res?.suspect_notes ?? res?.data?.suspect_notes ?? ''
+        const apiNotes =
+          res?.suspectNotes ?? res?.data?.suspect_notes ?? res?.data?.suspect_notes ?? ''
         setNotes(apiNotes || '')
       } catch (e) {
         console.error('[SuspectDetailPage] fetch detail failed:', e)
@@ -53,33 +54,45 @@ export default function SuspectDetailPage() {
   const mapped = useMemo(() => {
     const d = detail?.data || detail || null
     if (!d) return null
+    console.log('Detail ', d)
 
     const person = {
       id: d.id,
-      name: d.person_name || 'Unknown',
+      name: d.person_name || d.name || 'Unknown',
       status: d.suspect_status || d.status || 'Unknown',
-      notes: d.suspect_notes || '',
+      notes: d.suspect_notes || d.suspectNotes || '',
       evidences: []
     }
 
     // response evidence: array wrapper
-    const evWrap = d.evidence || []
-    const evList = evWrap.flatMap((w) => w.list_evidence || [])
-    person.evidences = evList.map((ev) => ({
+    const evWrap = d.evidences || []
+    person.evidences = evWrap.map((ev) => ({
       id: ev.id,
-      fileName: ev.file_path ? ev.file_path.split('/').pop() : ev.evidence_number || 'Evidence',
-      summary: ev.evidence_summary || '-',
+      fileName: ev.fileName,
+
+      // File path → ambil hanya file name terakhir
+      filePath: ev.filePath ? ev.filePath.split('/').pop() : ev.evidenceNumber || 'Evidence',
+
+      summary: ev.summary || '-',
+
+      // Preview (jika backend support)
       previewDataUrl: ev.preview_url || ev.preview_image || null,
-      img: ev.file_path || null,
-      source: ev.evidence_source || ev.evidence_number || '-',
-      createdAt: ev.created_at
+
+      // Gambar full path
+      img: ev.filePath || null,
+
+      // Source (jika backend menyimpan)
+      source: ev.evidenceSource,  // backend pakai evidenceNumber
+
+      createdAt: ev.createdAt,
+      updatedAt: ev.updatedAt
     }))
 
     const caseData = {
-      id: d.case_id,
-      name: d.case_name || '-',
+      id: d.caseId,
+      name: d.caseName || d.case_name || '-',
       investigator: d.investigator || '-',
-      createdAt: d.created_at_case || d.created_at || new Date().toISOString(),
+      createdAt: d.created_at_case || d.created_at || d.createdAtCase || new Date().toISOString(),
       date: d.created_at_case || d.created_at || null
     }
 
@@ -111,8 +124,7 @@ export default function SuspectDetailPage() {
         notes
       }
 
-      // ✅ sesuai kontrak: jika belum ada notes → save, else edit
-      const hasNotesBefore = !!(detail?.data?.suspect_notes || detail?.suspect_notes)
+      const hasNotesBefore = !!(detail?.suspectNotes || detail?.suspect_notes)
       if (!hasNotesBefore) {
         await saveNotesRemote(payload)
       } else {
@@ -121,7 +133,6 @@ export default function SuspectDetailPage() {
 
       setIsEditing(false)
 
-      // refresh detail biar evidence/notes sinkron
       const res = await fetchSuspectDetail(suspectNumId)
       setDetail(res)
     } catch (e) {
@@ -195,6 +206,7 @@ export default function SuspectDetailPage() {
       </div>
     )
   }
+  console.log('casedata', caseData)
 
   const onExportPdf = async () => {
     try {
@@ -223,6 +235,19 @@ export default function SuspectDetailPage() {
     }
   }
 
+  const fmt = (val) => {
+    if (!val) return '-'
+    if (typeof val === 'string' && /^\d{2}\/\d{2}\/\d{4}$/.test(val)) {
+      return val // sudah format DD/MM/YYYY dari backend
+    }
+    const d = new Date(val)
+    if (Number.isNaN(d.getTime())) return String(val)
+    const dd = String(d.getDate()).padStart(2, '0')
+    const mm = String(d.getMonth() + 1).padStart(2, '0')
+    const yyyy = String(d.getFullYear())
+    return `${dd}/${mm}/${yyyy}`
+  }
+
   return (
     <CaseLayout title="Suspect Management" showBack={true}>
       {/* HEADER */}
@@ -235,8 +260,7 @@ export default function SuspectDetailPage() {
               </h1>
               <div className="text-[#DDE3ED] text-[14px]">
                 {caseData?.investigator || '-'} -{' '}
-                {caseData?.date ||
-                  new Date(caseData?.createdAt || Date.now()).toLocaleDateString('id-ID')}
+                {fmt(caseData?.createdAtCase ?? caseData?.createdAt)}
               </div>
             </div>
             <div className="mt-2 flex items-center gap-3">{badgeStatus(person.status)}</div>
@@ -295,7 +319,7 @@ export default function SuspectDetailPage() {
           </button>
         </div>
 
-        <div className="grid gap-4 pr-2 overflow-y-auto" style={{ maxHeight: 240 }}>
+        <div className="grid gap-4 pr-2 overflow-y-auto custom-scroll" style={{ maxHeight: 240 }}>
           {evidences.map((e) => (
             <div key={e.id} className="flex gap-4 items-start">
               {e.previewDataUrl || e.img ? (
@@ -350,8 +374,11 @@ export default function SuspectDetailPage() {
           onClose={() => setOpenModalEdit(false)}
           caseId={caseData.id}
           person={person}
-          // prop opsional biar modal bisa pakai endpoint baru kalau kamu update modalnya
           suspectId={person.id}
+          onSaved={async () => {
+            const res = await fetchSuspectDetail(suspectNumId)
+            setDetail(res)
+          }}
         />
       )}
 
