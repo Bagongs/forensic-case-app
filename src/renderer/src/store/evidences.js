@@ -62,6 +62,7 @@ export const useEvidences = create((set, get) => ({
   summary: null,
   loading: false,
   error: null,
+  detail: null,
 
   pagination: {
     total: 0,
@@ -112,6 +113,43 @@ export const useEvidences = create((set, get) => ({
       return mapped
     } catch (err) {
       set({ loading: false, error: err?.message || 'Failed to fetch evidences' })
+      throw err
+    }
+  },
+
+  /* =======================
+     SUMMARY (optional)
+     IPC: 'evidence:summary'
+  ======================= */
+  // async fetchEvidenceSummary() {
+  //   set({ loading: true, error: null })
+  //   try {
+  //     const res = await window.api.invoke('evidence:summary')
+  //     const sum = unwrap(res)
+  //     set({ summary: sum, loading: false })
+  //     return sum
+  //   } catch (err) {
+  //     console.warn('fetchEvidenceSummary skipped:', err?.message)
+  //     set({ loading: false })
+  //     return null
+  //   }
+  // },
+
+  /* =======================
+     NEW: DETAIL
+     IPC: 'evidence:detail'
+  ======================= */
+  async fetchEvidenceDetail(evidenceId) {
+    set({ loading: true, error: null })
+    try {
+      const res = await window.api.invoke('evidence:detail', evidenceId)
+      const detail = unwrap(res)
+
+      set({ detail, loading: false }) // sekarang aman
+      return detail
+    } catch (err) {
+      console.error('fetchEvidenceDetail error:', err)
+      set({ loading: false, error: err?.message || 'Failed to fetch evidence detail' })
       throw err
     }
   }

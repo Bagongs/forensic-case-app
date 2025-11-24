@@ -70,7 +70,6 @@ export default function EditEvidenceModal({
       setPreviewDataUrl(null)
     }
   }
-  console.log('STATUS : ', status)
 
   return (
     <Modal

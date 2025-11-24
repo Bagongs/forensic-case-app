@@ -28,6 +28,12 @@ const VALID_CHANNELS = new Set([
   'evidence:summary',
   'evidence:create',
   'evidence:update',
+  'evidence:detail',
+  'evidence:custody:acquisition',
+  'evidence:custody:preparation',
+  'evidence:custody:extraction',
+  'evidence:custody:analysis',
+  'evidence:custody:update-notes',
 
   // suspects
   'suspects:list',
@@ -92,9 +98,25 @@ contextBridge.exposeInMainWorld('apiLegacy', {
 
   evidence: {
     list: (params) => ipcRenderer.invoke('evidence:list', params),
+    detail: (evidenceId) => ipcRenderer.invoke('evidence:detail', evidenceId),
     summary: () => ipcRenderer.invoke('evidence:summary'),
     create: (payload) => ipcRenderer.invoke('evidence:create', payload),
-    update: (evidenceId, payload) => ipcRenderer.invoke('evidence:update', { evidenceId, payload })
+    update: (evidenceId, payload) => ipcRenderer.invoke('evidence:update', { evidenceId, payload }),
+
+    createAcquisition: (evidenceId, payload) =>
+      ipcRenderer.invoke('evidence:custody:acquisition', { evidenceId, payload }),
+
+    createPreparation: (evidenceId, payload) =>
+      ipcRenderer.invoke('evidence:custody:preparation', { evidenceId, payload }),
+
+    createExtraction: (evidenceId, payload) =>
+      ipcRenderer.invoke('evidence:custody:extraction', { evidenceId, payload }),
+
+    createAnalysis: (evidenceId, payload) =>
+      ipcRenderer.invoke('evidence:custody:analysis', { evidenceId, payload }),
+
+    updateNotes: (evidenceId, reportId, notes) =>
+      ipcRenderer.invoke('evidence:custody:update-notes', { evidenceId, reportId, notes })
   },
 
   suspects: {

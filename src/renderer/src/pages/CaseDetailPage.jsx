@@ -118,11 +118,15 @@ export default function CaseDetailPage() {
     () =>
       logsRaw
         .slice()
-        .sort((a, b) => new Date(b.date) - new Date(a.date))
+        .sort((a, b) => {
+          const da = new Date(a.rawDate || a.date)
+          const db = new Date(b.rawDate || b.date)
+          return db - da
+        })
         .map((l) => ({
           status: l.status,
           by: l.by || undefined,
-          date: fmtDate(l.date),
+          date: fmtDate(l.rawDate || l.date),
           change: l.notes || l.change || undefined,
           hasNotes: !!l.notes,
           note: l.notes
@@ -133,10 +137,13 @@ export default function CaseDetailPage() {
   // ===== status chip =====
   const statChip = useMemo(() => {
     if (!item) return null
-    const status = item.status || 'Open'
+    const statusRaw = item.status || 'Open'
+    const status = String(statusRaw)
     const COLORS = {
       Open: { bg: '#103300', border: '#42D200', text: '#42D200' },
       Closed: { bg: '#330006', border: '#FF0221', text: '#FF0221' },
+      'Re-open': { bg: '#664C00', border: '#FFC720', text: '#FFC720' },
+      Reopen: { bg: '#664C00', border: '#FFC720', text: '#FFC720' },
       'Re-Open': { bg: '#664C00', border: '#FFC720', text: '#FFC720' }
     }
     const color = COLORS[status] || COLORS.Open
@@ -189,6 +196,9 @@ Z`.trim()
     try {
       const trimmed = notes.trim()
       setIsEditing(false)
+
+      // guard: contract notes tidak boleh kosong
+      if (!trimmed) return
 
       if (!item.notes) {
         await saveCaseNotesRemote(item.id, trimmed)
@@ -257,7 +267,7 @@ Z`.trim()
   return (
     <CaseLayout title="Case Management" showBack={true}>
       {/* HEADER */}
-      <div className="flex mt-8 items-start justify-between">
+      <div className="flex mt-8 items-start justify-between gap-10">
         <div className="flex flex-col gap-2">
           <div className="text-xs opacity-70">{headerCaseNumber}</div>
 

@@ -1,7 +1,7 @@
-/* eslint-disable react-hooks/rules-of-hooks */
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useCases } from '../store/cases'
+import { useEvidences } from '../store/evidences'
 import MiniButton, { MiniButtonContent } from '../components/common/MiniButton'
 import StageContentModal from '../components/modals/evidence/StageContentModal'
 import CaseLayout from './CaseLayout'
@@ -18,9 +18,8 @@ import { LiaEditSolid } from 'react-icons/lia'
 import editBg from '../assets/image/edit.svg'
 import NotesBox from '../components/box/NotesBox'
 import Pagination from '../components/common/Pagination'
-
-// ⬇️ ikon report lokal (untuk panel Analysis)
 import iconReport from '@renderer/assets/icons/icon_report.svg'
+import { useEvidenceApi } from '../hooks/useEvidenceApi'
 
 const STAGES = [
   { key: 'acquisition', label: 'Acquisition' },
@@ -53,45 +52,204 @@ const fmtDateShort = fmtDateLong
 export default function EvidenceDetailPage() {
   const { evidenceId } = useParams()
   const nav = useNavigate()
-  const getEvidenceById = useCases((s) => s.getEvidenceById)
-  const addChainContent = useCases((s) => s.addChainContent)
-  const updateEvidence = useCases((s) => s.updateEvidence)
 
-  const ref = getEvidenceById(evidenceId)
-  if (!ref) {
-    return (
-      <div className="p-6">
-        <div className="mb-4">
-          <button className="btn" onClick={() => nav(-1)}>
-            ← Back
-          </button>
-        </div>
-        <div className="text-sm opacity-70">Evidence not found.</div>
-      </div>
-    )
-  }
+  // store lama (masih dipakai untuk update evidence via modal)
+  const updateEvidence = useEvidences((s) => s.updateEvidence)
 
-  const { evidence, caseRef, personRef } = ref
+  // store baru untuk detail evidence (IPC evidence:detail)
+  const {
+    createCustodyAcquisition,
+    createCustodyPreparation,
+    createCustodyExtraction,
+    createCustodyAnalysis,
+    updateCustodyNotes
+  } = useEvidenceApi()
+
+  const fetchEvidenceDetail = useEvidences((s) => s.fetchEvidenceDetail)
+
+  const detail = useEvidences((s) => s.detail)
+  const loading = useEvidences((s) => s.loading)
+  const error = useEvidences((s) => s.error)
+
+  // ============================
+  // UI STATE HOOKS (harus di atas, sebelum return kondisi)
+  // ============================
   const [active, setActive] = useState(STAGES[0].key)
   const [editOpen, setEditOpen] = useState(false)
   const [openStage, setOpenStage] = useState(null)
 
-  const chain = evidence.chain || { acquisition: [], preparation: [], extraction: [], analysis: [] }
+  // Pagination acquisition photos
+  const [page, setPage] = useState(1)
+
+  // Pagination analysis reports
+  const [reportPage, setReportPage] = useState(1)
+
+  // investigation tools untuk modal
+  const [investigationTools, setInvestigationTools] = useState(null)
+
+  // NotesBox state
+  const [notesValue, setNotesValue] = useState('')
+  const [isEditingNotes, setIsEditingNotes] = useState(false)
+  const savingRef = useRef(false)
+
+  // ============================
+  // FETCH DETAIL DARI IPC
+  // ============================
+  useEffect(() => {
+    if (evidenceId) {
+      fetchEvidenceDetail(evidenceId)
+    }
+  }, [evidenceId, fetchEvidenceDetail])
+
+  // ============================
+  // DERIVE DATA DARI detail (tidak pakai hook)
+  // ============================
+  let evidence = null
+  let caseRef = null
+  let personRef = null
+
+  let chain = {
+    acquisition: [],
+    preparation: [],
+    extraction: [],
+    analysis: []
+  }
+
+  if (detail) {
+    const data = detail
+    evidence = {
+      id: data.evidence_number,
+      summary: data.description,
+      source: data.evidence_type,
+      investigator: data.investigator,
+      previewUrl: null,
+      previewDataUrl: null,
+      createdAt: data.created_at
+    }
+
+    caseRef = {
+      id: data.case_id,
+      name: data.case_name
+    }
+
+    personRef = {
+      name: data.suspect_name
+    }
+
+    // build chain dari custody_reports
+    chain = {
+      acquisition: [],
+      preparation: [],
+      extraction: [],
+      analysis: []
+    }
+
+    for (const r of data.custody_reports || []) {
+      // Acquisition
+      if (r.custody_type === 'acquisition') {
+        chain.acquisition.push({
+          title: data.title,
+          steps: (Array.isArray(r.details) ? r.details : []).map((d) => ({
+            desc: d.steps
+          })),
+          photos: (Array.isArray(r.details) ? r.details : []).map((d) => d.photo),
+          notes: r.notes,
+          investigator: r.investigator,
+          location: r.location,
+          createdAt: r.created_at,
+          source: r.evidence_source,
+          type: r.evidence_type,
+          detail: r.evidence_detail,
+          id: r.id
+        })
+      }
+
+      // Preparation
+      if (r.custody_type === 'preparation') {
+        chain.preparation.push({
+          pairs: (Array.isArray(r.details) ? r.details : []).map((d) => ({
+            investigation: d.hypothesis,
+            tools: d.tools
+          })),
+          notes: r.notes,
+          investigator: r.investigator,
+          location: r.location,
+          createdAt: r.created_at,
+          source: r.evidence_source,
+          type: r.evidence_type,
+          detail: r.evidence_detail,
+          id: r.id
+        })
+      }
+
+      // Extraction
+      if (r.custody_type === 'extraction') {
+        const d = r.details || {}
+        chain.extraction.push({
+          files: [
+            {
+              name: d.file_name,
+              size: d.file_size,
+              base64: d.extraction_file // di UI diperlakukan seperti dataURL, tapi di sini string path juga oke
+            }
+          ],
+          notes: r.notes,
+          investigator: r.investigator,
+          location: r.location,
+          createdAt: r.created_at,
+          source: r.evidence_source,
+          type: r.evidence_type,
+          detail: r.evidence_detail,
+          id: r.id
+        })
+      }
+
+      // Analysis
+      if (r.custody_type === 'analysis') {
+        const details = r.details || {}
+        const results = details.results || []
+        const files = details.files || []
+
+        chain.analysis.push({
+          details: {
+            results: results.map((d) => ({
+              hypothesis: d.hypothesis,
+              tools: d.tools,
+              result: d.result
+            })),
+            files: files.map((f) => ({
+              file_name: f.file_name,
+              file_size: f.file_size,
+              file_path: f.file_path
+            }))
+          },
+          notes: r.notes,
+          investigator: r.investigator,
+          location: r.location,
+          createdAt: r.created_at,
+          source: r.evidence_source,
+          type: r.evidence_type,
+          detail: r.evidence_detail,
+          id: r.id
+        })
+      }
+    }
+  }
+
+  // ============================
+  // DERIVED VAR DARI chain & evidence
+  // ============================
   const contents = chain?.[active] ?? []
   const latest = Array.isArray(contents) ? contents[contents.length - 1] || null : contents || null
 
   const headerMeta = useMemo(() => {
-    const d = new Date(evidence.createdAt || Date.now())
+    const d = new Date(evidence?.createdAt || Date.now())
     const date = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(
       2,
       '0'
     )}/${String(d.getFullYear()).slice(-2)}`
     return { date }
-  }, [evidence.createdAt])
-
-  function handleSubmitStage(stage, data) {
-    addChainContent(evidence.id, stage, data)
-  }
+  }, [evidence?.createdAt])
 
   const panelLocation = latest?.location || ''
   const panelDatetime = fmtDateLong(latest?.createdAt)
@@ -109,16 +267,12 @@ export default function EvidenceDetailPage() {
       label,
       has: !!last,
       date: fmtDateShort(last?.createdAt),
-      investigator: last?.investigator || ''
+      investigator: last?.investigator || '',
+      notes: last?.notes
     }
   })
 
-  const headingInvestigator = caseRef?.investigator || latest?.investigator || '-'
-
-  // ==== NotesBox state ====
-  const [notesValue, setNotesValue] = useState('')
-  const [isEditingNotes, setIsEditingNotes] = useState(false)
-  const savingRef = useRef(false)
+  const headingInvestigator = evidence?.investigator || latest?.investigator || '-'
 
   const notesActionLabel = isEditingNotes ? 'Save' : notesValue.trim() ? 'Edit' : 'Add'
   const notesActionIcon = isEditingNotes ? (
@@ -126,22 +280,6 @@ export default function EvidenceDetailPage() {
   ) : (
     <LiaEditSolid className="text-[18px]" />
   )
-
-  const onNotesAction = async () => {
-    if (!isEditingNotes) {
-      setIsEditingNotes(true)
-      return
-    }
-    if (savingRef.current) return
-    savingRef.current = true
-    try {
-      const text = notesValue.trim()
-      useCases.getState().updateChainNotes(evidence.id, active, text)
-      setIsEditingNotes(false)
-    } finally {
-      savingRef.current = false
-    }
-  }
 
   const showContent =
     latest &&
@@ -173,38 +311,148 @@ export default function EvidenceDetailPage() {
     return true
   })()
 
-  // ===== Pagination Acquisition Photos =====
-  const [page, setPage] = useState(1)
+  // Pagination derived
   const totalPages = latest?.photos?.length || 0
   const currentImg = totalPages > 0 ? latest?.photos[page - 1] : null
 
-  // ===== Pagination Analysis Reports (baru) =====
-  const [reportPage, setReportPage] = useState(1)
-  const totalReports = Array.isArray(latest?.reports) ? latest.reports.length : 0
-  const currentReport = totalReports > 0 ? latest.reports[reportPage - 1] : null
+  const totalReports = Array.isArray(latest?.details?.files) ? latest?.details?.files.length : 0
+  const currentReport = totalReports > 0 ? latest?.details?.files[reportPage - 1] : null
 
-  // reset pagination saat berpindah tab agar aman
+  // ============================
+  // EFFECTS LANJUTAN
+  // ============================
+  // reset pagination saat pindah tab
   useEffect(() => {
     setPage(1)
     setReportPage(1)
   }, [active])
 
-  const [investigationTools, setInvestigationTools] = useState(null)
+  // investigation tools dari chain.preparation
   useEffect(() => {
-    setInvestigationTools(ref.evidence.chain.preparation)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+    setInvestigationTools(chain.preparation)
+  }, [detail]) // cukup bergantung pada detail; chain akan ikut berubah
 
-  // ===== Helpers untuk report (download & ukuran) =====
+  // sinkron notes dengan latest content
+  // Sync notes only when not editing
+  useEffect(() => {
+    if (isEditingNotes) return
+
+    if (!latest) {
+      setNotesValue('')
+      return
+    }
+
+    setNotesValue(latest.notes || '')
+  }, [active, latest, isEditingNotes])
+
+  // ============================
+  // HELPERS
+  // ============================
+  async function handleSubmitStage(stage, payload) {
+    const numericId = detail.id
+
+    try {
+      if (stage === 'acquisition') {
+        await createCustodyAcquisition(numericId, {
+          investigator: payload.investigator,
+          location: payload.location,
+          source: payload.source,
+          type: payload.type,
+          detail: payload.detail,
+          notes: payload.notes,
+          steps: payload.steps
+        })
+      } else if (stage === 'preparation') {
+        await createCustodyPreparation(numericId, {
+          investigator: payload.investigator,
+          location: payload.location,
+          source: payload.source,
+          type: payload.type,
+          detail: payload.detail,
+          notes: payload.notes,
+          pairs: payload.pairs
+        })
+      } else if (stage === 'extraction') {
+        await createCustodyExtraction(numericId, {
+          investigator: payload.investigator,
+          location: payload.location,
+          source: payload.source,
+          type: payload.type,
+          detail: payload.detail,
+          notes: payload.notes,
+
+          // EXTRACTION memang pakai payload.files
+          files: payload.files
+        })
+      } // EvidenceDetailPage.jsx
+      else if (stage === 'analysis') {
+        const files = payload.reports.map((r) => ({
+          name: r.name,
+          mime: r.type,
+          base64: r.base64
+        }))
+
+        await createCustodyAnalysis(numericId, {
+          investigator: payload.investigator,
+          location: payload.location,
+          source: payload.source,
+          type: payload.type,
+          detail: payload.detail,
+          notes: payload.notes,
+          analysisPairs: payload.analysisPairs,
+          files // ← kirim base64 di sini
+        })
+      }
+
+      await fetchEvidenceDetail(numericId)
+    } catch (err) {
+      console.error('submit stage error', err)
+    }
+  }
+
+  const onNotesAction = async () => {
+    if (!isEditingNotes) {
+      setIsEditingNotes(true)
+      return
+    }
+
+    if (savingRef.current) return
+    savingRef.current = true
+
+    try {
+      const text = notesValue.trim()
+
+      const stageList = chain[active] || []
+      const latestReport = stageList[stageList.length - 1]
+      console.log(latestReport)
+      if (!latestReport?.id) {
+        console.error('No custody report ID detected for stage:', active)
+        setIsEditingNotes(false)
+        return
+      }
+
+      await updateCustodyNotes(detail.id, latestReport.id, text)
+
+      await fetchEvidenceDetail(detail.id)
+
+      setIsEditingNotes(false)
+    } catch (err) {
+      console.error('Failed updating notes:', err)
+    } finally {
+      savingRef.current = false
+    }
+  }
+
   function downloadReport(rep) {
     if (!rep?.base64) return
     const a = document.createElement('a')
-    a.href = rep.base64 // dataURL dari FileReader
+    a.href = rep.base64 // di versi lama pakai dataURL dari FileReader
     a.download = rep.name || 'report.pdf'
     document.body.appendChild(a)
     a.click()
     a.remove()
   }
+
   function approxSizeLabel(dataUrl) {
     if (!dataUrl) return '-'
     const b64 = dataUrl.split(',')[1] || ''
@@ -214,18 +462,51 @@ export default function EvidenceDetailPage() {
     return mb >= 0.5 ? `${mb.toFixed(0)} Mb` : `${(bytes / 1024).toFixed(0)} Kb`
   }
 
-  useEffect(() => {
-    if (!latest) {
-      setNotesValue('')
-      return
-    }
+  // ============================
+  // EARLY RETURN SETELAH SEMUA HOOK
+  // (AMAN UNTUK RULES OF HOOKS)
+  // ============================
+  if (loading && !detail) {
+    return (
+      <CaseLayout title="Evidence Management" showBack={true}>
+        <div className="p-6 text-center opacity-70">Loading evidence detail...</div>
+      </CaseLayout>
+    )
+  }
 
-    let stageNotes = ''
-    stageNotes = latest?.notes || latest?.[active]?.notes || ''
-    setNotesValue(stageNotes)
-  }, [active, latest])
+  if (error && !detail) {
+    return (
+      <CaseLayout title="Evidence Management" showBack={true}>
+        <div className="p-6">
+          <div className="mb-4">
+            <button className="btn" onClick={() => nav(-1)}>
+              ← Back
+            </button>
+          </div>
+          <div className="text-sm opacity-70">Failed to load evidence detail: {error}</div>
+        </div>
+      </CaseLayout>
+    )
+  }
 
-  console.log(latest)
+  if (!detail || !evidence) {
+    return (
+      <CaseLayout title="Evidence Management" showBack={true}>
+        <div className="p-6">
+          <div className="mb-4">
+            <button className="btn" onClick={() => nav(-1)}>
+              ← Back
+            </button>
+          </div>
+          <div className="text-sm opacity-70">Evidence not found.</div>
+        </div>
+      </CaseLayout>
+    )
+  }
+
+  // ============================
+  // NORMAL RENDER
+  // ============================
   return (
     <CaseLayout title="Evidence Management" showBack={true}>
       <div className="mx-auto py-6">
@@ -355,11 +636,16 @@ export default function EvidenceDetailPage() {
 
             <div className="grid grid-cols-4 gap-6">
               {stageMeta.map((m) => (
-                <div key={m.key} className="flex flex-col items-center text-center">
+                <div key={m.key} className="flex flex-col items-center text-center gap-1">
                   <div className="text-lg font-semibold mb-1">{m.label}</div>
                   {m.date && <div className="text-sm opacity-60">{m.date}</div>}
-                  {m.investigator && <div className="text-sm opacity-60">{m.investigator}</div>}
-                  {!(m.date || m.investigator) && <div>Not Recorded</div>}
+                  {m.investigator && <div className="text-sm ">{m.investigator}</div>}
+                  {m.notes && (
+                    <div className="opacity-60 text-[13px] truncate max-w-[220px]" title={m.notes}>
+                      notes : {m.notes}
+                    </div>
+                  )}
+                  {!(m.date || m.investigator || m.notes) && <div>Not Recorded</div>}
                   {m.key === firstEmptyStage && (
                     <div className="flex justify-center mt-2">
                       <div className="inline-block rounded-md bg-[#394F6F]">
@@ -430,7 +716,7 @@ export default function EvidenceDetailPage() {
                   <div className="grid grid-cols-1 md:grid-cols-[1fr_380px] gap-8">
                     <div>
                       <div className="text-lg font-semibold mb-2">
-                        {latest?.title || 'Steps for Confiscating Evidence : '}
+                        {'Steps for Confiscating Evidence : '}
                       </div>
                       <ol className="list-decimal pl-6 text-base leading-relaxed space-y-2">
                         {(latest?.steps || []).map((s, i) => (
@@ -501,7 +787,12 @@ export default function EvidenceDetailPage() {
                     {latest?.files?.[0] ? (
                       <>
                         <div className="absolute -mt-8 text-center">
-                          <p className="font-bold truncate max-w-[220px]">{latest.files[0].name}</p>
+                          <p
+                            title={latest.files[0].name}
+                            className="font-bold truncate max-w-[130px]"
+                          >
+                            {latest.files[0].name}
+                          </p>
                           <p>
                             Size : {latest.files[0].size || approxSizeLabel(latest.files[0].base64)}
                           </p>
@@ -523,35 +814,40 @@ export default function EvidenceDetailPage() {
 
                 {active === 'analysis' && showContent && (
                   <div className="flex flex-row justify-between gap-8">
-                    {/* KIRI: hasil analisis */}
+                    {/* ===========================
+                          LEFT — ANALYSIS RESULTS
+                        =========================== */}
                     <div>
                       <div className="text-lg font-semibold mb-3">Analysis Result:</div>
                       <ol className="list-decimal pl-6 text-base leading-relaxed space-y-3">
-                        {(latest.analysisPairs || []).map((p, i) => (
+                        {(latest?.details?.results || []).map((p, i) => (
                           <li key={i} className="space-y-1">
-                            <div className="whitespace-pre-wrap">{p.result}</div>
+                            <div className="whitespace-pre-wrap">{p.result || '-'}</div>
                           </li>
                         ))}
                       </ol>
                     </div>
 
-                    {/* KANAN: Card file (tampilan tetap), isi & pagination dinamis */}
+                    {/* =================================
+                          RIGHT — REPORT FILES DISPLAY
+                      ================================= */}
                     <div className="md:justify-self-end">
                       <BoxAllSide>
                         <BoxAllSide>
                           <div className="flex flex-row justify-center items-center gap-5">
-                            {/* ikon lokal */}
                             <img src={iconReport} alt="report" className="w-[30px] h-[30px]" />
                             <div className="flex flex-col">
-                              <p className="font-bold truncate max-w-[220px]">
-                                {currentReport?.name || 'No Report'}
+                              <p
+                                title={currentReport?.file_name}
+                                className="font-bold truncate max-w-[150px]"
+                              >
+                                {currentReport?.file_name || 'No Report'}
                               </p>
-                              <p>
-                                Size : {currentReport ? approxSizeLabel(currentReport.base64) : '-'}
-                              </p>
+                              <p>Size : {currentReport?.file_size || '-'}</p>
                             </div>
                           </div>
                         </BoxAllSide>
+
                         <button
                           className="bg-[#2A3A51] px-5 mt-5 border-y-black border border-x-0 flex justify-self-center disabled:opacity-60"
                           onClick={() => currentReport && downloadReport(currentReport)}
@@ -561,7 +857,7 @@ export default function EvidenceDetailPage() {
                         </button>
                       </BoxAllSide>
 
-                      {/* Pagination khusus report di bawah card */}
+                      {/* Pagination */}
                       <div className="flex justify-center my-3">
                         {totalReports > 1 && (
                           <Pagination
@@ -579,7 +875,7 @@ export default function EvidenceDetailPage() {
                   <NotesBox
                     title="Notes"
                     value={notesValue}
-                    onChange={setNotesValue}
+                    onChange={(v) => setNotesValue(v)}
                     placeholder="Click Add to write notes"
                     editable={isEditingNotes}
                     actionLabel={notesActionLabel}

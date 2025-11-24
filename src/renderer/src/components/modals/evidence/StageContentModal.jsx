@@ -78,8 +78,6 @@ const Row = ({ children, cols = 2 }) => (
     {children}
   </div>
 )
-
-/* =============== MAIN COMPONENT =============== */
 export default function StageContentModal({
   open,
   caseNumber,
@@ -179,6 +177,7 @@ function AcquisitionPanel({ registerCollector }) {
     const reader = new FileReader()
     reader.onload = () => {
       const next = [...v.photos]
+      // simpan dataURL saja (untuk preview & nanti dikirim ke backend sebagai file base64)
       next[i] = reader.result
       setV({ ...v, photos: next })
     }
@@ -202,6 +201,7 @@ function AcquisitionPanel({ registerCollector }) {
       setStageData(STAGES.ACQUISITION, payload)
       return payload
     })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [v])
 
   return (
@@ -344,6 +344,7 @@ function PreparationPanel({ registerCollector }) {
       setStageData(STAGES.PREPARATION, payload)
       return payload
     })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [v])
 
   const setPair = (i, key, val) => {
@@ -498,6 +499,7 @@ function ExtractionPanel({ registerCollector }) {
       setStageData(STAGES.EXTRACTION, payload)
       return payload
     })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [v])
 
   return (
@@ -575,8 +577,8 @@ function ExtractionPanel({ registerCollector }) {
     </>
   )
 }
-
-/* =============== ANALYSIS (RESET SETIAP OPEN) =============== */
+/* =============== ANALYSIS (UPDATED WITH FILE UPLOAD FIXED) =============== */
+/* =============== ANALYSIS (UPDATED) =============== */
 function AnalysisPanel({ open, registerCollector, investigationTools }) {
   const { preparation, setStageData } = useEvidenceChain()
 
@@ -584,9 +586,9 @@ function AnalysisPanel({ open, registerCollector, investigationTools }) {
     preparation?.pairs ??
     preparation?.hypothesis?.map((h, i) => ({
       investigation: h,
-      tools: preparation.tool[i] ?? ''
+      tools: preparation.tool?.[i] ?? ''
     })) ??
-    investigationTools?.pairs ??
+    investigationTools[0]?.pairs ??
     []
 
   const buildDefaults = () => ({
@@ -594,58 +596,82 @@ function AnalysisPanel({ open, registerCollector, investigationTools }) {
     location: '',
     source: '',
     type: '',
-    stage: '',
     detail: '',
+    notes: '',
+
     analysisPairs: prepPairs.map((p) => ({
       investigation: p.investigation || '',
       tools: p.tools || '',
       result: ''
     })),
-    reports: [], // ⬅️ selalu kosong saat mulai
-    notes: ''
+
+    reports: [] // tempat penyimpanan file (metadata + File asli)
   })
 
   const [v, setV] = useState(buildDefaults)
 
-  // Reset setiap kali modal dibuka / pasangan preparation berubah
   useEffect(() => {
     if (open) setV(buildDefaults())
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, preparation])
 
-  // helper upload
-  const addReport = (file) => {
-    const reader = new FileReader()
-    reader.onload = () =>
-      setV((prev) => ({
-        ...prev,
-        reports: [
-          ...(prev.reports || []),
-          { name: file.name, mime: file.type, base64: reader.result }
-        ]
-      }))
-    reader.readAsDataURL(file)
-  }
-  const addReports = (files) => Array.from(files || []).forEach(addReport)
+  // Upload files -> simpan File asli + metadata
+  const addReports = async (fileList) => {
+    const arr = Array.from(fileList)
 
-  useEffect(() => {
-    registerCollector(async () => {
-      const payload = {
-        ...v,
-        id: crypto.randomUUID(),
-        stage: STAGES.ANALYSIS,
-        createdAt: new Date().toISOString()
-      }
-      setStageData(STAGES.ANALYSIS, payload)
-      return payload
-    })
-  }, [v])
+    const files = await Promise.all(
+      arr.map(
+        (file) =>
+          new Promise((resolve) => {
+            const reader = new FileReader()
+            reader.onload = () => {
+              resolve({
+                name: file.name,
+                type: file.type,
+                size: file.size,
+                base64: reader.result, // dataURL (kalau suatu saat perlu preview)
+                file // File asli
+              })
+            }
+            reader.readAsDataURL(file)
+          })
+      )
+    )
+
+    setV((prev) => ({
+      ...prev,
+      reports: [...prev.reports, ...files]
+    }))
+  }
 
   const setResult = (i, val) => {
     const next = [...v.analysisPairs]
     next[i].result = val
     setV({ ...v, analysisPairs: next })
   }
+
+  // Mixer payload ke StageContentModal
+  useEffect(() => {
+    registerCollector(async () => {
+      // DEBUG: pastikan file masih File
+      const payload = {
+        ...v,
+        stage: STAGES.ANALYSIS,
+        id: crypto.randomUUID(),
+        createdAt: new Date().toISOString(),
+
+        hypothesis: v.analysisPairs.map((p) => p.investigation),
+        tools: v.analysisPairs.map((p) => p.tools),
+        result: v.analysisPairs.map((p) => p.result),
+
+        // ❗ DI SINI CUKUP KIRIM reports SAJA
+        // File asli ada di reports[i].file
+        reports: v.reports
+      }
+
+      setStageData(STAGES.ANALYSIS, payload)
+      return payload
+    })
+  }, [v])
 
   return (
     <>
@@ -657,6 +683,7 @@ function AnalysisPanel({ open, registerCollector, investigationTools }) {
             placeholder="Name"
           />
         </Field>
+
         <Field label="Location">
           <Input
             value={v.location}
@@ -674,6 +701,7 @@ function AnalysisPanel({ open, registerCollector, investigationTools }) {
             options={DEVICE_SOURCES}
           />
         </Field>
+
         <Field label="Evidence Type">
           <Input
             value={v.type}
@@ -681,6 +709,7 @@ function AnalysisPanel({ open, registerCollector, investigationTools }) {
             placeholder="Evidence Type"
           />
         </Field>
+
         <Field label="Evidence Detail">
           <Input
             value={v.detail}
@@ -697,6 +726,7 @@ function AnalysisPanel({ open, registerCollector, investigationTools }) {
             <Input key={i} readOnly value={p.investigation} className="mb-3" />
           ))}
         </div>
+
         <div className="flex flex-col gap-2">
           <Label>Tool Used</Label>
           {v.analysisPairs.map((p, i) => (
@@ -716,11 +746,10 @@ function AnalysisPanel({ open, registerCollector, investigationTools }) {
         />
       ))}
 
-      {/* ===== Upload Report (container border + tombol center) ===== */}
-      <Field label={`Upload Report (${v.reports?.length || 0})`}>
+      <Field label={`Upload Report (${v.reports.length})`}>
         <div
           className="w-full rounded-md flex items-center justify-center"
-          style={{ border: `1px solid ${TOKENS.ring}`, background: 'transparent', minHeight: 88 }}
+          style={{ border: `1px solid ${TOKENS.ring}`, minHeight: 88 }}
         >
           <label
             className="cursor-pointer h-11 px-6 rounded-md flex items-center justify-center text-sm font-medium"
@@ -734,17 +763,16 @@ function AnalysisPanel({ open, registerCollector, investigationTools }) {
               className="hidden"
               onChange={(e) => {
                 addReports(e.target.files)
-                e.target.value = null // reset agar bisa pilih file yang sama
+                e.target.value = null
               }}
             />
           </label>
         </div>
 
-        {/* List file di bawah container */}
         <div className="mt-3 space-y-3">
-          {(v.reports || []).map((f, i) => (
+          {v.reports.map((f, i) => (
             <div
-              key={`${f.name}-${i}`}
+              key={i}
               className="flex items-center justify-between rounded-md px-4 py-3"
               style={{ border: `1px solid ${TOKENS.ring}` }}
             >
@@ -754,6 +782,7 @@ function AnalysisPanel({ open, registerCollector, investigationTools }) {
                   {f.name}
                 </span>
               </div>
+
               <span
                 className="text-sm px-3 py-1 rounded-md"
                 style={{ background: TOKENS.statusBg, color: TOKENS.text }}
@@ -771,7 +800,6 @@ function AnalysisPanel({ open, registerCollector, investigationTools }) {
           value={v.notes}
           onChange={(e) => setV({ ...v, notes: e.target.value })}
           placeholder="Evidence Notes"
-          data-optional="true"
         />
       </Field>
     </>
