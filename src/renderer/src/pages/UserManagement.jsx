@@ -218,8 +218,8 @@ export default function UserManagement() {
           open={!!editingUser}
           user={editingUser}
           onClose={() => setEditingUser(null)}
-          onSave={async (payload) => {
-            await updateUserRemote(editingUser.id, payload)
+          onSave={async (id, payload) => {
+            await updateUserRemote(id, payload)
             setEditingUser(null)
           }}
         />

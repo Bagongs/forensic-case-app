@@ -194,7 +194,7 @@ export default function EditEvidenceModal({
 
             <FormLabel>Suspect Status</FormLabel>
             <select
-              className="w-full px-3 py-2 rounded-lg border bg-transparent"
+              className="w-full px-3 py-2 rounded-lg border bg-[#151d28]"
               style={{ borderColor: 'var(--border)' }}
               value={status || ''}
               onChange={(e) => setStatus(e.target.value)}
