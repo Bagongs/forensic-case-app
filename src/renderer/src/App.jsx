@@ -12,6 +12,7 @@ import UserManagement from './pages/UserManagement.jsx'
 import RequireAuth from './RequireAuth.jsx'
 import RequireAdmin from './RequireAdmin.jsx'
 import { Toaster } from 'react-hot-toast'
+import AboutPage from './pages/AboutPage.jsx'
 
 export default function App() {
   return (
@@ -63,6 +64,7 @@ export default function App() {
               </RequireAdmin>
             }
           />
+          <Route path="/about" element={<AboutPage />} />
         </Route>
 
         {/* catch all */}

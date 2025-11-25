@@ -180,7 +180,9 @@ export default function Modal({
           ? 'w-[720px]'
           : size === 'xl'
             ? 'w-[900px]'
-            : 'w-[560px]'
+            : size === '2xl'
+              ? 'w-[1500px]'
+              : 'w-[560px]'
 
   return (
     <>

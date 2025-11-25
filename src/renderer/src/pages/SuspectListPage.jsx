@@ -222,7 +222,7 @@ export default function SuspectListPage() {
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left" style={{ background: COLORS.theadBg }}>
-              {['Name', 'Case Name', 'Investigator', 'Status', 'Action'].map((h) => (
+              {['Name', 'Case Name', 'Main Investigator', 'Status', 'Action'].map((h) => (
                 <th
                   key={h}
                   className="px-4 py-3 border-b"

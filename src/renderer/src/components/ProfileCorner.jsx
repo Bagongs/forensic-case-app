@@ -8,7 +8,8 @@ import {
   FaEyeSlash,
   FaChevronUp,
   FaChevronDown,
-  FaUserCircle
+  FaUserCircle,
+  FaInfoCircle
 } from 'react-icons/fa'
 import { useAuth } from '@renderer/store/auth'
 
@@ -63,16 +64,16 @@ export default function ProfileCorner({ active = false }) {
       {/* === Trigger Button === */}
       <button
         onClick={() => setOpen((prev) => !prev)}
-        className="text-sm flex items-center justify-center text-white font-[Aldrich] gap-2"
+        className="text-sm flex items-center justify-center text-white font-[Aldrich] gap-2 mt-5 2xl:Fmr-5"
       >
-        <FaUserCircle size={32} />
+        <FaUserCircle size={50} />
         {open ? <FaChevronUp /> : <FaChevronDown />}
       </button>
 
       {/* === Dropdown === */}
       {open && (
         <div
-          className="absolute right-0 mt-3 w-64 rounded-sm shadow-lg z-50 border border-[#2A3A51] font-[Noto Sans]"
+          className="absolute right-0 mt-3 w-64 rounded-sm 2xl:mr-5 shadow-lg z-50 border border-[#2A3A51] font-[Noto Sans]"
           style={{ backgroundColor: '#0F1722' }}
         >
           {/* User info */}
@@ -106,6 +107,14 @@ export default function ProfileCorner({ active = false }) {
               User management
             </Link>
           )}
+          <Link
+            to="/about"
+            className="flex items-center gap-2 px-4 py-3 text-sm text-white border-b border-[#2A3A51] hover:bg-[#1A2638] transition"
+            onClick={() => setOpen(false)}
+          >
+            <FaInfoCircle className="text-[#A9CCFD]" />
+            About
+          </Link>
 
           {/* Logout */}
           <button

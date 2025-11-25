@@ -139,9 +139,9 @@ export default function EvidenceDetailPage() {
     }
 
     personRef = {
-      name: data.suspect_name
+      name: data.suspect_name,
+      status: data.suspect_status
     }
-
     // build chain dari custody_reports
     chain = {
       acquisition: [],
@@ -608,7 +608,7 @@ export default function EvidenceDetailPage() {
                   color: '#A9CCFD'
                 }}
               >
-                {active}
+                Preservation
               </div>
             </div>
           </div>

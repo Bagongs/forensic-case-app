@@ -5,7 +5,7 @@ import Modal from '../Modal'
 import FormLabel from '../../atoms/FormLabel'
 import Input from '../../atoms/Input'
 
-export default function AddUserModal({ open, onClose, onSave }) {
+export default function AddUserModal({ open, onClose, onSave, errMessage }) {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -14,7 +14,6 @@ export default function AddUserModal({ open, onClose, onSave }) {
   const [showPass, setShowPass] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
 
-  // Reset form setiap kali modal ditutup
   useEffect(() => {
     if (!open) {
       setName('')
@@ -27,15 +26,18 @@ export default function AddUserModal({ open, onClose, onSave }) {
     }
   }, [open])
 
+  const isInvalid =
+    !name ||
+    !email ||
+    !password ||
+    !confirmPassword ||
+    password.length < 8 ||
+    confirmPassword.length < 8 ||
+    password !== confirmPassword ||
+    !tag
+
   const handleSave = async () => {
-    if (!name || !email || !password || !confirmPassword) {
-      alert('Please fill all required fields')
-      return
-    }
-    if (password !== confirmPassword) {
-      alert('Passwords do not match!')
-      return
-    }
+    if (isInvalid) return
 
     await onSave({
       fullname: name,
@@ -55,6 +57,7 @@ export default function AddUserModal({ open, onClose, onSave }) {
       onCancel={onClose}
       confirmText="Add User"
       onConfirm={handleSave}
+      disableConfirm={isInvalid}
     >
       <div className="grid gap-3">
         {/* Name */}
@@ -69,6 +72,9 @@ export default function AddUserModal({ open, onClose, onSave }) {
           placeholder="Email"
           type="email"
         />
+        {errMessage?.toLowerCase().includes('email') && (
+          <p className="text-red-400 text-xs">{errMessage}</p>
+        )}
 
         {/* Password */}
         <FormLabel>Password</FormLabel>
@@ -88,6 +94,11 @@ export default function AddUserModal({ open, onClose, onSave }) {
           </button>
         </div>
 
+        {/* Error for password */}
+        {password && password.length < 8 && (
+          <p className="text-red-400 text-xs">Password must be at least 8 characters</p>
+        )}
+
         {/* Confirm Password */}
         <FormLabel>Confirm Password</FormLabel>
         <div className="relative">
@@ -105,6 +116,20 @@ export default function AddUserModal({ open, onClose, onSave }) {
             {showConfirm ? <FaEyeSlash /> : <FaEye />}
           </button>
         </div>
+
+        {/* Error for confirm password */}
+        {confirmPassword && confirmPassword.length < 8 && (
+          <p className="text-red-400 text-xs">Confirm Password must be at least 8 characters</p>
+        )}
+
+        {/* Error for mismatch */}
+        {password &&
+          confirmPassword &&
+          password.length >= 8 &&
+          confirmPassword.length >= 8 &&
+          password !== confirmPassword && (
+            <p className="text-red-400 text-xs">Passwords do not match</p>
+          )}
 
         {/* Tag */}
         <FormLabel>Tag</FormLabel>

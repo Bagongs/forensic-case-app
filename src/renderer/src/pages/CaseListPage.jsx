@@ -260,7 +260,7 @@ export default function CaseListPage() {
               {[
                 'Case ID',
                 'Case Name',
-                'Investigator',
+                'Main Investigator',
                 'Agency',
                 'Date Created',
                 'Status',
@@ -272,16 +272,8 @@ export default function CaseListPage() {
                   style={{ borderColor: COLORS.border, color: COLORS.dim }}
                 >
                   {h === 'Date Created' ? (
-                    <button onClick={toggleSort} className="inline-flex items-center gap-1">
+                    <button className="inline-flex items-center gap-1">
                       <span>Date Created</span>
-                      <PiArrowsDownUpBold
-                        size={16}
-                        style={{
-                          color: '#FFFFFF',
-                          opacity: sortOrder ? 1 : 0.6,
-                          transition: 'opacity 0.2s'
-                        }}
-                      />
                     </button>
                   ) : (
                     h
@@ -528,8 +520,11 @@ function FilterDropdown({ open, onClose, selected, onChange, anchorRef }) {
             <div
               key={opt}
               onClick={() => {
-                if (isChecked) onChange(selected.filter((s) => s !== opt))
-                else onChange([...selected, opt])
+                if (isChecked) {
+                  onChange([])
+                } else {
+                  onChange([opt])
+                }
               }}
               className="flex items-center gap-3 cursor-pointer select-none"
             >

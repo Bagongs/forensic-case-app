@@ -10,9 +10,11 @@ export default function CaseLogBox({
   borderColor = '#4C607D',
   borderW = 1.5,
   cut = 16,
-  onViewNotes
+  onViewNotes,
+  onSeeMore
 }) {
-  console.log('Logs', logs)
+  const visibleLogs = logs.slice(0, 6)
+
   return (
     <BoxAllSide className="w-full" cut={cut} borderColor={borderColor} borderW={borderW} bg={bg}>
       {/* Header */}
@@ -39,7 +41,7 @@ export default function CaseLogBox({
 
       {/* Timeline */}
       <div className="relative pl-6 border-l border-dashed border-[#6A7A94]">
-        {logs.map((log, i) => (
+        {visibleLogs.map((log, i) => (
           <div key={i} className="relative mb-6">
             {/* Circle */}
             <div className="absolute -left-[34px] top-1 w-5 h-5 rounded-full border border-[#B9C3D3] bg-[#0F1927]" />
@@ -47,30 +49,52 @@ export default function CaseLogBox({
             {/* Content */}
             <div className="text-[#E7E9EE] text-[14px] font-[Noto Sans] leading-relaxed">
               <div className="font-semibold">{log.status}</div>
+
               {log.by && <div>{log.by}</div>}
               {log.date && <div>{log.date}</div>}
-              {log.change && <div>{log.change}</div>}
-              {log.hasNotes && (
+
+              {/* Notes Button */}
+              {log.hasNotes ? (
                 <button
-                  className="mt-1 bg-[#1E2A3C] text-[13px]"
+                  className="mt-1 text-[13px]"
                   style={{
                     background: 'linear-gradient(180deg, #222E41 0%, #111720 100%)',
                     borderTop: '1px solid #C3CFE0',
                     borderBottom: '1px solid #C3CFE0',
-                    borderLeft: 'none',
-                    borderRight: 'none',
                     padding: '2px 18px'
                   }}
-                  onClick={() => onViewNotes && onViewNotes(log)} // ⬅️ tambahkan ini
+                  onClick={() => onViewNotes && onViewNotes(log)}
                 >
-                  Notes
+                  See Note
                 </button>
+              ) : (
+                log.change && <div>{log.change}</div>
               )}
             </div>
           </div>
         ))}
       </div>
-      {logs.length == 0 && <div className="text-center"> No Case Log </div>}
+
+      {/* No Logs */}
+      {logs.length === 0 && <div className="text-center text-[#E7E9EE] py-2">No Case Log</div>}
+
+      {/* See More Button */}
+      {logs.length > 6 && (
+        <div className="flex justify-center mt-3">
+          <button
+            onClick={() => onSeeMore && onSeeMore(logs)}
+            className="px-4 py-1.5 text-sm"
+            style={{
+              background: 'linear-gradient(180deg, #263449 0%, #2B3C54 100%)',
+              borderTop: '1px solid #C3CFE0',
+              borderBottom: '1px solid #C3CFE0',
+              padding: '2px 18px'
+            }}
+          >
+            See More
+          </button>
+        </div>
+      )}
     </BoxAllSide>
   )
 }

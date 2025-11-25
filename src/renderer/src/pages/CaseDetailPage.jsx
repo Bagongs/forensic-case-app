@@ -28,6 +28,7 @@ import editBg from '../assets/image/edit.svg'
 import NotesModal from '../components/modals/case/NotesModal'
 import ConfirmDeleteModal from '../components/modals/ConfirmDeleteModal'
 import toast from 'react-hot-toast'
+import AllLogsModal from '../components/modals/case/DetailCaseLogsModal'
 
 const fmtDate = (iso) => {
   if (!iso) return '-'
@@ -84,6 +85,8 @@ export default function CaseDetailPage() {
 
   const savingRef = useRef(false)
   const fetchedDetailRef = useRef(null) // prevent double fetch
+  const [logsModal, setLogsModal] = useState(false)
+  const [allLogs, setAllLogs] = useState([])
 
   // selected person from fresh store
   const selectedPerson = useCases((s) =>
@@ -263,7 +266,6 @@ Z`.trim()
 
   const persons = item.persons || []
   const headerCaseNumber = item.caseNumber || item.case_number || item.caseNumberText || item.id
-
   return (
     <CaseLayout title="Case Management" showBack={true}>
       {/* HEADER */}
@@ -368,6 +370,7 @@ Z`.trim()
                         image={img}
                         code={ev.fileName || ev.evidenceNumber || ev.id}
                         summary={ev.summary}
+                        onClick={() => nav(`/evidence/${ev.id}`)}
                       />
                     )
                   })}
@@ -396,7 +399,13 @@ Z`.trim()
               setSelectedNote(log.note || log.change || 'No notes found')
               setNoteOpen(true)
             }}
+            onSeeMore={(logs) => {
+              setAllLogs(logs)
+              setLogsModal(true)
+            }}
           />
+
+          <AllLogsModal open={logsModal} onClose={() => setLogsModal(false)} logs={allLogs} />
 
           {noteOpen && (
             <NotesModal open={noteOpen} onClose={() => setNoteOpen(false)} notes={selectedNote} />

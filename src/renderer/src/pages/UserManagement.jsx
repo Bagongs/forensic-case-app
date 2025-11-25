@@ -77,6 +77,7 @@ export default function UserManagement() {
   const totalUsers = pagination?.total ?? users.length ?? 0
   const totalPages = Math.max(1, Math.ceil(totalUsers / pageSize))
   const safePage = Math.min(page, totalPages)
+  console.log(users)
 
   return (
     <CaseLayout title="User Management" showBack={true}>
@@ -111,16 +112,6 @@ export default function UserManagement() {
         {loading && (
           <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-10 text-sm">
             Loading users…
-          </div>
-        )}
-
-        {/* Error bar */}
-        {error && (
-          <div
-            className="px-4 py-2 text-xs text-red-400 border-b"
-            style={{ borderColor: COLORS.border }}
-          >
-            {String(error)}
           </div>
         )}
 
@@ -168,6 +159,7 @@ export default function UserManagement() {
                       onClick={() => setDeleteUser(u)}
                       className="inline-flex items-center justify-center w-8 h-8 rounded"
                       title="Delete"
+                      hidden={u.role == 'admin'}
                       style={{
                         background: COLORS.delBg,
                         border: `1.18px solid ${COLORS.delBorder}`
@@ -217,6 +209,7 @@ export default function UserManagement() {
             setOpenAdd(false)
             setPage(1)
           }}
+          errMessage={String(error)}
         />
       )}
 

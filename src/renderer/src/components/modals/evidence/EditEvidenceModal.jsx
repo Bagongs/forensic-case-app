@@ -41,6 +41,8 @@ export default function EditEvidenceModal({
       setFile(null)
     }
   }, [open, evidenceData, personData])
+  console.log('status', status)
+  console.log('personData', personData)
 
   const fileToDataURL = (f) =>
     new Promise((res, rej) => {
@@ -194,7 +196,7 @@ export default function EditEvidenceModal({
             <select
               className="w-full px-3 py-2 rounded-lg border bg-transparent"
               style={{ borderColor: 'var(--border)' }}
-              value={status === null || status === 'Unknown' ? '' : status}
+              value={status || ''}
               onChange={(e) => setStatus(e.target.value)}
             >
               <option value="" disabled>

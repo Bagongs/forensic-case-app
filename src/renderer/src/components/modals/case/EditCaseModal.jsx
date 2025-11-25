@@ -2,13 +2,14 @@
 import { useEffect, useState } from 'react'
 import Modal from '../Modal'
 import HorizontalLine from '../../common/HorizontalLine'
+import { useAuth } from '../../../store/auth'
 
 export default function EditCaseModal({ open, onClose, initial, onSave }) {
-  console.log('Initial ', initial)
+  const { user } = useAuth()
   const [name, setName] = useState(initial?.name || '')
   const [id, setId] = useState(initial?.id || '')
   const [description, setDescription] = useState(initial?.description || '')
-  const [investigator, setInvestigator] = useState(initial?.investigator || '')
+  const [investigator, setInvestigator] = useState(user.fullname || '')
   const [agency, setAgency] = useState(initial?.agency || '')
   const [workUnit, setWorkUnit] = useState(initial?.workUnit || '')
 
@@ -16,7 +17,7 @@ export default function EditCaseModal({ open, onClose, initial, onSave }) {
     if (open) {
       setName(initial?.name || '')
       setDescription(initial?.description || '')
-      setInvestigator(initial?.investigator || '')
+      setInvestigator(user.fullname || '')
       setId(initial?.id || '')
       setAgency(initial?.agency || '')
       setWorkUnit(initial?.workUnit || '')
@@ -93,6 +94,7 @@ export default function EditCaseModal({ open, onClose, initial, onSave }) {
             Main Investigator
           </div>
           <input
+            readOnly
             value={investigator}
             onChange={(e) => setInvestigator(e.target.value)}
             placeholder="input name"

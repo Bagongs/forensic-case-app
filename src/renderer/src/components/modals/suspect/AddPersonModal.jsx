@@ -286,7 +286,7 @@ export default function AddPersonModal({ open, onClose, onSave, caseOptions = []
         </Select>
 
         {/* Evidence file */}
-        <FormLabel>Evidence File</FormLabel>
+        <FormLabel>Evidence Image</FormLabel>
         <div
           className="rounded-lg border p-4 flex items-center justify-center"
           style={{ borderColor: 'var(--border)' }}

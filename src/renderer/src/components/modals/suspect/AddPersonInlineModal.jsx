@@ -261,7 +261,7 @@ export default function AddPersonInlineModal({ caseId, open, onClose }) {
           ))}
         </Select>
 
-        <FormLabel>Evidence File</FormLabel>
+        <FormLabel>Evidence Image</FormLabel>
         <div
           className="rounded-lg border p-4 flex items-center justify-center gap-3"
           style={{ borderColor: 'var(--border)' }}
@@ -277,7 +277,7 @@ export default function AddPersonInlineModal({ caseId, open, onClose }) {
           </button>
           <input
             ref={fileRef}
-            accept="image/*,application/pdf"
+            accept="image/*"
             type="file"
             className="hidden"
             onChange={onPickFile}

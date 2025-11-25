@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { FaFilePdf } from 'react-icons/fa6'
 import { useEvidenceChain } from '../../../store/evidenceChain'
 import Modal from '../Modal'
+import { useAuth } from '../../../store/auth'
 
 const TOKENS = {
   modalBg: '#151D28',
@@ -90,6 +91,7 @@ export default function StageContentModal({
   const [stage, setStage] = useState(initialStage)
   const [submitting, setSubmitting] = useState(false)
   const collectorRef = useRef(null)
+  const {user} = useAuth()
 
   useEffect(() => {
     if (open) setStage(initialStage)
@@ -137,16 +139,17 @@ export default function StageContentModal({
     >
       <div className="space-y-6">
         {stage === STAGES.ACQUISITION && (
-          <AcquisitionPanel registerCollector={(fn) => (collectorRef.current = fn)} />
+          <AcquisitionPanel user={user} registerCollector={(fn) => (collectorRef.current = fn)} />
         )}
         {stage === STAGES.PREPARATION && (
-          <PreparationPanel registerCollector={(fn) => (collectorRef.current = fn)} />
+          <PreparationPanel user={user} registerCollector={(fn) => (collectorRef.current = fn)} />
         )}
         {stage === STAGES.EXTRACTION && (
-          <ExtractionPanel registerCollector={(fn) => (collectorRef.current = fn)} />
+          <ExtractionPanel user={user} registerCollector={(fn) => (collectorRef.current = fn)} />
         )}
         {stage === STAGES.ANALYSIS && (
           <AnalysisPanel
+            user={user}
             open={open}
             investigationTools={investigationTools}
             registerCollector={(fn) => (collectorRef.current = fn)}
@@ -158,7 +161,7 @@ export default function StageContentModal({
 }
 
 /* =============== ACQUISITION =============== */
-function AcquisitionPanel({ registerCollector }) {
+function AcquisitionPanel({ user, registerCollector }) {
   const { acquisition, setStageData } = useEvidenceChain()
   const [v, setV] = useState({
     investigator: '',
@@ -209,9 +212,10 @@ function AcquisitionPanel({ registerCollector }) {
       <Row>
         <Field label="Investigator">
           <Input
-            value={v.investigator}
-            onChange={(e) => setV({ ...v, investigator: e.target.value })}
+            value={user.fullname}
+            onChange={() => setV({ ...v, investigator: user.fullname })}
             placeholder="Name"
+            readOnly
           />
         </Field>
         <Field label="Location">
@@ -317,7 +321,7 @@ function AcquisitionPanel({ registerCollector }) {
 }
 
 /* =============== PREPARATION =============== */
-function PreparationPanel({ registerCollector }) {
+function PreparationPanel({user, registerCollector }) {
   const { preparation, setStageData } = useEvidenceChain()
   const [v, setV] = useState({
     investigator: '',
@@ -358,9 +362,10 @@ function PreparationPanel({ registerCollector }) {
       <Row>
         <Field label="Investigator">
           <Input
-            value={v.investigator}
-            onChange={(e) => setV({ ...v, investigator: e.target.value })}
+            value={user.fullname}
+            onChange={() => setV({ ...v, investigator: user.fullname })}
             placeholder="Name"
+            readOnly
           />
         </Field>
         <Field label="Location">
@@ -444,7 +449,7 @@ function PreparationPanel({ registerCollector }) {
 }
 
 /* =============== EXTRACTION =============== */
-function ExtractionPanel({ registerCollector }) {
+function ExtractionPanel({user, registerCollector }) {
   const { extraction, setStageData } = useEvidenceChain()
   const [v, setV] = useState({
     investigator: '',
@@ -507,9 +512,10 @@ function ExtractionPanel({ registerCollector }) {
       <Row>
         <Field label="Investigator">
           <Input
-            value={v.investigator}
-            onChange={(e) => setV({ ...v, investigator: e.target.value })}
+            value={user.fullname}
+            onChange={() => setV({ ...v, investigator: user.fullname })}
             placeholder="Name"
+            readOnly
           />
         </Field>
         <Field label="Location">
@@ -579,7 +585,7 @@ function ExtractionPanel({ registerCollector }) {
 }
 /* =============== ANALYSIS (UPDATED WITH FILE UPLOAD FIXED) =============== */
 /* =============== ANALYSIS (UPDATED) =============== */
-function AnalysisPanel({ open, registerCollector, investigationTools }) {
+function AnalysisPanel({user, open, registerCollector, investigationTools }) {
   const { preparation, setStageData } = useEvidenceChain()
 
   const prepPairs =
@@ -678,9 +684,10 @@ function AnalysisPanel({ open, registerCollector, investigationTools }) {
       <Row>
         <Field label="Investigator">
           <Input
-            value={v.investigator}
-            onChange={(e) => setV({ ...v, investigator: e.target.value })}
+            value={user.fullname}
+            onChange={() => setV({ ...v, investigator: user.fullname })}
             placeholder="Name"
+            readOnly
           />
         </Field>
 

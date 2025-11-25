@@ -6,6 +6,7 @@ import Radio from '../../atoms/Radio'
 import Input from '../../atoms/Input'
 import Textarea from '../../atoms/Textarea'
 import Select from '../../atoms/Select'
+import { useAuth } from '../../../store/auth'
 
 const DEVICE_SOURCES = ['Hp', 'Ssd', 'HardDisk', 'Pc', 'Laptop', 'DVR']
 const STATUS_OPTIONS = ['Witness', 'Reported', 'Suspected', 'Suspect', 'Defendant']
@@ -40,13 +41,14 @@ export default function AddEvidenceModal({
   defaultPerson = null
 }) {
   console.log('default case id : ', defaultCaseId)
+  const { user } = useAuth()
   const [status, setStatus] = useState(null)
   const [caseId, setCaseId] = useState(defaultCaseId)
   const [idMode, setIdMode] = useState('gen')
   const [evidenceId, setEvidenceId] = useState('')
   const [source, setSource] = useState('')
   const [summary, setSummary] = useState('')
-  const [investigator, setInvestigator] = useState(defaultInvestigator)
+  const [investigator, setInvestigator] = useState(user.fullname)
   const [poiMode, setPoiMode] = useState(defaultPerson ? 'known' : 'unknown')
   const [personName, setPersonName] = useState(defaultPerson?.name || '')
   const [etype, setEtype] = useState('')
@@ -61,7 +63,7 @@ export default function AddEvidenceModal({
   useEffect(() => {
     if (open) {
       setCaseId(defaultCaseId || '')
-      setInvestigator(defaultInvestigator || '')
+      setInvestigator(user.fullname || '')
       setPersonName(defaultPerson?.name || '')
       setPoiMode(defaultPerson ? 'known' : 'unknown')
       setStatus(defaultPerson?.status ?? null)
@@ -260,7 +262,7 @@ export default function AddEvidenceModal({
           ))}
         </Select>
 
-        <FormLabel>Evidence File</FormLabel>
+        <FormLabel>Evidence Image</FormLabel>
         <div
           className="rounded-lg border p-4 flex items-center justify-center"
           style={{ borderColor: 'var(--border)' }}
@@ -313,7 +315,7 @@ export default function AddEvidenceModal({
           onChange={(e) => setInvestigator(e.target.value)}
           placeholder="Input name"
           disabled={!!defaultInvestigator || submitting}
-          readOnly={!!defaultInvestigator}
+          readOnly
         />
 
         <FormLabel>Person of Interest</FormLabel>

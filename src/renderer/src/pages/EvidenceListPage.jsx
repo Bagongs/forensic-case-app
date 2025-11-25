@@ -182,17 +182,22 @@ export default function EvidenceListPage() {
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left" style={{ background: COLORS.theadBg }}>
-              {['Evidence ID', 'Case Name', 'Agency', 'Investigator', 'Date Created', 'Action'].map(
-                (h) => (
-                  <th
-                    key={h}
-                    className="px-4 py-3 border-b"
-                    style={{ borderColor: COLORS.border, color: COLORS.dim }}
-                  >
-                    {h}
-                  </th>
-                )
-              )}
+              {[
+                'Evidence ID',
+                'Case Name',
+                'Agency',
+                'Main Investigator',
+                'Date Created',
+                'Action'
+              ].map((h) => (
+                <th
+                  key={h}
+                  className="px-4 py-3 border-b"
+                  style={{ borderColor: COLORS.border, color: COLORS.dim }}
+                >
+                  {h}
+                </th>
+              ))}
             </tr>
           </thead>
 
