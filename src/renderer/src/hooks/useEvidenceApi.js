@@ -14,6 +14,7 @@ export function useEvidenceApi() {
 
     /* DETAIL */
     getEvidenceDetail: (evidenceId) => invoke('evidence:detail', evidenceId),
+    exportPdf: (evidenceId) => invoke('evidence:exportPdf', evidenceId),
 
     /* =======================
         CUSTODY ENDPOINTS

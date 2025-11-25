@@ -11,6 +11,7 @@ import {
   exportSuspectDetailPdf,
   deleteSuspect
 } from '../services/suspects.service.js'
+import { saveSuspectPdf } from '../services/export.service.js'
 
 // helper: ambil pesan error terbaik dari axios / node error
 function toIpcError(err, fallback = 'Unexpected error') {
@@ -122,12 +123,9 @@ export function registerSuspectsIpc() {
      EXPORT PDF
      Return: { ok:true, buffer:ArrayBuffer, filename?:string }
   ============================================================ */
-  ipcMain.handle('suspects:exportPdf', async (_event, suspect_id) => {
+  ipcMain.handle('suspects:exportPdf', async (_event, id) => {
     try {
-      console.log('[IPC Receive - export suspect pdf]:', suspect_id)
-
-      const out = await exportSuspectDetailPdf(suspect_id)
-      return { ok: true, ...out }
+      return await saveSuspectPdf(id)
     } catch (err) {
       return toIpcError(err, 'Failed to export suspect PDF')
     }

@@ -20,6 +20,7 @@ import NotesBox from '../components/box/NotesBox'
 import Pagination from '../components/common/Pagination'
 import iconReport from '@renderer/assets/icons/icon_report.svg'
 import { useEvidenceApi } from '../hooks/useEvidenceApi'
+import toast from 'react-hot-toast'
 
 const BACKEND_BASE =
   import.meta.env?.VITE_BACKEND_URL || window?.api?.backendBase || 'http://172.15.2.105:8000'
@@ -122,7 +123,8 @@ export default function EvidenceDetailPage() {
     const data = detail
     console.log('Data ', data)
     evidence = {
-      id: data.evidence_number,
+      id: data.id,
+      evidence_number: data.evidence_number,
       summary: data.description,
       source: data.source,
       investigator: data.investigator,
@@ -466,6 +468,17 @@ export default function EvidenceDetailPage() {
     return mb >= 0.5 ? `${mb.toFixed(0)} Mb` : `${(bytes / 1024).toFixed(0)} Kb`
   }
 
+  async function downloadEvidencePdf(evidenceId) {
+    const res = await window.api.invoke('evidence:exportPdf', evidenceId)
+
+    if (res.error) {
+      alert(res.message)
+      return
+    }
+
+    toast.success('PDF exported successfully. Please check your Downloads folder.')
+  }
+
   // ============================
   // EARLY RETURN SETELAH SEMUA HOOK
   // (AMAN UNTUK RULES OF HOOKS)
@@ -517,7 +530,7 @@ export default function EvidenceDetailPage() {
       <div className="mx-auto py-6">
         <div className="flex justify-between items-start">
           <div>
-            <h1 className="text-2xl font-semibold mb-1">{evidence.id}</h1>
+            <h1 className="text-2xl font-semibold mb-1">{evidence.evidence_number}</h1>
             <div className="text-sm opacity-80 mb-4">
               {headingInvestigator} • {headerMeta.date}
             </div>
@@ -531,7 +544,7 @@ export default function EvidenceDetailPage() {
                 textColor="text-white"
               />
             </MiniButton>
-            <MiniButton>
+            <MiniButton onClick={() => downloadEvidencePdf(evidence.id)}>
               <MiniButtonContent bg={bgButton} text="+ Export PDF" textColor="text-black" />
             </MiniButton>
           </div>

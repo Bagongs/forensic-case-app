@@ -148,21 +148,15 @@ export async function editSuspectNotes({ suspect_id, notes }) {
 /* ============================================================
    8. EXPORT SUSPECT PDF
 ============================================================ */
-export async function exportSuspectDetailPdf(suspect_id) {
-  const res = await api.get(`/suspects/export-suspect-detail-pdf/${suspect_id}`, {
-    responseType: 'arraybuffer'
+export async function exportSuspectDetailPdf(suspectId) {
+  const response = await api.get(`/suspects/export-suspect-detail-pdf/${suspectId}`, {
+    responseType: 'arraybuffer',
+    headers: { Accept: 'application/pdf' }
   })
 
-  let filename = null
-  const dispo = res.headers?.['content-disposition'] || res.headers?.['Content-Disposition']
-  if (dispo) {
-    const m = /filename="?([^"]+)"?/i.exec(dispo)
-    if (m) filename = m[1]
-  }
-
   return {
-    buffer: res.data,
-    filename
+    base64: Buffer.from(response.data).toString('base64'),
+    filename: response.headers['content-disposition']
   }
 }
 

@@ -11,10 +11,24 @@ import UserManagement from './pages/UserManagement.jsx'
 
 import RequireAuth from './RequireAuth.jsx'
 import RequireAdmin from './RequireAdmin.jsx'
+import { Toaster } from 'react-hot-toast'
 
 export default function App() {
   return (
     <HashRouter>
+      <Toaster
+        position="bottom-right"
+        toastOptions={{
+          style: {
+            background: '#172133',
+            color: '#E7E9EE',
+            border: '1px solid #394F6F',
+            fontFamily: 'Noto Sans'
+          },
+          success: { iconTheme: { primary: '#EDC702', secondary: '#172133' } },
+          error: { iconTheme: { primary: '#E55353', secondary: '#172133' } }
+        }}
+      />
       <Routes>
         {/* Public route */}
         <Route path="/login" element={<LoginPage />} />

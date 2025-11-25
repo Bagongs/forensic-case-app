@@ -315,3 +315,15 @@ export async function updateCustodyNotes(evidenceId, reportId, notes) {
   const res = await api.put(`/evidence/${evidenceId}/custody/${reportId}/notes`, form)
   return res.data
 }
+
+export async function exportEvidenceDetailPdf(evidenceId) {
+  const response = await api.get(`/evidence/export-evidence-detail-pdf/${evidenceId}`, {
+    responseType: 'arraybuffer',
+    headers: { Accept: 'application/pdf' }
+  })
+
+  return {
+    base64: Buffer.from(response.data).toString('base64'),
+    filename: response.headers['content-disposition']
+  }
+}

@@ -29,6 +29,7 @@ const VALID_CHANNELS = new Set([
   'evidence:create',
   'evidence:update',
   'evidence:detail',
+  'evidence:exportPdf',
   'evidence:custody:acquisition',
   'evidence:custody:preparation',
   'evidence:custody:extraction',
@@ -102,7 +103,7 @@ contextBridge.exposeInMainWorld('apiLegacy', {
     summary: () => ipcRenderer.invoke('evidence:summary'),
     create: (payload) => ipcRenderer.invoke('evidence:create', payload),
     update: (evidenceId, payload) => ipcRenderer.invoke('evidence:update', { evidenceId, payload }),
-
+    exportPdf: (id) => ipcRenderer.invoke('evidence:exportPdf', id),
     createAcquisition: (evidenceId, payload) =>
       ipcRenderer.invoke('evidence:custody:acquisition', { evidenceId, payload }),
 

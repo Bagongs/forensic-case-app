@@ -10,6 +10,7 @@ import {
   editCaseNotes,
   exportCaseDetailPdf
 } from '../services/cases.service.js'
+import { saveCasePdf } from '../services/export.service.js'
 
 export function registerCasesIpc() {
   ipcMain.handle('cases:summary', async () => {
@@ -69,11 +70,11 @@ export function registerCasesIpc() {
     }
   })
 
-  ipcMain.handle('cases:exportPdf', async (_event, caseId) => {
+  ipcMain.handle('cases:exportPdf', async (_e, id) => {
     try {
-      return await exportCaseDetailPdf(caseId)
+      return await saveCasePdf(id)
     } catch (err) {
-      return { error: true, message: err?.response?.data?.message || err.message }
+      return { error: true, message: err.message }
     }
   })
 }

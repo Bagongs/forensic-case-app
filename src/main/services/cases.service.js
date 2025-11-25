@@ -95,18 +95,13 @@ export async function updateCaseApi(caseId, payload) {
 ============================================================ */
 export async function exportCaseDetailPdf(caseId) {
   const response = await api.get(`/cases/export-case-details-pdf/${caseId}`, {
-    responseType: 'arraybuffer'
+    responseType: 'arraybuffer',
+    headers: { Accept: 'application/pdf' }
   })
 
-  const contentDisposition = response.headers['content-disposition'] || ''
-  let filename = 'case_detail.pdf'
-
-  const match = contentDisposition.match(/filename="?([^"]+)"?/)
-  if (match && match[1]) filename = match[1]
-
   return {
-    buffer: Buffer.from(response.data),
-    filename
+    base64: Buffer.from(response.data).toString('base64'),
+    filename: response.headers['content-disposition']
   }
 }
 

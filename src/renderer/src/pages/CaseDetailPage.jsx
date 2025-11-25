@@ -27,6 +27,7 @@ import editBg from '../assets/image/edit.svg'
 
 import NotesModal from '../components/modals/case/NotesModal'
 import ConfirmDeleteModal from '../components/modals/ConfirmDeleteModal'
+import toast from 'react-hot-toast'
 
 const fmtDate = (iso) => {
   if (!iso) return '-'
@@ -212,17 +213,15 @@ Z`.trim()
   }
 
   // ===== Export PDF =====
-  const onExportPdf = async () => {
-    if (!item) return
-    try {
-      const res = await window.api.invoke('cases:exportPdf', item.id)
-      if (res?.error) throw new Error(res.message)
-      console.log('PDF ready:', res?.filename || res)
-      // TODO toast / save dialog
-    } catch (e) {
-      console.error('Export PDF failed:', e)
-      // TODO toast error
+  async function downloadCasePdf(caseId) {
+    const res = await window.api.invoke('cases:exportPdf', caseId)
+
+    if (res.error) {
+      alert(res.message)
+      return
     }
+
+    toast.success('PDF exported successfully. Please check your Downloads folder.')
   }
 
   /* ============================================================
@@ -297,7 +296,7 @@ Z`.trim()
             />
           </MiniButton>
 
-          <MiniButton onClick={onExportPdf}>
+          <MiniButton onClick={() => downloadCasePdf(caseId)}>
             <MiniButtonContent bg={bgButton} text="+ Export PDF" textColor="text-black" />
           </MiniButton>
         </div>

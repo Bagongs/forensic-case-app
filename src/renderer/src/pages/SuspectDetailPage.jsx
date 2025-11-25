@@ -13,6 +13,7 @@ import EditPersonModal from '../components/modals/suspect/EditPersonModal'
 import AddEvidenceModal from '../components/modals/evidence/AddEvidenceModal'
 import { useCases } from '../store/cases' // hanya untuk caseOptions default di modal
 import { useSuspects } from '../store/suspects' // ✅ suspects store
+import toast from 'react-hot-toast'
 
 const BACKEND_BASE =
   import.meta.env?.VITE_BACKEND_URL || window?.api?.backendBase || 'http://172.15.2.105:8000'
@@ -145,6 +146,16 @@ export default function SuspectDetailPage() {
       savingRef.current = false
     }
   }
+  async function downloadSuspectPdf(suspectId) {
+    const res = await window.api.invoke('suspects:exportPdf', suspectId)
+
+    if (res.error) {
+      alert(res.message)
+      return
+    }
+
+    toast.success('PDF exported successfully. Please check your Downloads folder.')
+  }
 
   if (!mapped) {
     return (
@@ -210,34 +221,6 @@ export default function SuspectDetailPage() {
       </div>
     )
   }
-  console.log('casedata', caseData)
-
-  const onExportPdf = async () => {
-    try {
-      const res = await window.api.invoke('suspects:exportPdf', suspectNumId)
-      if (res?.error) throw new Error(res.message || 'Export failed')
-
-      const buffer = res.buffer
-      if (!buffer) throw new Error('PDF buffer empty')
-
-      const u8 = new Uint8Array(buffer)
-      const blob = new Blob([u8], { type: 'application/pdf' })
-      const url = URL.createObjectURL(blob)
-
-      const a = document.createElement('a')
-      a.href = url
-      a.download = res.filename || `suspect_detail_${suspectNumId}.pdf`
-      document.body.appendChild(a)
-      a.click()
-      a.remove()
-
-      URL.revokeObjectURL(url)
-    } catch (e) {
-      console.error('[SuspectDetailPage] export pdf failed:', e)
-      // kalau kamu punya toast global, call di sini
-      // toast.error(e.message)
-    }
-  }
 
   const fmt = (val) => {
     if (!val) return '-'
@@ -286,7 +269,7 @@ export default function SuspectDetailPage() {
               textColor="text-white"
             />
           </MiniButton>
-          <MiniButton onClick={onExportPdf}>
+          <MiniButton onClick={() => downloadSuspectPdf(person.id)}>
             <MiniButtonContent bg={bgButton} text="Export PDF" textColor="text-black" />
           </MiniButton>
         </div>
