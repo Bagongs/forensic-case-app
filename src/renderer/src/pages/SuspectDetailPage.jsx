@@ -14,6 +14,9 @@ import AddEvidenceModal from '../components/modals/evidence/AddEvidenceModal'
 import { useCases } from '../store/cases' // hanya untuk caseOptions default di modal
 import { useSuspects } from '../store/suspects' // ✅ suspects store
 
+const BACKEND_BASE =
+  import.meta.env?.VITE_BACKEND_URL || window?.api?.backendBase || 'http://172.15.2.105:8000'
+
 export default function SuspectDetailPage() {
   const { suspectId } = useParams()
   const suspectNumId = Number(suspectId)
@@ -79,14 +82,15 @@ export default function SuspectDetailPage() {
       previewDataUrl: ev.preview_url || ev.preview_image || null,
 
       // Gambar full path
-      img: ev.filePath || null,
+      img: BACKEND_BASE + '/' + ev.filePath || null,
 
       // Source (jika backend menyimpan)
-      source: ev.evidenceSource,  // backend pakai evidenceNumber
+      source: ev.evidenceSource, // backend pakai evidenceNumber
 
       createdAt: ev.createdAt,
       updatedAt: ev.updatedAt
     }))
+    console.log('evidences', person.evidences)
 
     const caseData = {
       id: d.caseId,

@@ -21,6 +21,9 @@ import Pagination from '../components/common/Pagination'
 import iconReport from '@renderer/assets/icons/icon_report.svg'
 import { useEvidenceApi } from '../hooks/useEvidenceApi'
 
+const BACKEND_BASE =
+  import.meta.env?.VITE_BACKEND_URL || window?.api?.backendBase || 'http://172.15.2.105:8000'
+
 const STAGES = [
   { key: 'acquisition', label: 'Acquisition' },
   { key: 'preparation', label: 'Preparation' },
@@ -117,13 +120,14 @@ export default function EvidenceDetailPage() {
 
   if (detail) {
     const data = detail
+    console.log('Data ', data)
     evidence = {
       id: data.evidence_number,
       summary: data.description,
       source: data.source,
       investigator: data.investigator,
-      previewUrl: null,
-      previewDataUrl: null,
+      previewUrl: BACKEND_BASE + '/' + data.file_path,
+      previewDataUrl: BACKEND_BASE + '/' + data.file_path,
       createdAt: data.created_at
     }
 
@@ -220,7 +224,7 @@ export default function EvidenceDetailPage() {
             files: files.map((f) => ({
               file_name: f.file_name,
               file_size: f.file_size,
-              file_path: f.file_path
+              file_path: BACKEND_BASE + '/' + f.file_path
             }))
           },
           notes: r.notes,
@@ -313,7 +317,7 @@ export default function EvidenceDetailPage() {
 
   // Pagination derived
   const totalPages = latest?.photos?.length || 0
-  const currentImg = totalPages > 0 ? latest?.photos[page - 1] : null
+  const currentImg = totalPages > 0 ? BACKEND_BASE + '/' + latest?.photos[page - 1] : null
 
   const totalReports = Array.isArray(latest?.details?.files) ? latest?.details?.files.length : 0
   const currentReport = totalReports > 0 ? latest?.details?.files[reportPage - 1] : null
