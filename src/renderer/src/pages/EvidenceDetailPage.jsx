@@ -139,6 +139,7 @@ export default function EvidenceDetailPage() {
     }
 
     personRef = {
+      id: data.suspect_id,
       name: data.suspect_name,
       status: data.suspect_status
     }
@@ -948,7 +949,9 @@ export default function EvidenceDetailPage() {
                 suspect_status:
                   updated.poiMode === 'unknown' ? undefined : updated.status || undefined,
 
-                evidence_file: updated.file || undefined
+                evidence_file: updated.file || undefined,
+
+                suspect_id: personRef?.id || undefined
               }
             })
             setEditOpen(false)
