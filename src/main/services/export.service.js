@@ -46,3 +46,30 @@ export async function saveSuspectPdf(suspectId) {
   fs.writeFileSync(fullPath, buffer)
   return { ok: true, path: fullPath, filename: fileName }
 }
+
+export async function saveEvidenceCustodyFile(filePath) {
+  console.log('filePath', filePath)
+  // 1. NORMALISASI PATH
+  const cleanPath = filePath
+    .replace(/^data\/custody\//, '')
+    .replace(/^\/?data\/custody\//, '')
+    .replace(/^\/+/, '')
+
+  // 2. DOWNLOAD BINARY DARI BACKEND
+  const buffer = await fetchPdf(`/evidence/custody/download-file?path=${cleanPath}`)
+
+  // 3. TARGET FOLDER: DOWNLOADS
+  const downloads = app.getPath('downloads')
+
+  // 4. BIKIN FILE NAME AUTO
+  const extension = cleanPath.split('.').pop()
+  const fileName = buildPdfName('evidence_file', '').replace('.pdf', `.${extension}`)
+
+  const fullPath = path.join(downloads, fileName)
+  console.log('Full path ', fullPath)
+
+  // 5. SIMPAN FILE
+  fs.writeFileSync(fullPath, buffer)
+
+  return { ok: true, path: fullPath, filename: fileName }
+}

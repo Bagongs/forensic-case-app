@@ -327,3 +327,22 @@ export async function exportEvidenceDetailPdf(evidenceId) {
     filename: response.headers['content-disposition']
   }
 }
+
+export async function downloadEvidenceFile(filePath) {
+  // NORMALISASI path → buang "data/custody/"
+  let cleanPath = filePath.replace(/^data\/custody\//, '').replace(/^\/+/, '')
+
+  const res = await api.get(`/evidence/custody/download-file`, {
+    params: { path: cleanPath },
+    responseType: 'arraybuffer'
+  })
+
+  return {
+    base64: Buffer.from(res.data).toString('base64'),
+    filename: res.headers['content-disposition']
+      ?.split('filename=')[1]
+      ?.replace(/"/g, '') || 'download.bin'
+  }
+}
+
+

@@ -227,7 +227,8 @@ export default function EvidenceDetailPage() {
             files: files.map((f) => ({
               file_name: f.file_name,
               file_size: f.file_size,
-              file_path: BACKEND_BASE + '/' + f.file_path
+              file_path: BACKEND_BASE + '/' + f.file_path,
+              base64: f.file_path
             }))
           },
           notes: r.notes,
@@ -450,14 +451,21 @@ export default function EvidenceDetailPage() {
     }
   }
 
-  function downloadReport(rep) {
-    if (!rep?.base64) return
-    const a = document.createElement('a')
-    a.href = rep.base64 // di versi lama pakai dataURL dari FileReader
-    a.download = rep.name || 'report.pdf'
-    document.body.appendChild(a)
-    a.click()
-    a.remove()
+  async function downloadReport(file) {
+    console.log('file : ', file)
+    if (!file?.base64) {
+      toast.error('File path not found')
+      return
+    }
+
+    const res = await window.api.invoke('evidence:downloadFile', file.base64)
+
+    if (res.error) {
+      toast.error(res.message)
+      return
+    }
+
+    toast.success(`Saved to Downloads`)
   }
 
   function approxSizeLabel(dataUrl) {

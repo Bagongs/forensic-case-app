@@ -10,10 +10,9 @@ import {
   createCustodyPreparation,
   createCustodyExtraction,
   createCustodyAnalysis,
-  updateCustodyNotes,
-  exportEvidenceDetailPdf
+  updateCustodyNotes
 } from '../services/evidence.service.js'
-import { saveEvidencePdf } from '../services/export.service.js'
+import { saveEvidenceCustodyFile, saveEvidencePdf } from '../services/export.service.js'
 
 export function registerEvidenceIpc() {
   ipcMain.handle('evidence:list', async (_event, params) => {
@@ -132,6 +131,17 @@ export function registerEvidenceIpc() {
       return {
         error: true,
         message: err?.response?.data?.message || err.message || 'Failed to export evidence PDF'
+      }
+    }
+  })
+
+  ipcMain.handle('evidence:downloadFile', async (_event, filePath) => {
+    try {
+      return await saveEvidenceCustodyFile(filePath)
+    } catch (err) {
+      return {
+        error: true,
+        message: err?.response?.data?.message || err.message
       }
     }
   })
