@@ -1,6 +1,7 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable react/prop-types */
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import toast from 'react-hot-toast'
 
 /**
  * NotesBox
@@ -107,10 +108,19 @@ export default function NotesBox({
     overflowY: autoGrow ? 'hidden' : 'auto', // kalau autoGrow, tinggi diatur JS & hide scrollbar
     paddingRight: 4
   }
+  const MAX_CHARS = 2800
 
   const handleChange = (e) => {
     if (!editable) return
-    onChange?.(e.target.value)
+
+    let text = e.target.value
+
+    if (text.length > MAX_CHARS) {
+      text = text.slice(0, MAX_CHARS)
+      toast.error('Maximum allowed length exceeded.')
+    }
+
+    onChange?.(text)
   }
 
   return (
@@ -157,9 +167,9 @@ export default function NotesBox({
           rows={rowsMin}
           readOnly={!editable}
           className={[
-            'w-full resize-none bg-transparent outline-none',
+            'w-full resize-none bg-transparent outline-none mt-3',
             'font-[Noto Sans] text-[14px] text-[#E7E9EE]',
-            'placeholder-[#9AA3B2]'
+            'placeholder-[#9AA3B2] custom-scroll'
           ].join(' ')}
           style={bodyStyle}
         />

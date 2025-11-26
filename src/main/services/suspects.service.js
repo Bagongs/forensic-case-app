@@ -121,9 +121,10 @@ export async function updateSuspect(id, payload) {
   appendField(form, 'is_unknown_person', payload.is_unknown_person)
   appendField(form, 'person_name', payload.person_name)
   appendField(form, 'suspect_status', payload.suspect_status)
+  appendField(form, 'notes', payload.notes)
   appendField(form, 'case_id', payload.case_id)
 
-  const res = await api.put(`/suspects/update-suspect/${id}`, form, {
+  const res = await api.put(`/persons/update-person/${id}`, form, {
     headers: form.getHeaders()
   })
   return res.data

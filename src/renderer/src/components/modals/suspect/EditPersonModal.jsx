@@ -109,34 +109,38 @@ export default function EditPersonModal({
       }
 
       // 1) UPDATE SUSPECT
+      const trimmedNotes = (notes || '').trim()
+
       const updatePayload = {
         is_unknown_person: isUnknown,
         person_name: isUnknown ? null : finalName,
-        suspect_status: isUnknown ? null : finalStatus || null
+        suspect_status: isUnknown ? null : finalStatus || null,
+        notes: trimmedNotes
       }
+      console.log('PAYLOAD UPDATE', updatePayload)
 
       const updRes = await window.api.invoke('suspects:update', {
         id: Number(suspectId),
         payload: updatePayload
       })
+      console.log('response update endpoint : ', updRes)
       if (updRes?.error) throw new Error(updRes.message || 'Failed to update suspect')
 
       // 2) UPDATE / SAVE NOTES
-      const trimmedNotes = (notes || '').trim()
       // if (trimmedNotes) {
-      const notesBody = {
-        suspect_id: Number(suspectId),
-        notes: trimmedNotes
-      }
+      // const notesBody = {
+      //   suspect_id: Number(suspectId),
+      //   notes: trimmedNotes
+      // }
 
-      const noteRes = hadExistingNotes
-        ? await window.api.invoke('suspects:editNotes', notesBody)
-        : await window.api.invoke('suspects:saveNotes', notesBody)
+      // const noteRes = hadExistingNotes
+      //   ? await window.api.invoke('suspects:editNotes', notesBody)
+      //   : await window.api.invoke('suspects:saveNotes', notesBody)
 
-      if (noteRes?.error) {
-        // notes error tidak menggagalkan update suspect, tapi tetap tampilkan warning
-        console.warn('[EditPersonModal] notes update failed:', noteRes.message)
-      }
+      // if (noteRes?.error) {
+      //   // notes error tidak menggagalkan update suspect, tapi tetap tampilkan warning
+      //   console.warn('[EditPersonModal] notes update failed:', noteRes.message)
+      // }
       // }
 
       if (caseId) {

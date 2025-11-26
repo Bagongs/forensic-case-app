@@ -612,10 +612,10 @@ export default function EvidenceDetailPage() {
             </div>
             <div className="flex flex-row items-start justify-between w-full">
               <div className="w-full">
-                <div className="text-xs font-semibold mb-1" style={{ color: 'var(--dim)' }}>
+                <div className="text-sm font-semibold mb-1" style={{ color: 'var(--dim)' }}>
                   Overview
                 </div>
-                <div className="text-sm mt-3">{evidence.summary || '-'}</div>
+                <div className="text-sm mt-3 mr-5 break-all">{evidence.summary || '-'}</div>
               </div>
               <div
                 className="text-xs px-2 py-1 font-[Aldrich] self-start min-w-28 text-center"

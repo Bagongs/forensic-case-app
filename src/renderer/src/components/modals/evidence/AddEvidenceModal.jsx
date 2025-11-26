@@ -317,8 +317,10 @@ export default function AddEvidenceModal({
           readOnly
         />
 
-        <FormLabel>Person of Interest</FormLabel>
-        <div className="flex items-center gap-6">
+        <FormLabel>
+          <span className={`${defaultPerson ? 'opacity-70' : ''}`}>Person of Interest</span>
+        </FormLabel>
+        <div className={`flex items-center gap-6 ${defaultPerson ? 'opacity-70' : ''}`}>
           <Radio
             checked={poiMode === 'known'}
             onChange={() => {

@@ -161,7 +161,7 @@ export default function SuspectListPage() {
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="Search person / case / status / investigator"
+              placeholder="Search person / case / investigator"
               className="w-full pl-3 pr-3 py-1 border border-[#C3CFE0] bg-transparent"
             />
             <img

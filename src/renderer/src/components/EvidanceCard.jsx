@@ -35,7 +35,9 @@ export function EvidenceCard({ image, code, summary, onClick, expandIcon }) {
       <div className="p-4 text-[#E7E9EE] font-[Noto Sans] leading-relaxed">
         <div className="text-[#F1CC49] font-semibold text-[15px]">{code || '-'}</div>
         <div className="text-[13px] opacity-80">Evidence Summary</div>
-        <p className="text-[13.5px] leading-snug mt-1">{summary || '-'}</p>
+        <p title={summary} className="text-[13.5px] leading-snug mt-1 break-all">
+          {(summary?.length > 100 ? summary.slice(0, 100) + '...' : summary) || '-'}
+        </p>{' '}
       </div>
     </div>
   )
