@@ -16,6 +16,7 @@ import bgButton from '../assets/image/bg-button.svg'
 import Pagination from '../components/common/Pagination'
 
 import { useSuspects } from '../store/suspects'
+import { useCases } from '../store/cases'
 
 /* ====== CONSTANTS ====== */
 const COLORS = {
@@ -39,15 +40,8 @@ const PAGE_SIZES = [5, 10, 15]
 
 export default function SuspectListPage() {
   const nav = useNavigate()
-  const {
-    suspects,
-    summary,
-    pagination,
-    loading,
-    error,
-    fetchSuspects,
-    fetchSuspectSummary
-  } = useSuspects()
+  const { suspects, summary, pagination, loading, error, fetchSuspects, fetchSuspectSummary } =
+    useSuspects()
 
   const [q, setQ] = useState('')
   const [modal, setModal] = useState(false)
@@ -80,7 +74,6 @@ export default function SuspectListPage() {
     }
 
     fetchSuspects(params).catch(() => {})
-    console.log("Status filter:", statusFilter)
   }, [q, page, pageSize, statusFilter])
 
   // Reset page when filter/search changes
@@ -93,10 +86,7 @@ export default function SuspectListPage() {
     if (summary) {
       return {
         totalPerson:
-          summary.total_person ??
-          summary.total_suspects ??
-          summary.totalPerson ??
-          rows.length,
+          summary.total_person ?? summary.total_suspects ?? summary.totalPerson ?? rows.length,
         totalEvidence: summary.total_evidence ?? summary.totalEvidence ?? 0
       }
     }
@@ -108,13 +98,16 @@ export default function SuspectListPage() {
   const safePage = Math.min(page, totalPages)
 
   // case options
-  const caseOptions = useMemo(() => {
-    const map = new Map()
-    for (const s of rows) {
-      if (!map.has(s.caseId)) map.set(s.caseId, s.caseName)
-    }
-    return Array.from(map.entries()).map(([value, label]) => ({ value, label }))
-  }, [rows])
+  const cases = useCases((s) => s.cases)
+  const fetchCases = useCases((s) => s.fetchCases)
+  useEffect(() => {
+    fetchCases().catch(() => {})
+  }, [fetchCases])
+
+  const caseOptions = useMemo(
+    () => (cases ?? []).map((c) => ({ value: c.id, label: c.name })),
+    [cases]
+  )
 
   // menerima hasil modal
   const handleSavePerson = async (payload) => {

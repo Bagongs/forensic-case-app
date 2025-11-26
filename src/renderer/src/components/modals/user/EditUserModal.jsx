@@ -24,13 +24,12 @@ export default function EditUserModal({ open, onClose, onSave, user }) {
     }
   }, [user])
 
-  // === VALIDASI ===
+  const tagTooLong = tag.length > 30
+
   const passwordFilled = password.length > 0
   const confirmFilled = confirmPassword.length > 0
-
   const passwordTooShort = passwordFilled && password.length < 8
   const confirmTooShort = confirmFilled && confirmPassword.length < 8
-
   const mismatch =
     passwordFilled &&
     confirmFilled &&
@@ -38,13 +37,13 @@ export default function EditUserModal({ open, onClose, onSave, user }) {
     confirmPassword.length >= 8 &&
     password !== confirmPassword
 
-  // === PASSWORD REQUIRED ===
   const isInvalid =
     !name ||
     !email ||
     !tag ||
-    !passwordFilled || // PASSWORD WAJIB
-    !confirmFilled || // CONFIRM PASSWORD WAJIB
+    tagTooLong ||
+    !passwordFilled ||
+    !confirmFilled ||
     passwordTooShort ||
     confirmTooShort ||
     mismatch
@@ -52,15 +51,14 @@ export default function EditUserModal({ open, onClose, onSave, user }) {
   const handleSave = async () => {
     if (isInvalid) return
 
-    const patch = {
+    await onSave(user.id, {
       fullname: name,
       email,
       tag,
       password,
       confirm_password: confirmPassword
-    }
+    })
 
-    await onSave(user.id, patch)
     onClose()
   }
 
@@ -74,15 +72,12 @@ export default function EditUserModal({ open, onClose, onSave, user }) {
       disableConfirm={isInvalid}
     >
       <div className="grid gap-3">
-        {/* Name */}
         <FormLabel>Name</FormLabel>
         <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Name" />
 
-        {/* Email */}
         <FormLabel>Email</FormLabel>
         <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" />
 
-        {/* Password */}
         <FormLabel>Password</FormLabel>
         <div className="relative">
           <Input
@@ -100,12 +95,10 @@ export default function EditUserModal({ open, onClose, onSave, user }) {
           </button>
         </div>
 
-        {/* Error password */}
         {passwordTooShort && (
           <p className="text-red-400 text-xs">Password must be at least 8 characters</p>
         )}
 
-        {/* Confirm Password */}
         <FormLabel>Confirm Password</FormLabel>
         <div className="relative">
           <Input
@@ -123,17 +116,16 @@ export default function EditUserModal({ open, onClose, onSave, user }) {
           </button>
         </div>
 
-        {/* Error confirm password */}
         {confirmTooShort && (
           <p className="text-red-400 text-xs">Confirm Password must be at least 8 characters</p>
         )}
 
-        {/* Error mismatch */}
         {mismatch && <p className="text-red-400 text-xs">Passwords do not match</p>}
 
-        {/* Tag */}
         <FormLabel>Tag</FormLabel>
         <Input value={tag} onChange={(e) => setTag(e.target.value)} placeholder="Input tag" />
+
+        {tagTooLong && <p className="text-red-400 text-xs">Tag must be at most 30 characters</p>}
       </div>
     </Modal>
   )

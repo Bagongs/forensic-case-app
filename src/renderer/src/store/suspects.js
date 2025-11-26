@@ -24,7 +24,7 @@ const mapApiSuspectListItem = (api) => ({
   id: api.id,
   caseId: api.case_id,
   name: api.person_name || 'Unknown',
-  status: api.status || api.suspect_status || 'Unknown',
+  status: api.status || api.suspect_status,
   caseName: api.case_name || '-',
   investigator: api.investigator || '-',
   agency: api.agency || '-',
@@ -44,7 +44,7 @@ const mapApiSuspectDetail = (resDetail) => {
   return {
     id: d.id,
     name: d.person_name || 'Unknown',
-    status: d.suspect_status || d.status || 'Unknown',
+    status: d.suspect_status || d.status,
     investigator: d.investigator || '-',
     caseName: d.case_name || '-',
     caseId: d.case_id || '-',

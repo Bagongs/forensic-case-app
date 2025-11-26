@@ -299,7 +299,7 @@ export default function CaseListPage() {
               return (
                 <tr key={safeKey} className="hover:bg-white/5">
                   <td className="px-4 py-3 border-b" style={{ borderColor: COLORS.border }}>
-                    {row.case_number || id}
+                    {row.caseNumber || id}
                   </td>
 
                   <td className="px-4 py-3 border-b" style={{ borderColor: COLORS.border }}>

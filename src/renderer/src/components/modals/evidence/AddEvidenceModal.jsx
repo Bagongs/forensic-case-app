@@ -40,7 +40,6 @@ export default function AddEvidenceModal({
   defaultInvestigator = '',
   defaultPerson = null
 }) {
-  console.log('default case id : ', defaultCaseId)
   const { user } = useAuth()
   const [status, setStatus] = useState(null)
   const [caseId, setCaseId] = useState(defaultCaseId)

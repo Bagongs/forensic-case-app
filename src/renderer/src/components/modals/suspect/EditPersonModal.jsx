@@ -18,7 +18,6 @@ export default function EditPersonModal({
   onSaved = () => {}
 }) {
   const fetchCaseDetail = useCases((s) => s.fetchCaseDetail)
-
   // person core
   const [name, setName] = useState('')
   const [status, setStatus] = useState(null)
@@ -36,7 +35,6 @@ export default function EditPersonModal({
 
   // ambil suspect_id dari person (asumsi: person.id = suspect_id)
   const suspectId = person?.suspect_id ?? person?.id
-  console.log('Person Edit', person)
 
   // reset semua ketika modal dibuka / person berubah
   useEffect(() => {
@@ -125,21 +123,21 @@ export default function EditPersonModal({
 
       // 2) UPDATE / SAVE NOTES
       const trimmedNotes = (notes || '').trim()
-      if (trimmedNotes) {
-        const notesBody = {
-          suspect_id: Number(suspectId),
-          notes: trimmedNotes
-        }
-
-        const noteRes = hadExistingNotes
-          ? await window.api.invoke('suspects:editNotes', notesBody)
-          : await window.api.invoke('suspects:saveNotes', notesBody)
-
-        if (noteRes?.error) {
-          // notes error tidak menggagalkan update suspect, tapi tetap tampilkan warning
-          console.warn('[EditPersonModal] notes update failed:', noteRes.message)
-        }
+      // if (trimmedNotes) {
+      const notesBody = {
+        suspect_id: Number(suspectId),
+        notes: trimmedNotes
       }
+
+      const noteRes = hadExistingNotes
+        ? await window.api.invoke('suspects:editNotes', notesBody)
+        : await window.api.invoke('suspects:saveNotes', notesBody)
+
+      if (noteRes?.error) {
+        // notes error tidak menggagalkan update suspect, tapi tetap tampilkan warning
+        console.warn('[EditPersonModal] notes update failed:', noteRes.message)
+      }
+      // }
 
       if (caseId) {
         try {

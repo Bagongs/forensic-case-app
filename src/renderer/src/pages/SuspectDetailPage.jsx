@@ -63,7 +63,7 @@ export default function SuspectDetailPage() {
     const person = {
       id: d.id,
       name: d.person_name || d.name || 'Unknown',
-      status: d.suspect_status || d.status || 'Unknown',
+      status: d.suspect_status || d.status,
       notes: d.suspect_notes || d.suspectNotes || '',
       evidences: []
     }

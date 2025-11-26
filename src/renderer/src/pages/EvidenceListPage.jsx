@@ -54,10 +54,8 @@ export default function EvidenceListPage() {
 
   // ensure cases loaded for modal
   useEffect(() => {
-    if (!cases || cases.length === 0) {
-      fetchCases?.({ skip: 0, limit: 1000 }).catch(() => {})
-    }
-  }, [cases, fetchCases])
+    fetchCases().catch(() => {})
+  }, [fetchCases])
 
   // reset page ketika search/pageSize berubah
   useEffect(() => setPage(1), [q, pageSize])

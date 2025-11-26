@@ -26,6 +26,8 @@ export default function AddUserModal({ open, onClose, onSave, errMessage }) {
     }
   }, [open])
 
+  const tagTooLong = tag.length > 30
+
   const isInvalid =
     !name ||
     !email ||
@@ -34,7 +36,8 @@ export default function AddUserModal({ open, onClose, onSave, errMessage }) {
     password.length < 8 ||
     confirmPassword.length < 8 ||
     password !== confirmPassword ||
-    !tag
+    !tag ||
+    tagTooLong
 
   const handleSave = async () => {
     if (isInvalid) return
@@ -94,7 +97,6 @@ export default function AddUserModal({ open, onClose, onSave, errMessage }) {
           </button>
         </div>
 
-        {/* Error for password */}
         {password && password.length < 8 && (
           <p className="text-red-400 text-xs">Password must be at least 8 characters</p>
         )}
@@ -117,12 +119,10 @@ export default function AddUserModal({ open, onClose, onSave, errMessage }) {
           </button>
         </div>
 
-        {/* Error for confirm password */}
         {confirmPassword && confirmPassword.length < 8 && (
           <p className="text-red-400 text-xs">Confirm Password must be at least 8 characters</p>
         )}
 
-        {/* Error for mismatch */}
         {password &&
           confirmPassword &&
           password.length >= 8 &&
@@ -134,6 +134,8 @@ export default function AddUserModal({ open, onClose, onSave, errMessage }) {
         {/* Tag */}
         <FormLabel>Tag</FormLabel>
         <Input value={tag} onChange={(e) => setTag(e.target.value)} placeholder="Input tag" />
+
+        {tagTooLong && <p className="text-red-400 text-xs">Tag must be at most 30 characters</p>}
       </div>
     </Modal>
   )
