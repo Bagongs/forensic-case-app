@@ -64,6 +64,7 @@ export default function CaseDetailPage() {
 
   // data dari store (bisa list-shape atau detail-shape)
   const item = caseId ? getCaseById?.(caseId) : null
+  console.log('ITEM ', item)
 
   // ===== local states =====
   const [selectedPersonId, setSelectedPersonId] = useState(null)

@@ -40,8 +40,8 @@ export default function EditCaseModal({ open, onClose, initial, onSave }) {
           main_investigator: investigator.trim(),
           agency_name: agency.trim(),
           work_unit_name: workUnit.trim(),
-          agency_id: initial.agency_id,
-          work_unit_id: initial.work_unit_id
+          // agency_id: initial.agency_id,
+          // work_unit_id: initial.work_unit_id
         })
       }}
       size="lg"

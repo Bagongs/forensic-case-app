@@ -1,5 +1,5 @@
-appId: com.electron.app
-productName: forensic-case-app
+appId: com.case.analytics.platform
+productName: Case Analytics Platform
 directories:
   buildResources: build
 files:
@@ -11,7 +11,7 @@ files:
 asarUnpack:
   - resources/**
 win:
-  executableName: forensic-case-app
+  executableName: Case Analytics Platform
 nsis:
   artifactName: ${name}-${version}-setup.${ext}
   shortcutName: ${productName}

@@ -64,9 +64,9 @@ const mapApiCaseListItem = (api) => ({
   status: normalizeStatus(api.status || api.case_status || 'Open'),
 
   agency: api.agency_name ?? api.agency ?? '',
-  agency_id: api.agency_id ?? api.agency ?? '',
+  agency_id: api.agency_id,
   workUnit: api.work_unit_name ?? api.work_unit ?? '',
-  work_unit_id: api.work_unit_id ?? api.agency ?? '',
+  work_unit_id: api.work_unit_id,
   investigator: api.main_investigator ?? api.case_officer ?? api.investigator ?? '',
 
   createdAt: api.created_at ?? api.created_date ?? new Date().toISOString(),
@@ -120,8 +120,8 @@ const mapApiCaseDetail = (detail, existing) => {
     status: normalizeStatus(apiCase.status ?? apiCase.case_status ?? base.status),
     agency: apiCase.agency_name ?? apiCase.agency ?? base.agency,
     workUnit: apiCase.work_unit_name ?? apiCase.work_unit ?? base.workUnit,
-    work_unit_id: apiCase.work_unit_id ?? apiCase.work_unit_id ?? base.work_unit_id,
-    agency_id: apiCase.agency_id ?? apiCase.agency_id ?? base.agency_id,
+    // work_unit_id: apiCase.work_unit_id,
+    // agency_id: apiCase.agency_id,
     investigator:
       apiCase.main_investigator ??
       apiCase.case_officer ??
@@ -138,6 +138,7 @@ const mapApiCaseDetail = (detail, existing) => {
    PAYLOAD NORMALIZER FOR CREATE / UPDATE
 ============================================================ */
 const normalizeCasePayload = (input, { forUpdate = false } = {}) => {
+  console.log('INPUT', input)
   const out = {
     title: input.title ?? input.name,
     description: input.description ?? input.desc,
@@ -150,8 +151,8 @@ const normalizeCasePayload = (input, { forUpdate = false } = {}) => {
 
     agency_name: input.agency_name ?? input.agency ?? input.agencyName,
     work_unit_name: input.work_unit_name ?? input.work_unit ?? input.workUnit,
-    work_unit_id: input.work_unit_id ?? input.work_unit ?? input.workUnit,
-    agency_id: input.agency_id ?? input.work_unit ?? input.workUnit,
+    // work_unit_id: input.work_unit_id,
+    // agency_id: input.agency_id,
     case_number: input.case_number ?? input.id ?? null
   }
 
