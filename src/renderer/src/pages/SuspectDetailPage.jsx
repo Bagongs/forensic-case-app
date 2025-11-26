@@ -1,3 +1,4 @@
+// src/renderer/src/pages/SuspectDetailPage.jsx
 import { useParams } from 'react-router-dom'
 import CaseLayout from './CaseLayout'
 import MiniButton, { MiniButtonContent } from '../components/common/MiniButton'
@@ -17,6 +18,20 @@ import toast from 'react-hot-toast'
 
 const BACKEND_BASE =
   import.meta.env?.VITE_BACKEND_URL || window?.api?.backendBase || 'http://172.15.2.105:8000'
+
+// Helper kecil untuk ambil notes dari berbagai bentuk response
+function extractNotesFromDetail(res) {
+  // beberapa kemungkinan bentuk:
+  // { status, message, data: { data: { suspect_notes } } }
+  // { status, message, data: { suspect_notes } }
+  // { suspect_notes }
+  // { suspectNotes }
+  const inner = res?.data?.data ?? res?.data ?? res
+
+  return (
+    inner?.suspect_notes ?? inner?.suspectNotes ?? res?.suspect_notes ?? res?.suspectNotes ?? ''
+  )
+}
 
 export default function SuspectDetailPage() {
   const { suspectId } = useParams()
@@ -42,8 +57,8 @@ export default function SuspectDetailPage() {
         const res = await fetchSuspectDetail(suspectNumId)
         if (!mounted) return
         setDetail(res)
-        const apiNotes =
-          res?.suspectNotes ?? res?.data?.suspect_notes ?? res?.data?.suspect_notes ?? ''
+
+        const apiNotes = extractNotesFromDetail(res)
         setNotes(apiNotes || '')
       } catch (e) {
         console.error('[SuspectDetailPage] fetch detail failed:', e)
@@ -83,7 +98,7 @@ export default function SuspectDetailPage() {
       previewDataUrl: ev.preview_url || ev.preview_image || null,
 
       // Gambar full path
-      img: BACKEND_BASE + '/' + ev.filePath || null,
+      img: ev.filePath ? BACKEND_BASE + '/' + ev.filePath : null,
 
       // Source (jika backend menyimpan)
       source: ev.evidenceSource, // backend pakai evidenceNumber
@@ -138,14 +153,18 @@ export default function SuspectDetailPage() {
 
       setIsEditing(false)
 
+      // 🔄 Refetch dan sync detail + notes
       const res = await fetchSuspectDetail(suspectNumId)
       setDetail(res)
+      const apiNotes = extractNotesFromDetail(res)
+      setNotes(apiNotes || '')
     } catch (e) {
       console.error('Failed to save notes:', e)
     } finally {
       savingRef.current = false
     }
   }
+
   async function downloadSuspectPdf(suspectId) {
     const res = await window.api.invoke('suspects:exportPdf', suspectId)
 
@@ -176,7 +195,7 @@ export default function SuspectDetailPage() {
   }
 
   const badgeStatus = (status = 'Unknown') => {
-    if (!status || status == 'Unknown') {
+    if (!status || status === 'Unknown') {
       return
     }
     const s = status.toLowerCase()
@@ -290,6 +309,7 @@ export default function SuspectDetailPage() {
             Evidence <span className="opacity-60">({evidences.length})</span>
           </h2>
 
+          {/* ADD EVIDENCE BUTTON */}
           <button
             onClick={() => setOpenAddEv(true)}
             className="flex items-center justify-center gap-2 px-6 py-2 text-[13px] font-[Aldrich] text-black transition-all active:scale-[0.98]"
@@ -337,7 +357,7 @@ export default function SuspectDetailPage() {
         </div>
       </div>
 
-      {/* SUMMARY */}
+      {/* NOTES */}
       <div className="mt-6">
         <NotesBox
           title="Notes"
@@ -363,8 +383,11 @@ export default function SuspectDetailPage() {
           person={person}
           suspectId={person.id}
           onSaved={async () => {
+            // 🔄 Refetch + sync detail & notes setelah edit modal
             const res = await fetchSuspectDetail(suspectNumId)
             setDetail(res)
+            const apiNotes = extractNotesFromDetail(res)
+            setNotes(apiNotes || '')
           }}
         />
       )}
@@ -374,8 +397,6 @@ export default function SuspectDetailPage() {
           open={openAddEv}
           onClose={() => setOpenAddEv(false)}
           onSave={async (data) => {
-            // bukti baru untuk suspect biasanya lewat evidence module kamu.
-            // kalau evidence:create memang sudah sesuai kontrak:
             try {
               await window.api.invoke('evidence:create', {
                 ...data,
@@ -384,6 +405,8 @@ export default function SuspectDetailPage() {
               })
               const res = await fetchSuspectDetail(suspectNumId)
               setDetail(res)
+              const apiNotes = extractNotesFromDetail(res)
+              setNotes(apiNotes || '')
             } catch (e) {
               console.error('[AddEvidenceModal] failed:', e)
             } finally {
