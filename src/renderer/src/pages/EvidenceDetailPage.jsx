@@ -913,8 +913,10 @@ export default function EvidenceDetailPage() {
                     actionIcon={notesActionIcon}
                     actionBgImage={editBg}
                     actionSize={{ w: 70, h: 27 }}
-                    actionOffset={{ top: 15, right: 24 }}
+                    actionOffset={{ top: 22, right: 24 }}
                     onAction={onNotesAction}
+                    maxBodyHeight={240}
+                    autoGrow={false}
                   />
                 )}
               </div>

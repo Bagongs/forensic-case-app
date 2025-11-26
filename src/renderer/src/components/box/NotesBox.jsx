@@ -2,6 +2,13 @@
 /* eslint-disable react/prop-types */
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 
+/**
+ * NotesBox
+ * Disamakan perilakunya dengan SummaryBox:
+ * - Ukuran box konsisten antara edit & view
+ * - Punya maxBodyHeight + autoGrow
+ * - Action button bisa pakai clamp() seperti di SummaryBox
+ */
 export default function NotesBox({
   title = 'Notes',
   value = '',
@@ -11,39 +18,58 @@ export default function NotesBox({
   onAction,
   actionIcon = null,
   actionBgImage = null,
-  actionSize = { w: 70, h: 27 },
+
+  // default responsif target Figma (sama seperti SummaryBox)
+  actionSize = {
+    w: 'clamp(70px, 5.2vw, 93.6227px)',
+    h: 'clamp(30px, 3vw, 41.5319px)'
+  },
+
   actionOffset = { top: 22, right: 24 },
   editable = true,
   rowsMin = 3,
+
+  // tinggi maksimal area teks
+  maxBodyHeight = 240,
+
+  // kontrol perilaku tinggi
+  autoGrow = true,
+
+  // styling eksternal wrapper
+  className = '',
 
   // style params
   gradient = 'linear-gradient(180deg, #1C2737 -94.25%, #1B2533 100%)',
   borderColor = '#4C607D',
   borderW = 1.5,
-  cut = 16,
+  cut = 18,
 
   // warna efek glow
   glowColor = '#FFFFFF', // putih utama
-  glowShadowAlpha = 0.7, // intensitas shadow putih
-  glowAuraAlpha = 0.5 // intensitas aura radial
+  glowShadowAlpha = 0.7,
+  glowAuraAlpha = 0.5 // disiapkan kalau nanti mau aura radial
 }) {
   const textRef = useRef(null)
   const boxRef = useRef(null)
-
-  // autosize textarea
-  useEffect(() => {
-    if (!textRef.current) return
-    const el = textRef.current
-    el.style.height = 'auto'
-    el.style.height = `${el.scrollHeight}px`
-  }, [value])
 
   // autofocus saat masuk edit
   useEffect(() => {
     if (editable && textRef.current) textRef.current.focus()
   }, [editable])
 
-  // ukur container untuk SVG border
+  // ========== AUTOGROW TINGGI TEXTAREA (BERLAKU DI EDIT & VIEW) ==========
+  useEffect(() => {
+    if (!autoGrow) return
+    if (!textRef.current) return
+    const el = textRef.current
+
+    // reset dulu supaya scrollHeight akurat
+    el.style.height = 'auto'
+    const next = Math.min(el.scrollHeight, maxBodyHeight)
+    el.style.height = `${next}px`
+  }, [value, editable, autoGrow, maxBodyHeight])
+
+  // ========== UKUR CONTAINER UNTUK SVG BORDER ==========
   const [size, setSize] = useState({ w: 0, h: 0 })
   useLayoutEffect(() => {
     if (!boxRef.current) return
@@ -56,7 +82,7 @@ export default function NotesBox({
   }, [])
 
   const d = getPathD(size.w, size.h, cut)
-  cut = cut * 0.6
+
   const innerClip = `polygon(
     ${Math.max(0, cut - borderW)}px ${borderW}px,
     calc(100% - ${borderW}px) ${borderW}px,
@@ -66,11 +92,29 @@ export default function NotesBox({
     ${borderW}px ${Math.max(0, cut - borderW)}px
   )`
 
-  const paddingRight = onAction ? actionSize.w + 24 : undefined
+  // ====== SAFE NUMERIC WIDTH FOR PADDING RIGHT ======
+  const FALLBACK_W = 93.6227
+  const actionWNum = typeof actionSize?.w === 'number' ? actionSize.w : FALLBACK_W
+  const paddingRight = onAction ? `${actionWNum + 24}px` : undefined
+
   const glowShadow = `0 0 14px ${hexToRgba(glowColor, glowShadowAlpha)}`
 
+  // style dasar area teks
+  const bodyStyle = {
+    lineHeight: 1.5,
+    minHeight: 80,
+    maxHeight: maxBodyHeight,
+    overflowY: autoGrow ? 'hidden' : 'auto', // kalau autoGrow, tinggi diatur JS & hide scrollbar
+    paddingRight: 4
+  }
+
+  const handleChange = (e) => {
+    if (!editable) return
+    onChange?.(e.target.value)
+  }
+
   return (
-    <div className="relative w-full" ref={boxRef}>
+    <div ref={boxRef} className={['relative', 'w-full', className].filter(Boolean).join(' ')}>
       {/* SVG border di belakang */}
       <svg
         className="absolute inset-0 pointer-events-none"
@@ -97,28 +141,28 @@ export default function NotesBox({
         style={{
           background: gradient,
           clipPath: innerClip,
-          paddingRight
+          paddingRight,
+          boxShadow: glowShadow
         }}
       >
         {/* Header */}
         <div className="font-[Aldrich] text-[16px] mb-2 text-[#F4F6F8]">{title}</div>
 
-        {/* Body */}
-        {editable ? (
-          <textarea
-            ref={textRef}
-            value={value}
-            onChange={(e) => onChange?.(e.target.value)}
-            placeholder={placeholder}
-            rows={rowsMin}
-            className="w-full resize-none bg-transparent outline-none font-[Noto Sans] text-[14px] text-[#E7E9EE] placeholder-[#9AA3B2]"
-            style={{ lineHeight: 1.5, overflow: 'hidden', minHeight: 36 }}
-          />
-        ) : (
-          <p className="font-[Noto Sans] text-[14px] text-[#E7E9EE] whitespace-pre-wrap">
-            {value || placeholder}
-          </p>
-        )}
+        {/* Body (selalu textarea, supaya ukuran konsisten) */}
+        <textarea
+          ref={textRef}
+          value={value}
+          onChange={handleChange}
+          placeholder={placeholder}
+          rows={rowsMin}
+          readOnly={!editable}
+          className={[
+            'w-full resize-none bg-transparent outline-none',
+            'font-[Noto Sans] text-[14px] text-[#E7E9EE]',
+            'placeholder-[#9AA3B2]'
+          ].join(' ')}
+          style={bodyStyle}
+        />
 
         {/* Tombol kanan-atas */}
         {onAction && (
@@ -130,16 +174,14 @@ export default function NotesBox({
               'group absolute z-10 overflow-hidden font-[Aldrich] text-[14px]',
               'flex items-center justify-center gap-2',
               'transition-all duration-200 ease-out',
-              // 'hover:brightness-110',
-              // 'hover:[box-shadow:0_0_14px_rgba(255,255,255,0.7)] focus:[box-shadow:0_0_14px_rgba(255,255,255,0.7)]',
-              'focus:outline-none focus:ring-0 rounded',
-              'px-3 py-5 -mt-2'
+              'hover:brightness-110',
+              'focus:outline-none focus:ring-0 rounded'
             ].join(' ')}
             style={{
               top: actionOffset.top,
               right: actionOffset.right,
-              width: actionSize.w,
-              height: actionSize.h,
+              width: actionSize.w, // bisa number(px) atau string(clamp)
+              height: actionSize.h, // bisa number(px) atau string(clamp)
               border: 'none'
             }}
           >
@@ -166,7 +208,7 @@ export default function NotesBox({
 /** Path polygon cut-corner */
 function getPathD(w, h, c) {
   if (!w || !h) return `M0,0 H1 V1 H0 Z`
-  const cut = Math.max(0, c * 0.6)
+  const cut = Math.max(0, c)
   return [`M ${cut} 0`, `H ${w}`, `V ${h - cut}`, `L ${w - cut} ${h}`, `H 0`, `V ${cut}`, `Z`].join(
     ' '
   )

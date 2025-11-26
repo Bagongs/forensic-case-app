@@ -371,6 +371,8 @@ export default function SuspectDetailPage() {
           actionSize={{ w: 70, h: 27 }}
           actionOffset={{ top: 22, right: 24 }}
           onAction={onNotesAction}
+          maxBodyHeight={240}
+          autoGrow={false}
         />
       </div>
 
