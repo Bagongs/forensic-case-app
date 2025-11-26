@@ -35,6 +35,7 @@ const VALID_CHANNELS = new Set([
   'evidence:custody:extraction',
   'evidence:custody:analysis',
   'evidence:custody:update-notes',
+  'evidence:downloadFile',
 
   // suspects
   'suspects:list',

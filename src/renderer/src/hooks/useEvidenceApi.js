@@ -37,6 +37,7 @@ export function useEvidenceApi() {
       invoke('evidence:custody:analysis', { evidenceId, payload }),
 
     updateCustodyNotes: (evidenceId, reportId, notes) =>
-      invoke('evidence:custody:update-notes', { evidenceId, reportId, notes })
+      invoke('evidence:custody:update-notes', { evidenceId, reportId, notes }),
+    downloadEvidenceFile: (filePath) => invoke('evidence:downloadFile', filePath)
   }
 }
