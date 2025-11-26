@@ -4,22 +4,37 @@ import Modal from '../Modal'
 export default function AllLogsModal({ open, onClose, logs }) {
   // Convert logs → table row
   const rows = logs.map((log) => {
-    let by = log.by || ''
-    if (by.includes('By:')) by = by.split('By:')[1].trim()
+    let by = log.by || "";
+    if (by.includes("By:")) by = by.split("By:")[1].trim();
 
-    let activity = ''
-    if (log.notes) activity = log.notes
-    else if (log.change) activity = log.change.replace(/^Change:\s*/i, '')
+    const parts = [];
 
-    let date = log.date || ''
+    // === CHANGE DETAIL ===
+    // Bisa datang dari log.change OR dari log.edit array backend
+    if (log.change) {
+      parts.push(`Change Detail: ${log.change.replace(/^Change:\s*/i, "")}`);
+    }
+
+    if (Array.isArray(log.edit) && log.edit.length > 0) {
+      const detail = log.edit[0].change_detail || "";
+      parts.push(`Change Detail: ${detail.replace(/^Change:\s*/i, "")}`);
+    }
+
+    // === NOTES ===
+    if (log.notes) {
+      parts.push(`Notes: ${log.notes}`);
+    }
+
+    let activity = parts.join("\n");
 
     return {
       action: log.status,
       by,
-      date,
+      date: log.date || "",
       activity
-    }
-  })
+    };
+    });
+
 
   return (
     <Modal size="2xl" open={open} title="All Case Logs" onCancel={onClose} confirmText="Close">

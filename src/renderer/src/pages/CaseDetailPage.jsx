@@ -121,7 +121,6 @@ export default function CaseDetailPage() {
 
   // ===== logs view =====
   const logsRaw = (caseId && caseLogsMap?.[caseId]) || []
-  console.log('logsRaw', logsRaw)
   const logs = useMemo(
     () =>
       logsRaw
@@ -135,9 +134,9 @@ export default function CaseDetailPage() {
           status: l.status,
           by: l.by || undefined,
           date: fmtDate(l.rawDate || l.date),
-          change: l.notes || l.change || undefined,
+          change: l.change || undefined,
           hasNotes: !!l.notes,
-          note: l.notes
+          notes: l.notes
         })),
     [logsRaw]
   )
