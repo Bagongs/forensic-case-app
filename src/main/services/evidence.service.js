@@ -341,10 +341,7 @@ export async function downloadEvidenceFile(filePath) {
 
   return {
     base64: Buffer.from(res.data).toString('base64'),
-    filename: res.headers['content-disposition']
-      ?.split('filename=')[1]
-      ?.replace(/"/g, '') || 'download.bin'
+    filename:
+      res.headers['content-disposition']?.split('filename=')[1]?.replace(/"/g, '') || 'download.bin'
   }
 }
-
-

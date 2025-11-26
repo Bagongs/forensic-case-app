@@ -460,18 +460,6 @@ export default function EvidenceDetailPage() {
     }
   }
 
-<<<<<<< HEAD
-  function downloadReport(rep) {
-    if (!rep?.base64 && !rep?.file_path) return
-
-    const url = rep.base64 || rep.file_path
-    const a = document.createElement('a')
-    a.href = url
-    a.download = rep.name || rep.file_name || 'report.pdf'
-    document.body.appendChild(a)
-    a.click()
-    a.remove()
-=======
   async function downloadReport(file) {
     console.log('file : ', file)
     if (!file?.base64) {
@@ -487,7 +475,6 @@ export default function EvidenceDetailPage() {
     }
 
     toast.success(`Saved to Downloads`)
->>>>>>> f042bd1081bb9a8ec5293fe065be16ae4bd84de8
   }
 
   function approxSizeLabel(dataUrl) {
