@@ -5,7 +5,6 @@ import { useCases } from '../../../store/cases'
 import { FaTrashAlt } from 'react-icons/fa'
 import FormLabel from '../../atoms/FormLabel'
 import Radio from '../../atoms/Radio'
-import { useSuspects } from '../../../store/suspects'
 
 const STATUS_OPTIONS = ['Witness', 'Reported', 'Suspected', 'Suspect', 'Defendant']
 
@@ -16,7 +15,7 @@ export default function EditPersonModal({
   person,
   showDelete = false,
   onRequestDelete = () => {},
-  onSaved = () => {}   // 🟩 tambah ini
+  onSaved = () => {}
 }) {
   const fetchCaseDetail = useCases((s) => s.fetchCaseDetail)
 
@@ -37,6 +36,7 @@ export default function EditPersonModal({
 
   // ambil suspect_id dari person (asumsi: person.id = suspect_id)
   const suspectId = person?.suspect_id ?? person?.id
+  console.log('Person Edit', person)
 
   // reset semua ketika modal dibuka / person berubah
   useEffect(() => {
@@ -246,7 +246,7 @@ export default function EditPersonModal({
         {/* Notes */}
         <div>
           <div className="text-sm font-semibold mb-1" style={{ color: 'var(--dim)' }}>
-            Notes (for this suspect)
+            Notes (Optional)
           </div>
           <textarea
             rows={4}

@@ -90,7 +90,7 @@ const mapApiCaseDetail = (detail, existing) => {
   const mappedPersons = persons.map((p) => ({
     id: p.suspect_id ?? p.id,
     name: p.name || p.person_name || 'Unknown',
-    status: p.person_type || p.suspect_status || 'Person of Interest',
+    status: p.person_type || p.suspect_status,
     notes: p.notes || '',
     evidences: (p.evidence || p.evidences || []).map((ev) => {
       const filePath = ev.file_path || ev.filePath || ''

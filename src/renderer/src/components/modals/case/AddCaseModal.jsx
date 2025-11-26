@@ -1,5 +1,4 @@
 /* eslint-disable react/prop-types */
-// src/renderer/src/components/modals/case/AddCaseModal.jsx
 import { useEffect, useState } from 'react'
 import Modal from '../Modal'
 import HorizontalLine from '../../common/HorizontalLine'
@@ -30,10 +29,17 @@ export default function AddCaseModal({ open, onClose, onSave }) {
     }
   }, [open])
 
-  const canSubmit = name.trim() && (idMode === 'gen' || manualId.trim())
+  const manualIdTooShort =
+    idMode === 'manual' && manualId.trim().length > 0 && manualId.trim().length < 3
+
+  const canSubmit =
+    name.trim() &&
+    (idMode === 'gen' || (manualId.trim() && manualId.trim().length >= 3)) &&
+    !manualIdTooShort
 
   const handleConfirm = () => {
-    // ✅ SESUAI CONTRACT API
+    if (!canSubmit) return
+
     const payload = {
       title: name.trim(),
       description: desc.trim(),
@@ -46,7 +52,6 @@ export default function AddCaseModal({ open, onClose, onSave }) {
       payload.case_number = manualId.trim()
     }
 
-    // jangan auto-close di sini
     onSave(payload)
   }
 
@@ -86,11 +91,16 @@ export default function AddCaseModal({ open, onClose, onSave }) {
         </div>
 
         {idMode === 'manual' && (
-          <Input
-            value={manualId}
-            onChange={(e) => setManualId(e.target.value)}
-            placeholder="Input Case ID"
-          />
+          <div className="flex flex-col gap-1">
+            <Input
+              value={manualId}
+              onChange={(e) => setManualId(e.target.value)}
+              placeholder="Input Case ID"
+            />
+            {manualIdTooShort && (
+              <p className="text-red-400 text-xs">Case ID must be at least 3 characters</p>
+            )}
+          </div>
         )}
 
         <HorizontalLine color={'var(--border)'} />

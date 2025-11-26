@@ -45,7 +45,7 @@ const Input = (p) => (
 const Select = ({ options = [], ...p }) => (
   <select
     {...p}
-    className="w-full h-11 rounded-md bg-transparent px-3 text-sm outline-none appearance-none"
+    className="w-full h-11 rounded-md bg-[#151d28] px-3 text-sm outline-none appearance-none"
     style={{ color: TOKENS.text, border: `1px solid ${TOKENS.ring}` }}
   >
     {options.map((o) => {

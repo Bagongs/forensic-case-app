@@ -25,16 +25,29 @@ export default function EditUserModal({ open, onClose, onSave, user }) {
   }, [user])
 
   // === VALIDASI ===
-  const passwordTooShort = password && password.length < 8
-  const confirmTooShort = confirmPassword && confirmPassword.length < 8
+  const passwordFilled = password.length > 0
+  const confirmFilled = confirmPassword.length > 0
+
+  const passwordTooShort = passwordFilled && password.length < 8
+  const confirmTooShort = confirmFilled && confirmPassword.length < 8
+
   const mismatch =
-    password &&
-    confirmPassword &&
+    passwordFilled &&
+    confirmFilled &&
     password.length >= 8 &&
     confirmPassword.length >= 8 &&
     password !== confirmPassword
 
-  const isInvalid = !name || !email || passwordTooShort || confirmTooShort || mismatch || !tag
+  // === PASSWORD REQUIRED ===
+  const isInvalid =
+    !name ||
+    !email ||
+    !tag ||
+    !passwordFilled || // PASSWORD WAJIB
+    !confirmFilled || // CONFIRM PASSWORD WAJIB
+    passwordTooShort ||
+    confirmTooShort ||
+    mismatch
 
   const handleSave = async () => {
     if (isInvalid) return
@@ -42,12 +55,9 @@ export default function EditUserModal({ open, onClose, onSave, user }) {
     const patch = {
       fullname: name,
       email,
-      tag
-    }
-
-    if (password) {
-      patch.password = password
-      patch.confirm_password = confirmPassword
+      tag,
+      password,
+      confirm_password: confirmPassword
     }
 
     await onSave(user.id, patch)
@@ -79,8 +89,7 @@ export default function EditUserModal({ open, onClose, onSave, user }) {
             type={showPass ? 'text' : 'password'}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="Password (optional)"
-            data-optional="true"
+            placeholder="Password"
           />
           <button
             type="button"
@@ -104,7 +113,6 @@ export default function EditUserModal({ open, onClose, onSave, user }) {
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             placeholder="Re-enter Password"
-            data-optional="true"
           />
           <button
             type="button"

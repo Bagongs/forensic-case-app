@@ -95,6 +95,8 @@ export default function CaseDetailPage() {
       : null
   )
 
+  console.log('Selected Person : ', selectedPerson)
+
   // ===== side effects =====
 
   // ✅ ALWAYS fetch detail when entering page / caseId changes
@@ -192,18 +194,17 @@ Z`.trim()
   // ===== Notes Save/Edit =====
   const onNotesAction = async () => {
     if (!item) return
+
     if (!isEditing) {
       setIsEditing(true)
       return
     }
     if (savingRef.current) return
     savingRef.current = true
-    try {
-      const trimmed = notes.trim()
-      setIsEditing(false)
 
-      // guard: contract notes tidak boleh kosong
-      if (!trimmed) return
+    try {
+      const trimmed = (notes ?? '').trim()
+      setIsEditing(false)
 
       if (!item.notes) {
         await saveCaseNotesRemote(item.id, trimmed)
