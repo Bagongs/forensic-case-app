@@ -50,7 +50,7 @@ export default function CaseLogBox({
             <div className="text-[#E7E9EE] text-[14px] font-[Noto Sans] leading-relaxed">
               <div className="font-semibold">{log.status}</div>
 
-              {log.by && <div>{log.by}</div>}
+              {log.by && <div>By: {log.by}</div>}
               {log.date && <div>{log.date}</div>}
 
               {/* Notes Button */}
