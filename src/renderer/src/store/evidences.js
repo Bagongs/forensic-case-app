@@ -35,7 +35,7 @@ const mapApiEvidenceListItem = (api) => {
     id: api.id ?? api.evidence_id,
     caseId: api.case_id ?? api.caseId,
     evidenceNumber,
-    caseName: api.title ?? api.case_title ?? api.caseName ?? '-', // ✅ from title
+    caseName: api.title ?? api.case_title ?? api.caseName ?? '-', // from title
     investigator: api.investigator ?? api.main_investigator ?? '-',
     agency: api.agency ?? api.agency_name ?? '-',
     createdAt: api.created_at ?? api.created_date ?? api.date_created ?? null,
@@ -79,27 +79,40 @@ export const useEvidences = create((set, get) => ({
         finalPayload[k] = v
       }
 
+      // ====== FIELD LAIN (bebas) ======
       putIfValid('case_id', payload.case_id)
       putIfValid('evidence_number', payload.evidence_number)
       putIfValid('type', payload.type)
       putIfValid('source', payload.source)
       putIfValid('evidence_summary', payload.evidence_summary)
       putIfValid('investigator', payload.investigator)
-      putIfValid('suspect_id', payload.suspect_id)
 
-      // POI logic
+      // ====== POI / SUSPECT LOGIC SESUAI KONTRAK ======
       if (payload.is_unknown_person === true) {
+        // CASE: Unknown Person
+        // - kirim hanya is_unknown_person = true
+        // - JANGAN kirim suspect_id, person_name, suspect_status
         finalPayload.is_unknown_person = true
       } else if (payload.is_unknown_person === false) {
+        // CASE: Known Person
+        // - wajib kirim suspect_id (supaya BE update suspect yg sama)
+        // - boleh kirim person_name & suspect_status
         finalPayload.is_unknown_person = false
+        putIfValid('suspect_id', payload.suspect_id)
+        putIfValid('person_name', payload.person_name)
+        putIfValid('suspect_status', payload.suspect_status)
+      } else {
+        // CASE: tidak set is_unknown_person
+        // - ikuti prioritas kontrak: suspect_id > person_name > suspect_status
+        putIfValid('suspect_id', payload.suspect_id)
         putIfValid('person_name', payload.person_name)
         putIfValid('suspect_status', payload.suspect_status)
       }
 
-      // file conversion (File → buffer)
+      // ====== FILE (optional) ======
       if (payload.evidence_file) {
         const f = payload.evidence_file
-        if (f instanceof File) {
+        if (typeof File !== 'undefined' && f instanceof File) {
           const buf = await f.arrayBuffer()
           finalPayload.evidence_file = {
             name: f.name,
@@ -108,6 +121,7 @@ export const useEvidences = create((set, get) => ({
             buffer: Array.from(new Uint8Array(buf))
           }
         } else if (f?.buffer) {
+          // sudah dalam bentuk { name, type, buffer, ... }
           finalPayload.evidence_file = f
         }
       }
@@ -121,6 +135,7 @@ export const useEvidences = create((set, get) => ({
         throw new Error(res.detail || res.message || 'Failed to update evidence')
       }
 
+      // refresh detail supaya UI kebaru
       await get().fetchEvidenceDetail(evidenceId)
 
       set({ loading: false })

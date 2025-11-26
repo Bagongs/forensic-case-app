@@ -136,20 +136,22 @@ export async function updateEvidence(evidenceId, payload) {
     }
   }
 
-  // FIELD optional
+  // FIELD optional (sesuai kontrak)
   appendField(form, 'case_id', payload.case_id)
 
-  // ✅ evidence_number only if non-empty
+  // evidence_number: kalau dikirim, tidak boleh kosong
   if (payload.evidence_number !== undefined && payload.evidence_number !== null) {
     const evNum = String(payload.evidence_number).trim()
     if (evNum) form.append('evidence_number', evNum)
   }
 
+  appendField(form, 'title', payload.title)
   appendField(form, 'type', payload.type)
   appendField(form, 'source', payload.source)
   appendField(form, 'evidence_summary', payload.evidence_summary)
   appendField(form, 'investigator', payload.investigator)
 
+  // POI / SUSPECT
   appendField(form, 'person_name', payload.person_name)
   appendField(form, 'suspect_status', payload.suspect_status)
   appendField(form, 'is_unknown_person', payload.is_unknown_person)

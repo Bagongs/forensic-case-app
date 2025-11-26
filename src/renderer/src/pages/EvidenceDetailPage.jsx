@@ -76,7 +76,7 @@ export default function EvidenceDetailPage() {
   const error = useEvidences((s) => s.error)
 
   // ============================
-  // UI STATE HOOKS (harus di atas, sebelum return kondisi)
+  // UI STATE HOOKS
   // ============================
   const [active, setActive] = useState(STAGES[0].key)
   const [editOpen, setEditOpen] = useState(false)
@@ -106,7 +106,7 @@ export default function EvidenceDetailPage() {
   }, [evidenceId, fetchEvidenceDetail])
 
   // ============================
-  // DERIVE DATA DARI detail (tidak pakai hook)
+  // DERIVE DATA DARI detail
   // ============================
   let evidence = null
   let caseRef = null
@@ -122,11 +122,14 @@ export default function EvidenceDetailPage() {
   if (detail) {
     const data = detail
     console.log('Data ', data)
+
     evidence = {
       id: data.id,
       evidence_number: data.evidence_number,
       summary: data.description,
       source: data.source,
+      type: data.evidence_type || null, // optional type (kontrak)
+      title: data.title || null, // optional title (kontrak)
       investigator: data.investigator,
       previewUrl: BACKEND_BASE + '/' + data.file_path,
       previewDataUrl: BACKEND_BASE + '/' + data.file_path,
@@ -138,11 +141,21 @@ export default function EvidenceDetailPage() {
       name: data.case_name
     }
 
+    // --- POI / Person of Interest ---
+    // prioritaskan flag unknown, kalau ada
+    const isUnknownPoi =
+      data.is_unknown_person === true ||
+      data.is_unknown === true ||
+      data.suspect_is_unknown === true
+
+    const poiName = isUnknownPoi ? 'Unknown' : (data.person_name ?? data.suspect_name ?? null)
+
     personRef = {
       id: data.suspect_id,
-      name: data.suspect_name,
+      name: poiName,
       status: data.suspect_status
     }
+
     // build chain dari custody_reports
     chain = {
       acquisition: [],
@@ -197,7 +210,7 @@ export default function EvidenceDetailPage() {
             {
               name: d.file_name,
               size: d.file_size,
-              base64: d.extraction_file // di UI diperlakukan seperti dataURL, tapi di sini string path juga oke
+              base64: d.extraction_file // string path juga oke
             }
           ],
           notes: r.notes,
@@ -339,8 +352,7 @@ export default function EvidenceDetailPage() {
     setInvestigationTools(chain.preparation)
   }, [detail]) // cukup bergantung pada detail; chain akan ikut berubah
 
-  // sinkron notes dengan latest content
-  // Sync notes only when not editing
+  // sinkron notes dengan latest content (kalau tidak sedang edit)
   useEffect(() => {
     if (isEditingNotes) return
 
@@ -387,12 +399,9 @@ export default function EvidenceDetailPage() {
           type: payload.type,
           detail: payload.detail,
           notes: payload.notes,
-
-          // EXTRACTION memang pakai payload.files
           files: payload.files
         })
-      } // EvidenceDetailPage.jsx
-      else if (stage === 'analysis') {
+      } else if (stage === 'analysis') {
         const files = payload.reports.map((r) => ({
           name: r.name,
           mime: r.type,
@@ -407,7 +416,7 @@ export default function EvidenceDetailPage() {
           detail: payload.detail,
           notes: payload.notes,
           analysisPairs: payload.analysisPairs,
-          files // ← kirim base64 di sini
+          files
         })
       }
 
@@ -451,10 +460,12 @@ export default function EvidenceDetailPage() {
   }
 
   function downloadReport(rep) {
-    if (!rep?.base64) return
+    if (!rep?.base64 && !rep?.file_path) return
+
+    const url = rep.base64 || rep.file_path
     const a = document.createElement('a')
-    a.href = rep.base64 // di versi lama pakai dataURL dari FileReader
-    a.download = rep.name || 'report.pdf'
+    a.href = url
+    a.download = rep.name || rep.file_name || 'report.pdf'
     document.body.appendChild(a)
     a.click()
     a.remove()
@@ -481,8 +492,7 @@ export default function EvidenceDetailPage() {
   }
 
   // ============================
-  // EARLY RETURN SETELAH SEMUA HOOK
-  // (AMAN UNTUK RULES OF HOOKS)
+  // EARLY RETURN
   // ============================
   if (loading && !detail) {
     return (
@@ -833,9 +843,7 @@ export default function EvidenceDetailPage() {
 
                 {active === 'analysis' && showContent && (
                   <div className="flex flex-row justify-between gap-8">
-                    {/* ===========================
-                          LEFT — ANALYSIS RESULTS
-                        =========================== */}
+                    {/* LEFT — ANALYSIS RESULTS */}
                     <div>
                       <div className="text-lg font-semibold mb-3">Analysis Result:</div>
                       <ol className="list-decimal pl-6 text-base leading-relaxed space-y-3">
@@ -847,9 +855,7 @@ export default function EvidenceDetailPage() {
                       </ol>
                     </div>
 
-                    {/* =================================
-                          RIGHT — REPORT FILES DISPLAY
-                      ================================= */}
+                    {/* RIGHT — REPORT FILES DISPLAY */}
                     <div className="md:justify-self-end">
                       <BoxAllSide>
                         <BoxAllSide>
@@ -931,6 +937,7 @@ export default function EvidenceDetailPage() {
           </div>
         </BoxTopLeftBottomRight>
 
+        {/* ============== EDIT EVIDENCE MODAL ============== */}
         <EditEvidenceModal
           open={editOpen}
           onClose={() => setEditOpen(false)}
@@ -938,20 +945,23 @@ export default function EvidenceDetailPage() {
           caseName={caseRef?.name}
           personData={personRef}
           onSave={async (updated) => {
+            const isUnknown = updated.poiMode === 'unknown'
+
             await updateEvidenceRemote(detail.id, {
               payload: {
                 source: updated.source,
                 evidence_summary: updated.summary,
                 investigator: updated.investigator,
 
-                is_unknown_person: updated.poiMode === 'unknown',
-                person_name: updated.poiMode === 'unknown' ? undefined : updated.personName?.trim(),
-                suspect_status:
-                  updated.poiMode === 'unknown' ? undefined : updated.status || undefined,
+                // POI logic
+                is_unknown_person: isUnknown,
+                // hanya kirim suspect_id kalau known
+                suspect_id: !isUnknown ? personRef?.id : undefined,
+                person_name: !isUnknown ? updated.personName?.trim() : undefined,
+                suspect_status: !isUnknown ? updated.status || undefined : undefined,
 
-                evidence_file: updated.file || undefined,
-
-                suspect_id: personRef?.id || undefined
+                // file kalau ada
+                evidence_file: updated.file || undefined
               }
             })
             setEditOpen(false)
