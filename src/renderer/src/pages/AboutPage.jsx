@@ -1,10 +1,10 @@
 import iconApp from '../assets/icons/icon_app.svg'
 
-import bgTop from '@renderer/assets/image/bg-casemanagement.svg'
-import bgApk from '@renderer/assets/image/bg-caseidentityinput.svg'
-import bgMonitor from '@renderer/assets/image/bg-statustracking.svg'
-import bgForensic from '@renderer/assets/image/bg-custodytracker.svg'
-import bgReport from '@renderer/assets/image/bg-custodygenerator.svg'
+import bgCaseManagement from '@renderer/assets/image/bg-casemanagement.svg'
+import bgCaseIdentity from '@renderer/assets/image/bg-caseidentityinput.svg'
+import bgStatusTracking from '@renderer/assets/image/bg-statustracking.svg'
+import bgCustodyTracker from '@renderer/assets/image/bg-custodytracker.svg'
+import bgCustodyGenerator from '@renderer/assets/image/bg-custodygenerator.svg'
 import CaseLayout from './CaseLayout'
 
 // eslint-disable-next-line react/prop-types
@@ -33,12 +33,12 @@ export default function AboutPage() {
     {
       title: 'Case Management',
       code: 'GS26-CGST-26MG-C02E',
-      bg: bgForensic
+      bg: bgCaseManagement
     },
     {
       title: 'Case Identity Input',
       code: 'GS26-IGSC-26PT-B02T',
-      bg: bgTop
+      bg: bgCaseIdentity
     }
   ]
 
@@ -46,17 +46,17 @@ export default function AboutPage() {
     {
       title: 'Status Tracking',
       code: 'GS26-CGSK-26SR-N02Y',
-      bg: bgApk
+      bg: bgStatusTracking
     },
     {
       title: 'Custody Tracker',
-      code: 'GS26-GSGN-26TD-J06S',
-      bg: bgMonitor
+      code: 'GS26-TRGR-26DR-K06A',
+      bg: bgCustodyTracker
     },
     {
       title: 'Custody Generator',
       code: 'GS26-GSGN-26TD-J06S',
-      bg: bgReport
+      bg: bgCustodyGenerator
     }
   ]
 
