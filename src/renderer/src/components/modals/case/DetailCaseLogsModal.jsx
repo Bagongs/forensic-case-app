@@ -4,40 +4,45 @@ import Modal from '../Modal'
 export default function AllLogsModal({ open, onClose, logs }) {
   // Convert logs → table row
   const rows = logs.map((log) => {
-    let by = log.by || "";
-    if (by.includes("By:")) by = by.split("By:")[1].trim();
+    let by = log.by || ''
+    if (by.includes('By:')) by = by.split('By:')[1].trim()
 
-    const parts = [];
+    const parts = []
 
     // === CHANGE DETAIL ===
     // Bisa datang dari log.change OR dari log.edit array backend
     if (log.change) {
-      parts.push(`Change Detail: ${log.change.replace(/^Change:\s*/i, "")}`);
+      parts.push(`Change Detail: ${log.change.replace(/^Change:\s*/i, '')}`)
     }
 
     if (Array.isArray(log.edit) && log.edit.length > 0) {
-      const detail = log.edit[0].change_detail || "";
-      parts.push(`Change Detail: ${detail.replace(/^Change:\s*/i, "")}`);
+      const detail = log.edit[0].change_detail || ''
+      parts.push(`Change Detail: ${detail.replace(/^Change:\s*/i, '')}`)
     }
 
     // === NOTES ===
     if (log.notes) {
-      parts.push(`Notes: ${log.notes}`);
+      parts.push(`Notes: ${log.notes}`)
     }
 
-    let activity = parts.join("\n");
+    let activity = parts.join('\n')
 
     return {
       action: log.status,
       by,
-      date: log.date || "",
+      date: log.date || '',
       activity
-    };
-    });
-
+    }
+  })
 
   return (
-    <Modal size="2xl" open={open} title="All Case Logs" onCancel={onClose} confirmText="Close">
+    <Modal
+      className={'2xl:w-[1500px] w-[900px]'}
+      open={open}
+      title="All Case Logs"
+      onCancel={onClose}
+      confirmText="Close"
+    >
       <div className="overflow-x-auto max-h-[60vh] overflow-y-auto pr-2">
         <table className="w-full text-sm table-fixed border-collapse">
           <thead>

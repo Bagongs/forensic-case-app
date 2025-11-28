@@ -64,9 +64,9 @@ export default function ProfileCorner({ active = false }) {
       {/* === Trigger Button === */}
       <button
         onClick={() => setOpen((prev) => !prev)}
-        className="text-sm flex items-center justify-center text-white font-[Aldrich] gap-2 mt-5 2xl:Fmr-5"
+        className="text-sm flex items-center justify-center text-white font-[Aldrich] gap-2 2xl:mt-5 2xl:mr-5"
       >
-        <FaUserCircle size={50} />
+        <FaUserCircle className="2xl:w-[50px] 2xl:h-[50px] w-[30px] h-[30px]" />
         {open ? <FaChevronUp /> : <FaChevronDown />}
       </button>
 
