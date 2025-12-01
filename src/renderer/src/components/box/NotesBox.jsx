@@ -43,7 +43,7 @@ export default function NotesBox({
   gradient = 'linear-gradient(180deg, #1C2737 -94.25%, #1B2533 100%)',
   borderColor = '#4C607D',
   borderW = 1.5,
-  cut = 18,
+  cut = 16,
 
   // warna efek glow
   glowColor = '#FFFFFF', // putih utama
@@ -206,8 +206,10 @@ export default function NotesBox({
             )}
 
             {/* konten tombol */}
-            {actionIcon ? <span className="relative z-10">{actionIcon}</span> : null}
-            <span className="relative z-10">{actionLabel}</span>
+            <div className="flex gap-1 items-center">
+              {actionIcon ? <span className="relative z-10">{actionIcon}</span> : null}
+              <span className="relative z-10">{actionLabel}</span>
+            </div>
           </button>
         )}
       </div>

@@ -22,9 +22,7 @@ import iconReport from '@renderer/assets/icons/icon_report.svg'
 import { useEvidenceApi } from '../hooks/useEvidenceApi'
 import toast from 'react-hot-toast'
 
-const BACKEND_BASE =
-  import.meta.env?.VITE_BACKEND_URL || window?.api?.backendBase || 'http://172.15.2.105:8000'
-
+const BACKEND_BASE = import.meta.env?.VITE_BACKEND_URL
 const STAGES = [
   { key: 'acquisition', label: 'Acquisition' },
   { key: 'preparation', label: 'Preparation' },
@@ -121,7 +119,6 @@ export default function EvidenceDetailPage() {
 
   if (detail) {
     const data = detail
-    console.log('Data ', data)
 
     evidence = {
       id: data.id,
@@ -441,7 +438,6 @@ export default function EvidenceDetailPage() {
 
       const stageList = chain[active] || []
       const latestReport = stageList[stageList.length - 1]
-      console.log(latestReport)
       if (!latestReport?.id) {
         console.error('No custody report ID detected for stage:', active)
         setIsEditingNotes(false)
@@ -461,7 +457,6 @@ export default function EvidenceDetailPage() {
   }
 
   async function downloadReport(file) {
-    console.log('file : ', file)
     if (!file?.base64) {
       toast.error('File path not found')
       return
@@ -537,7 +532,6 @@ export default function EvidenceDetailPage() {
       </CaseLayout>
     )
   }
-  console.log('caseref : ', caseRef)
 
   // ============================
   // NORMAL RENDER

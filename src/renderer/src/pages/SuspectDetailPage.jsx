@@ -16,8 +16,7 @@ import { useCases } from '../store/cases' // hanya untuk caseOptions default di 
 import { useSuspects } from '../store/suspects' // ✅ suspects store
 import toast from 'react-hot-toast'
 
-const BACKEND_BASE =
-  import.meta.env?.VITE_BACKEND_URL || window?.api?.backendBase || 'http://172.15.2.105:8000'
+const BACKEND_BASE = import.meta.env?.VITE_BACKEND_URL
 
 // Helper kecil untuk ambil notes dari berbagai bentuk response
 function extractNotesFromDetail(res) {
@@ -73,7 +72,6 @@ export default function SuspectDetailPage() {
   const mapped = useMemo(() => {
     const d = detail?.data || detail || null
     if (!d) return null
-    console.log('Detail ', d)
 
     const person = {
       id: d.id,
@@ -106,7 +104,6 @@ export default function SuspectDetailPage() {
       createdAt: ev.createdAt,
       updatedAt: ev.updatedAt
     }))
-    console.log('evidences', person.evidences)
 
     const caseData = {
       id: d.caseId,

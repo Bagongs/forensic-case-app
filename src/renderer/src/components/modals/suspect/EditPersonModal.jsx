@@ -117,13 +117,11 @@ export default function EditPersonModal({
         suspect_status: isUnknown ? null : finalStatus || null,
         notes: trimmedNotes
       }
-      console.log('PAYLOAD UPDATE', updatePayload)
 
       const updRes = await window.api.invoke('suspects:update', {
         id: Number(suspectId),
         payload: updatePayload
       })
-      console.log('response update endpoint : ', updRes)
       if (updRes?.error) throw new Error(updRes.message || 'Failed to update suspect')
 
       // 2) UPDATE / SAVE NOTES
@@ -145,9 +143,7 @@ export default function EditPersonModal({
 
       if (caseId) {
         try {
-          console.log('rehit fetch')
-          const res = await fetchCaseDetail(caseId)
-          console.log('Rehit Resp : ', res)
+          await fetchCaseDetail(caseId)
         } catch (err) {
           console.error('Failed to refresh case detail', err)
         }

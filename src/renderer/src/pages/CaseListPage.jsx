@@ -144,7 +144,6 @@ export default function CaseListPage() {
   }, [page, totalPages])
 
   const handleSaveCase = async (payload) => {
-    console.log('[Renderer Payload] =>', payload)
     try {
       const created = await createCaseRemote(payload)
       setModal(false)

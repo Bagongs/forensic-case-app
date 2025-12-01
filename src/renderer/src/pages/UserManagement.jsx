@@ -77,7 +77,6 @@ export default function UserManagement() {
   const totalUsers = pagination?.total ?? users.length ?? 0
   const totalPages = Math.max(1, Math.ceil(totalUsers / pageSize))
   const safePage = Math.min(page, totalPages)
-  console.log(users)
 
   return (
     <CaseLayout title="User Management" showBack={true}>

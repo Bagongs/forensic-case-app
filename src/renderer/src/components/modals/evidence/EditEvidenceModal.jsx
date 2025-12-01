@@ -41,8 +41,6 @@ export default function EditEvidenceModal({
       setFile(null)
     }
   }, [open, evidenceData, personData])
-  console.log('status', status)
-  console.log('personData', personData)
 
   const fileToDataURL = (f) =>
     new Promise((res, rej) => {

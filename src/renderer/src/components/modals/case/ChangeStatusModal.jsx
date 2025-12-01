@@ -64,7 +64,7 @@ export default function ChangeStatusModal({
       onCancel={onClose}
       confirmText={submitting ? 'Applying...' : 'Apply'}
       onConfirm={handleConfirm}
-      disableConfirm={submitting || !sel}
+      disableConfirm={submitting || !sel || sel === currentStatus || !allowed.includes(sel)}
       size="md"
     >
       <div className="grid gap-3">

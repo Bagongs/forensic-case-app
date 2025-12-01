@@ -68,8 +68,6 @@ export async function createCaseApi(payload) {
     }
   })
 
-  console.log('[Create Case Payload] =>', fixedPayload)
-
   const { data } = await api.post('/cases/create-case', fixedPayload, {
     headers: { 'Content-Type': 'application/json' }
   })

@@ -48,7 +48,6 @@ export async function saveSuspectPdf(suspectId) {
 }
 
 export async function saveEvidenceCustodyFile(filePath) {
-  console.log('filePath', filePath)
   // 1. NORMALISASI PATH
   const cleanPath = filePath
     .replace(/^data\/custody\//, '')
@@ -66,7 +65,6 @@ export async function saveEvidenceCustodyFile(filePath) {
   const fileName = buildPdfName('evidence_file', '').replace('.pdf', `.${extension}`)
 
   const fullPath = path.join(downloads, fileName)
-  console.log('Full path ', fullPath)
 
   // 5. SIMPAN FILE
   fs.writeFileSync(fullPath, buffer)

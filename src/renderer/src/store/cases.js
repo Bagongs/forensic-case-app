@@ -6,8 +6,7 @@ import { create } from 'zustand'
 ============================================================ */
 // kalau kamu set VITE_BACKEND_URL di .env, itu akan dipakai.
 // fallback ke IP backend kamu sekarang.
-const BACKEND_BASE =
-  import.meta.env?.VITE_BACKEND_URL || window?.api?.backendBase || 'http://172.15.2.105:8000'
+const BACKEND_BASE = import.meta.env?.VITE_BACKEND_URL
 
 const resolveBackendUrl = (maybePath) => {
   if (!maybePath) return null
@@ -138,7 +137,6 @@ const mapApiCaseDetail = (detail, existing) => {
    PAYLOAD NORMALIZER FOR CREATE / UPDATE
 ============================================================ */
 const normalizeCasePayload = (input, { forUpdate = false } = {}) => {
-  console.log('INPUT', input)
   const out = {
     title: input.title ?? input.name,
     description: input.description ?? input.desc,
@@ -241,7 +239,6 @@ export const useCases = create((set, get) => ({
     set({ loading: true, error: null })
     try {
       const res = await window.api.invoke('cases:detail', caseId)
-      console.log('case detail', res)
       const detail = unwrap(res)
 
       const current = get().cases
@@ -294,8 +291,6 @@ export const useCases = create((set, get) => ({
         caseId,
         payload: apiPatch
       })
-      console.log('Payload update case', apiPatch)
-      console.log('Update Case resp', res)
 
       const updated = unwrap(res)
       const current = get().cases
@@ -356,7 +351,6 @@ export const useCases = create((set, get) => ({
     try {
       const res = await window.api.invoke('caseLogs:list', { caseId, params })
       const apiLogs = unwrap(res) || []
-      console.log('case log : ', res)
 
       const viewLogs = apiLogs.map((log) => ({
         id: log.id,

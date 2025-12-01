@@ -160,7 +160,6 @@ export default function AddEvidenceModal({
         is_unknown_person,
         evidence_file: evidenceFilePayload || undefined
       }
-      console.log('Payload Evidence Create : ', payload)
 
       const res = await window.api.invoke('evidence:create', payload)
       if (res?.error) throw new Error(res.message || 'Failed to create evidence')

@@ -4,7 +4,7 @@ import { getTokens, clearSession } from '../session.js'
 import { refreshTokenRequest } from './auth.service.js'
 
 const api = axios.create({
-  baseURL: process.env.BACKEND_URL || 'http://172.15.2.105:8000/api/v1'
+  baseURL: import.meta.env?.VITE_BACKEND_URL + '/api/v1'
 })
 
 // ============================
