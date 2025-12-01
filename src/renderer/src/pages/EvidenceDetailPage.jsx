@@ -690,7 +690,7 @@ export default function EvidenceDetailPage() {
 
         {/* STAGE TABS + CONTENT */}
         <BoxTopLeftBottomRight>
-          <div className="grid grid-cols-4 gap-3 mb-3">
+          <div className="grid grid-cols-4 gap-3 mb-3 w-full place-items-center">
             {STAGES.map((s) => {
               const isActive = active === s.key
               const bg = isActive ? stageOn : stageOff

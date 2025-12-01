@@ -1,9 +1,11 @@
 /* eslint-disable react/prop-types */
 import { FaEdit } from 'react-icons/fa'
 import iconAddEvidance from '../../assets/icons/icon-add-evidance.svg'
+import { useScreenMode } from '../../hooks/useScreenMode'
 // import iconExpand from '../assets/icons/icon-expand.svg' // kalau mau pakai di Add Evidence
 
 export function PersonBox({ name, roleLabel, children, onEdit, onAddEvidence, actionBgImage }) {
+  const mode = useScreenMode()
   const badgeStatus = (status = 'Unknown') => {
     if (!status || status == 'Unknown' || status == 'Person of Interest') return
     const s = status.toLowerCase()
@@ -94,8 +96,11 @@ export function PersonBox({ name, roleLabel, children, onEdit, onAddEvidence, ac
         </div>
       </div>
 
-      {/* grid evidences */}
-      <div className="grid md:grid-cols-2 gap-6">{children}</div>
+      <div
+        className={`grid ${mode === 'ultra' ? 'grid-cols-4' : mode == 'wide' ? 'grid-cols-3' : 'grid-cols-2'}  gap-6`}
+      >
+        {children}
+      </div>
     </div>
   )
 }
