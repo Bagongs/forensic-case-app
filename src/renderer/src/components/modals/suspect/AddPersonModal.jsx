@@ -8,12 +8,12 @@ import Input from '../../atoms/Input'
 import Textarea from '../../atoms/Textarea'
 import Select from '../../atoms/Select'
 
-const DEVICE_SOURCES = ['Hp', 'Ssd', 'HardDisk', 'Pc', 'Laptop', 'DVR']
+const DEVICE_SOURCES = ['Handphone', 'Ssd', 'HardDisk', 'Pc', 'Laptop', 'DVR']
 const STATUS_OPTIONS = ['Witness', 'Reported', 'Suspected', 'Suspect', 'Defendant']
 
 function mapDeviceSourceToApi(v) {
   switch (v) {
-    case 'Hp':
+    case 'Handphone':
       return 'Handphone'
     case 'Ssd':
       return 'SSD'

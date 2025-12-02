@@ -127,6 +127,48 @@ function getPathByType(w, h, c, type, extra = {}) {
   switch (type) {
     case 'allSideWithTopNotchChamfered':
       return withTopNotchChamfered()
+    case 'allSideWithTopLeftSlanted': {
+      const { slantWidth = 360, slantHeight = 40 } = extra
+      const o = 0.6
+      const c = cut
+
+      // seberapa jauh notch-nya dari kiri & turun
+      const SW = Math.max(0, Math.min(slantWidth, w - 2 * c - 20))
+      const SH = Math.max(0, Math.min(slantHeight, h - 2 * c - 20))
+
+      // titik-titik sama urutannya dengan allSide, cuma disisipi notch
+      const A_x = c + o // top-left chamfer end
+      const A_y = o
+
+      const L_x = A_x + SW // awal slope
+      // eslint-disable-next-line no-unused-vars
+      const L_y = A_y
+
+      const P_x = L_x + SH // ujung slope turun
+      const P_y = A_y + SH
+
+      const Q_x = w - c - o // awal chamfer kanan atas (di plateau SH)
+      // eslint-disable-next-line no-unused-vars
+      const Q_y = P_y
+
+      const C_x = w - o // ujung chamfer kanan atas
+      const C_y = SH + c + o
+
+      return [
+        `M ${A_x} ${A_y}`, // dari chamfer kiri atas
+        `H ${L_x}`, // top datar
+        `L ${P_x} ${P_y}`, // slope turun kanan
+        `H ${Q_x}`, // top datar lagi (plateau)
+        `L ${C_x} ${C_y}`, // chamfer kanan atas (SAMA modelnya dg allSide, cuma turun SH)
+        `V ${h - c - o}`, // sisi kanan
+        `L ${w - c - o} ${h - o}`, // chamfer kanan bawah
+        `H ${c + o}`, // sisi bawah
+        `L ${o} ${h - c - o}`, // chamfer kiri bawah
+        `V ${c + o}`, // sisi kiri
+        `L ${c + o} ${o}`, // chamfer kiri atas balik ke awal
+        'Z'
+      ].join(' ')
+    }
 
     // tipe-tipe lain yang sudah ada
     case 'topRight':
@@ -225,6 +267,58 @@ function getInnerClipPath(w, h, c, type, borderW, extra = {}) {
   const make = (pts) => `polygon(${pts.map(([x, y]) => pct(x, y)).join(', ')})`
 
   switch (type) {
+    case 'allSideWithTopLeftSlanted': {
+      const { slantWidth = 360, slantHeight = 40 } = extra
+
+      const SW = Math.max(0, Math.min(slantWidth - borderW, w))
+      const SH = Math.max(0, Math.min(slantHeight - borderW, h))
+
+      const A_x = x0 + c2 // inner chamfer kiri atas
+      const A_y = y0
+
+      const L_x = A_x + SW
+      const L_y = A_y
+
+      const P_x = L_x + SH
+      const P_y = A_y + SH
+
+      const Q_x = x1 - c2 // awal chamfer kanan atas (inner)
+      const Q_y = P_y
+
+      const C_x = x1
+      const C_y = P_y + c2
+
+      const D_x = x1
+      const D_y = y1 - c2
+
+      const E_x = x1 - c2
+      const E_y = y1
+
+      const F_x = x0 + c2
+      const F_y = y1
+
+      const G_x = x0
+      const G_y = y1 - c2
+
+      const H_x = x0
+      const H_y = y0 + c2
+
+      const pts = [
+        [A_x, A_y], // top-left chamfer end
+        [L_x, L_y], // sebelum slope
+        [P_x, P_y], // slope turun
+        [Q_x, Q_y], // plateau kanan
+        [C_x, C_y], // chamfer kanan atas
+        [D_x, D_y], // sisi kanan
+        [E_x, E_y], // chamfer kanan bawah
+        [F_x, F_y], // bawah
+        [G_x, G_y], // chamfer kiri bawah
+        [H_x, H_y] // sisi kiri
+      ]
+
+      return `polygon(${pts.map(([x, y]) => pct(x, y)).join(', ')})`
+    }
+
     case 'topRight':
       return make([
         [x0, y0],
@@ -282,6 +376,9 @@ function getInnerClipPath(w, h, c, type, borderW, extra = {}) {
 /* ================= EXPORT WRAPPERS ================= */
 export const BoxAllSideWithTopNotchChamfered = (props) => (
   <BaseCutBox {...props} type="allSideWithTopNotchChamfered" />
+)
+export const BoxAllSideWithTopLeftSlanted = (props) => (
+  <BaseCutBox {...props} type="allSideWithTopLeftSlanted" />
 )
 export const BoxAllSide = (props) => <BaseCutBox {...props} type="allSide" />
 export const BoxTopLeftBottomRight = (props) => <BaseCutBox {...props} type="topLeftBottomRight" />

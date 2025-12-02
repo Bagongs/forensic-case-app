@@ -15,6 +15,7 @@ import AddEvidenceModal from '../components/modals/evidence/AddEvidenceModal'
 import { useCases } from '../store/cases' // hanya untuk caseOptions default di modal
 import { useSuspects } from '../store/suspects' // ✅ suspects store
 import toast from 'react-hot-toast'
+import { useScreenMode } from '../hooks/useScreenMode'
 
 const BACKEND_BASE = import.meta.env?.VITE_BACKEND_URL
 
@@ -34,6 +35,7 @@ function extractNotesFromDetail(res) {
 
 export default function SuspectDetailPage() {
   const { suspectId } = useParams()
+  const mode = useScreenMode()
   const suspectNumId = Number(suspectId)
 
   // cases store cuma buat default dropdown/modal
@@ -323,7 +325,10 @@ export default function SuspectDetailPage() {
           </button>
         </div>
 
-        <div className="grid gap-4 pr-2 overflow-y-auto custom-scroll" style={{ maxHeight: 240 }}>
+        <div
+          className="grid gap-4 pr-2 overflow-y-auto custom-scroll"
+          style={{ maxHeight: mode == 'default' ? 240 : 600 }}
+        >
           {evidences.map((e) => (
             <div key={e.id} className="flex gap-4 items-start">
               {e.previewDataUrl || e.img ? (

@@ -21,6 +21,7 @@ import Pagination from '../components/common/Pagination'
 import iconReport from '@renderer/assets/icons/icon_report.svg'
 import { useEvidenceApi } from '../hooks/useEvidenceApi'
 import toast from 'react-hot-toast'
+import { useScreenMode } from '../hooks/useScreenMode'
 
 const BACKEND_BASE = import.meta.env?.VITE_BACKEND_URL
 const STAGES = [
@@ -53,6 +54,15 @@ const fmtDateShort = fmtDateLong
 
 export default function EvidenceDetailPage() {
   const { evidenceId } = useParams()
+  const mode = useScreenMode()
+  const grid =
+    mode == 'default'
+      ? 'grid-cols-[auto_1fr_auto_1fr_auto_1fr_auto] max-w-4xl'
+      : mode == 'wide'
+        ? 'grid-cols-[auto_3fr_auto_3fr_auto_3fr_auto] max-w-[1200px]'
+        : mode == 'ultra'
+          ? 'grid-cols-[auto_3fr_auto_3fr_auto_3fr_auto] max-w-[1600px]'
+          : ''
   const nav = useNavigate()
 
   // store lama (masih dipakai untuk update evidence via modal)
@@ -102,6 +112,13 @@ export default function EvidenceDetailPage() {
       fetchEvidenceDetail(evidenceId)
     }
   }, [evidenceId, fetchEvidenceDetail])
+
+  const acquisitionValue = {
+    location: detail?.custody_reports[0]?.location,
+    evidence_type: detail?.custody_reports[0]?.evidence_type,
+    evidence_source: detail?.custody_reports[0]?.evidence_source,
+    evidence_detail: detail?.custody_reports[0]?.evidence_detail
+  }
 
   // ============================
   // DERIVE DATA DARI detail
@@ -583,6 +600,8 @@ export default function EvidenceDetailPage() {
           onClose={() => setOpenStage(null)}
           onSubmitStage={handleSubmitStage}
           investigationTools={investigationTools}
+          evidenceSource={evidence.source}
+          acquisitionValue={acquisitionValue}
         />
       </div>
 
@@ -630,7 +649,9 @@ export default function EvidenceDetailPage() {
           <div className="p-2 mb-4">
             <div className="text-2xl font-semibold mb-10">Chain of custody</div>
 
-            <div className="max-w-4xl mx-auto grid place-items-center justify-items-center grid-cols-[auto_1fr_auto_1fr_auto_1fr_auto] items-center gap-x-4 mb-4">
+            <div
+              className={`mx-auto grid place-items-center justify-items-center items-center gap-x-4 mb-4 ${grid}`}
+            >
               {stageMeta.map((m, idx) => {
                 const style = STAGE_STYLE[m.key] || NODE_DEFAULT
                 const isActive = active === m.key

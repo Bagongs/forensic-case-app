@@ -97,7 +97,7 @@ export default function CaseLayout({ title, showBack = false, children }) {
           {tab('/suspects', 'Suspect Management')}
         </div>
 
-        <h1 className="text-3xl font-bold mt-20 relative">
+        <h1 className="text-3xl font-bold mt-10 relative">
           {showBack && (
             <button
               onClick={() => nav(-1)}

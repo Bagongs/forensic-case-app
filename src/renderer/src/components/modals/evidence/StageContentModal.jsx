@@ -23,7 +23,7 @@ export const STAGES = {
   ANALYSIS: 'analysis'
 }
 
-const DEVICE_SOURCES = ['Hp', 'Ssd', 'HardDisk', 'Pc', 'Laptop', 'DVR']
+const DEVICE_SOURCES = ['Handphone', 'Ssd', 'HardDisk', 'Pc', 'Laptop', 'DVR']
 
 /* =============== PRIMITIVES =============== */
 const Label = ({ children }) => (
@@ -55,6 +55,8 @@ const Select = ({ options = [], ...p }) => (
         <option
           key={val ?? label}
           value={val ?? label}
+          disabled={o.disabled}
+          hidden={o.hidden}
           style={{ background: '#0F1621', color: TOKENS.text }}
         >
           {label}
@@ -98,7 +100,9 @@ export default function StageContentModal({
   initialStage = STAGES.ACQUISITION,
   onClose,
   onSubmitStage,
-  investigationTools
+  investigationTools,
+  evidenceSource,
+  acquisitionValue
 }) {
   const [stage, setStage] = useState(initialStage)
   const [submitting, setSubmitting] = useState(false)
@@ -169,6 +173,7 @@ export default function StageContentModal({
             resetSignal={resetSignal}
             registerCollector={(fn) => (collectorRef.current = fn)}
             onValidityChange={setIsValid}
+            evidenceSource={evidenceSource}
           />
         )}
 
@@ -178,6 +183,7 @@ export default function StageContentModal({
             resetSignal={resetSignal}
             registerCollector={(fn) => (collectorRef.current = fn)}
             onValidityChange={setIsValid}
+            acquisitionValue={acquisitionValue}
           />
         )}
 
@@ -187,6 +193,7 @@ export default function StageContentModal({
             resetSignal={resetSignal}
             registerCollector={(fn) => (collectorRef.current = fn)}
             onValidityChange={setIsValid}
+            acquisitionValue={acquisitionValue}
           />
         )}
 
@@ -198,6 +205,7 @@ export default function StageContentModal({
             investigationTools={investigationTools}
             registerCollector={(fn) => (collectorRef.current = fn)}
             onValidityChange={setIsValid}
+            acquisitionValue={acquisitionValue}
           />
         )}
       </div>
@@ -206,14 +214,20 @@ export default function StageContentModal({
 }
 
 /* =============== ACQUISITION =============== */
-function AcquisitionPanel({ user, registerCollector, onValidityChange, resetSignal }) {
+function AcquisitionPanel({
+  user,
+  registerCollector,
+  onValidityChange,
+  resetSignal,
+  evidenceSource
+}) {
   const { acquisition, setStageData } = useEvidenceChain()
 
   const buildInitial = () => {
     const base = {
       investigator: '',
       location: '',
-      source: 'Hp',
+      source: evidenceSource || 'Handphone',
       type: '',
       detail: '',
       steps: [''],
@@ -346,10 +360,10 @@ function AcquisitionPanel({ user, registerCollector, onValidityChange, resetSign
 
       <Row cols={3}>
         <Field label="Evidence Source">
-          <Select
+          <Input
             value={v.source}
-            onChange={(e) => setV({ ...v, source: e.target.value })}
-            options={DEVICE_SOURCES}
+            onChange={() => setV({ ...v, source: evidenceSource })}
+            readOnly
           />
         </Field>
 
@@ -467,16 +481,22 @@ function AcquisitionPanel({ user, registerCollector, onValidityChange, resetSign
 }
 
 /* =============== PREPARATION =============== */
-function PreparationPanel({ user, registerCollector, onValidityChange, resetSignal }) {
+function PreparationPanel({
+  user,
+  registerCollector,
+  onValidityChange,
+  resetSignal,
+  acquisitionValue
+}) {
   const { preparation, setStageData } = useEvidenceChain()
 
   const buildInitial = () => ({
     investigator: '',
-    location: '',
-    source: 'Hp',
-    type: '',
+    location: acquisitionValue.location || '-',
+    source: acquisitionValue.evidence_source || 'Handphone',
+    type: acquisitionValue.evidence_type || '-',
+    detail: acquisitionValue.evidence_detail || '-',
     stage: '',
-    detail: '',
     pairs: [{ investigation: '', tools: '' }],
     notes: '',
     ...preparation
@@ -551,16 +571,17 @@ function PreparationPanel({ user, registerCollector, onValidityChange, resetSign
             value={v.location}
             onChange={(e) => setV({ ...v, location: e.target.value })}
             placeholder="Location"
+            readOnly
           />
         </Field>
       </Row>
 
       <Row cols={3}>
         <Field label="Evidence Source">
-          <Select
+          <Input
             value={v.source}
-            onChange={(e) => setV({ ...v, source: e.target.value })}
-            options={DEVICE_SOURCES}
+            onChange={() => setV({ ...v, source: acquisitionValue.evidence_source })}
+            readOnly
           />
         </Field>
         <Field label="Evidence Type">
@@ -568,6 +589,7 @@ function PreparationPanel({ user, registerCollector, onValidityChange, resetSign
             value={v.type}
             onChange={(e) => setV({ ...v, type: e.target.value })}
             placeholder="Evidence Type"
+            readOnly
           />
         </Field>
         <Field label="Evidence Detail">
@@ -575,6 +597,7 @@ function PreparationPanel({ user, registerCollector, onValidityChange, resetSign
             value={v.detail}
             onChange={(e) => setV({ ...v, detail: e.target.value })}
             placeholder="Evidence Detail"
+            readOnly
           />
         </Field>
       </Row>
@@ -599,7 +622,7 @@ function PreparationPanel({ user, registerCollector, onValidityChange, resetSign
               value={p.tools}
               onChange={(e) => setPair(i, 'tools', e.target.value)}
               options={[
-                { label: 'Select tools', value: '' },
+                { label: 'Select tools', value: '', disabled: true, hidden: true },
                 { label: 'Magnet Axiom', value: 'Magnet Axiom' },
                 { label: 'Oxygen', value: 'Oxygen' },
                 { label: 'Cellebrite', value: 'Cellebrite' },
@@ -642,16 +665,22 @@ function PreparationPanel({ user, registerCollector, onValidityChange, resetSign
 }
 
 /* =============== EXTRACTION =============== */
-function ExtractionPanel({ user, registerCollector, onValidityChange, resetSignal }) {
+function ExtractionPanel({
+  user,
+  registerCollector,
+  onValidityChange,
+  resetSignal,
+  acquisitionValue
+}) {
   const { extraction, setStageData } = useEvidenceChain()
 
   const buildInitial = () => ({
     investigator: '',
-    location: '',
-    source: 'Hp',
-    type: '',
+    location: acquisitionValue.location || '-',
+    source: acquisitionValue.evidence_source || 'Handphone',
+    type: acquisitionValue.evidence_type || '-',
+    detail: acquisitionValue.evidence_detail || '-',
     stage: '',
-    detail: '',
     files: [],
     notes: '',
     ...extraction
@@ -727,16 +756,17 @@ function ExtractionPanel({ user, registerCollector, onValidityChange, resetSigna
             value={v.location}
             onChange={(e) => setV({ ...v, location: e.target.value })}
             placeholder="Location"
+            readOnly
           />
         </Field>
       </Row>
 
       <Row cols={3}>
         <Field label="Evidence Source">
-          <Select
+          <Input
             value={v.source}
-            onChange={(e) => setV({ ...v, source: e.target.value })}
-            options={DEVICE_SOURCES}
+            onChange={() => setV({ ...v, source: acquisitionValue.evidence_source })}
+            readOnly
           />
         </Field>
         <Field label="Evidence Type">
@@ -744,6 +774,7 @@ function ExtractionPanel({ user, registerCollector, onValidityChange, resetSigna
             value={v.type}
             onChange={(e) => setV({ ...v, type: e.target.value })}
             placeholder="Evidence Type"
+            readOnly
           />
         </Field>
         <Field label="Evidence Detail">
@@ -751,6 +782,7 @@ function ExtractionPanel({ user, registerCollector, onValidityChange, resetSigna
             value={v.detail}
             onChange={(e) => setV({ ...v, detail: e.target.value })}
             placeholder="Evidence Detail"
+            readOnly
           />
         </Field>
       </Row>
@@ -797,7 +829,8 @@ function AnalysisPanel({
   registerCollector,
   investigationTools,
   onValidityChange,
-  resetSignal
+  resetSignal,
+  acquisitionValue
 }) {
   const { preparation, setStageData } = useEvidenceChain()
 
@@ -812,10 +845,10 @@ function AnalysisPanel({
 
   const buildDefaults = () => ({
     investigator: '',
-    location: '',
-    source: 'Hp',
-    type: '',
-    detail: '',
+    location: acquisitionValue.location || '-',
+    source: acquisitionValue.evidence_source || 'Handphone',
+    type: acquisitionValue.evidence_type || '-',
+    detail: acquisitionValue.evidence_detail || '-',
     notes: '',
     analysisPairs: prepPairs.map((p) => ({
       investigation: p.investigation || '',
@@ -923,17 +956,17 @@ function AnalysisPanel({
             onChange={(e) => setV({ ...v, location: e.target.value })}
             placeholder="Location"
             data-optional="false"
+            readOnly
           />
         </Field>
       </Row>
 
       <Row cols={3}>
         <Field label="Evidence Source">
-          <Select
+          <Input
             value={v.source}
-            onChange={(e) => setV({ ...v, source: e.target.value })}
-            options={DEVICE_SOURCES}
-            data-optional="false"
+            onChange={() => setV({ ...v, source: acquisitionValue.evidence_source })}
+            readOnly
           />
         </Field>
 
@@ -943,6 +976,7 @@ function AnalysisPanel({
             onChange={(e) => setV({ ...v, type: e.target.value })}
             placeholder="Evidence Type"
             data-optional="false"
+            readOnly
           />
         </Field>
 
@@ -952,6 +986,7 @@ function AnalysisPanel({
             onChange={(e) => setV({ ...v, detail: e.target.value })}
             placeholder="Evidence Detail"
             data-optional="false"
+            readOnly
           />
         </Field>
       </Row>

@@ -2,29 +2,25 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useCases } from '../store/cases'
-
+import { PersonSectionBox } from '../components/box/PersonSectionBox'
+import { PersonBox } from '../components/box/PersonBox'
+import { EvidenceCard } from '../components/EvidanceCard'
+import { FaEdit, FaRegSave } from 'react-icons/fa'
+import { LiaEditSolid } from 'react-icons/lia'
+import { BoxAllSideWithTopLeftSlanted } from '../components/box/BaseBox'
+import MiniButton, { MiniButtonContent } from '../components/common/MiniButton'
 import AddPersonInlineModal from '../components/modals/suspect/AddPersonInlineModal'
 import ChangeStatusModal from '../components/modals/case/ChangeStatusModal'
 import EditCaseModal from '../components/modals/case/EditCaseModal'
 import EditPersonModal from '../components/modals/suspect/EditPersonModal'
 import AddEvidenceModal from '../components/modals/evidence/AddEvidenceModal'
-
 import CaseLayout from './CaseLayout'
-import MiniButton, { MiniButtonContent } from '../components/common/MiniButton'
 import NotesBox from '../components/box/NotesBox'
 import CaseLogBox from '../components/box/CaseLogBox'
-import { PersonSectionBox } from '../components/box/PersonSectionBox'
-import { PersonBox } from '../components/box/PersonBox'
-import { EvidenceCard } from '../components/EvidanceCard'
-import ExactSvgCutBox from '../components/box/ExactSvgCutBox'
-
-import { FaEdit, FaRegSave } from 'react-icons/fa'
-import { LiaEditSolid } from 'react-icons/lia'
-
 import bgButton from '../assets/image/bg-button.svg'
 import bgButtonTransparent from '../assets/image/bg-button-transparent.svg'
 import editBg from '../assets/image/edit.svg'
-
+import upperCard from '../assets/image/upper-card.svg'
 import NotesModal from '../components/modals/case/NotesModal'
 import ConfirmDeleteModal from '../components/modals/ConfirmDeleteModal'
 import toast from 'react-hot-toast'
@@ -166,21 +162,6 @@ export default function CaseDetailPage() {
     )
   }, [item?.status])
 
-  const PATH_D = `
-M368.22 0.75
-L429.666 56.8008
-L429.881 56.9961
-H1276.12
-L1290.25 70.9805
-V304.737
-L1276.13 318.25
-H14.875
-L0.75 304.265
-V14.7344
-L14.875 0.75
-H368.22
-Z`.trim()
-
   const actionLabel = isEditing ? 'Save' : notes.trim() ? 'Edit' : 'Add'
   const actionIcon = isEditing ? (
     <FaRegSave className="text-[16px]" />
@@ -308,31 +289,20 @@ Z`.trim()
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6">
         <div className="space-y-6">
           {/* DESCRIPTION */}
-          <ExactSvgCutBox
-            pathD={PATH_D}
-            paddingX={40}
-            titlePaddingTop={41}
-            contentSpacing={20}
-            titleFontSize={30}
-          >
-            {({ titleFontSize, contentSpacing }) => (
-              <>
-                <div
-                  className="font-[Aldrich]"
-                  style={{
-                    fontSize: titleFontSize,
-                    fontWeight: 600,
-                    marginBottom: contentSpacing
-                  }}
-                >
-                  Case description
-                </div>
-                <p className="text-2xl pt-5 pb-0 leading-relaxed text-[#CFCFCF]">
-                  {item.description || 'No description.'}
-                </p>
-              </>
-            )}
-          </ExactSvgCutBox>
+          <div className="relative">
+            <img src={upperCard} className="absolute -z-10 right-24 w-3/4 top-5" />
+            <BoxAllSideWithTopLeftSlanted
+              slantWidth={180}
+              slantHeight={50}
+              borderColor="#C3CFE0"
+              bg="#111720"
+            >
+              <div className="flex flex-col gap-5">
+                <p className="text-xl font-bold capitalize">Case description</p>
+                <p className="text-base">{item.description || 'No description.'}</p>
+              </div>
+            </BoxAllSideWithTopLeftSlanted>
+          </div>
 
           {/* PERSON SECTION */}
           <PersonSectionBox
