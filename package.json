@@ -1,7 +1,8 @@
 {
-  "name": "forensic-case-app",
+  "name": "case-analytics-platform",
   "version": "1.0.0",
-  "description": "An Electron application with React",
+  "productName": "Case Analytics Platform",
+  "description": "Case Analytics Platform Desktop Application",
   "main": "./out/main/index.js",
   "author": "Digital Forensics",
   "homepage": "https://electron-vite.org",
