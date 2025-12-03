@@ -1,5 +1,6 @@
+/* eslint-disable react/prop-types */
 /* eslint-disable react-hooks/exhaustive-deps */
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useCases } from '../store/cases'
 import { PersonSectionBox } from '../components/box/PersonSectionBox'
@@ -25,6 +26,7 @@ import NotesModal from '../components/modals/case/NotesModal'
 import ConfirmDeleteModal from '../components/modals/ConfirmDeleteModal'
 import toast from 'react-hot-toast'
 import AllLogsModal from '../components/modals/case/DetailCaseLogsModal'
+import { FaChevronDown, FaChevronUp } from 'react-icons/fa6'
 
 const fmtDate = (iso) => {
   if (!iso) return '-'
@@ -36,6 +38,86 @@ const fmtDate = (iso) => {
   const hh = String(d.getHours()).padStart(2, '0')
   const min = String(d.getMinutes()).padStart(2, '0')
   return `${dd}/${mm}/${yyyy} ${hh}:${min}`
+}
+function ClampText({ text, step = 5 }) {
+  const [visibleLines, setVisibleLines] = useState(step)
+  const [totalLines, setTotalLines] = useState(step)
+  const [expandedAll, setExpandedAll] = useState(false)
+  const hiddenRef = useRef(null)
+
+  // hitung jumlah line real
+  useLayoutEffect(() => {
+    if (!hiddenRef.current) return
+
+    const el = hiddenRef.current
+    const style = window.getComputedStyle(el)
+    const lineHeight = parseFloat(style.lineHeight)
+
+    const height = el.getBoundingClientRect().height
+    const lines = Math.round(height / lineHeight)
+
+    setTotalLines(lines)
+  }, [text])
+
+  const handleToggle = () => {
+    if (!expandedAll) {
+      // expand full
+      setVisibleLines(totalLines)
+      setExpandedAll(true)
+    } else {
+      // collapse back to step
+      setVisibleLines(step)
+      setExpandedAll(false)
+    }
+  }
+
+  return (
+    <div>
+      {/* Hidden measurement */}
+      <p
+        ref={hiddenRef}
+        className="text-base absolute opacity-0 pointer-events-none -z-50"
+        style={{ position: 'absolute', visibility: 'hidden' }}
+      >
+        {text}
+      </p>
+
+      {/* Visible text */}
+      <p
+        className="text-base transition-all"
+        style={
+          expandedAll
+            ? { overflow: 'visible' } // FULL TEXT
+            : {
+                display: '-webkit-box',
+                WebkitLineClamp: visibleLines,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden'
+              }
+        }
+      >
+        {text}
+      </p>
+
+      {/* Show more/less ONLY if needed */}
+      {totalLines > step && (
+        <button
+          onClick={handleToggle}
+          className="mt-2 text-sm font-semibold text-[#EDC702] hover:underline flex items-center gap-2"
+        >
+          {expandedAll ? (
+            <>
+              <FaChevronUp size={12} /> Show less
+            </>
+          ) : (
+            <>
+              <FaChevronDown size={12} /> Show more
+            </>
+          )}
+        </button>
+      )}
+    </div>
+  )
 }
 
 export default function CaseDetailPage() {
@@ -291,6 +373,7 @@ export default function CaseDetailPage() {
           {/* DESCRIPTION */}
           <div className="relative">
             <img src={upperCard} className="absolute -z-10 right-24 w-3/4 top-5" />
+
             <BoxAllSideWithTopLeftSlanted
               slantWidth={180}
               slantHeight={50}
@@ -299,7 +382,8 @@ export default function CaseDetailPage() {
             >
               <div className="flex flex-col gap-5">
                 <p className="text-xl font-bold capitalize">Case description</p>
-                <p className="text-base">{item.description || 'No description.'}</p>
+
+                <ClampText text={item.description || 'No description.'} lines={5} />
               </div>
             </BoxAllSideWithTopLeftSlanted>
           </div>
