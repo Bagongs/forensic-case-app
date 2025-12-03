@@ -125,7 +125,7 @@ export default function EditEvidenceModal({
             <input
               ref={fileRef}
               type="file"
-              accept="image/*,application/pdf"
+              accept=".jpg, .jpeg, .png, .gif, .bmp, .webp"
               className="hidden"
               onChange={onPickFile}
             />

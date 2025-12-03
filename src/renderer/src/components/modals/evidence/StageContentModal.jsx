@@ -414,7 +414,7 @@ function AcquisitionPanel({
                 Change Photo
                 <input
                   type="file"
-                  accept="image/*"
+                  accept=".jpg, .jpeg, .png, .gif, .bmp, .webp"
                   className="hidden"
                   data-optional="true"
                   data-key={`step-${i}`}
@@ -430,7 +430,7 @@ function AcquisitionPanel({
               Upload Photo
               <input
                 type="file"
-                accept="image/*"
+                accept=".jpg, .jpeg, .png, .gif, .bmp, .webp"
                 className="hidden"
                 data-optional="true"
                 data-key={`step-${i}`}
@@ -794,6 +794,7 @@ function ExtractionPanel({
             <input
               type="file"
               className="hidden"
+              accept=".sdp"
               data-optional={v.files.length > 0 ? 'true' : 'false'}
               data-key="extraction-upload"
               onChange={(e) => e.target.files?.[0] && addFile(e.target.files[0])}

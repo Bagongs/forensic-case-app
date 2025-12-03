@@ -17,6 +17,8 @@ import { registerUserIpc } from './ipc/user.ipc.js'
 process.on('uncaughtException', (err) => console.error('[uncaughtException]', err))
 process.on('unhandledRejection', (reason) => console.error('[unhandledRejection]', reason))
 
+const BACKEND_BASE = import.meta.env?.VITE_BACKEND_URL
+
 const gotTheLock = app.requestSingleInstanceLock()
 if (!gotTheLock) app.quit()
 
@@ -64,9 +66,9 @@ app.whenReady().then(() => {
       "default-src 'self'",
       "script-src 'self' 'unsafe-eval' 'unsafe-inline' blob: http://localhost:5173",
       "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data: blob: https: http://localhost:5173 http://localhost:8000 http://172.15.2.105:8000",
+      `img-src 'self' data: blob: https: http://localhost:5173 http://localhost:8000 ${BACKEND_BASE}`,
       "font-src 'self' data:",
-      "connect-src 'self' http://localhost:8000 http://172.15.2.105:8000 ws://localhost:5173 http://localhost:5173",
+      `connect-src 'self' http://localhost:8000 ${BACKEND_BASE} ws://localhost:5173 http://localhost:5173`,
       "worker-src 'self' blob:"
     ].join('; ')
 
@@ -74,7 +76,7 @@ app.whenReady().then(() => {
       "default-src 'self'",
       "script-src 'self'",
       "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data: blob: https: http://localhost:5173 http://localhost:8000 http://172.15.2.105:8000",
+      `img-src 'self' data: blob: https: http://localhost:5173 http://localhost:8000 ${BACKEND_BASE}`,
       "font-src 'self' data:",
       "connect-src 'self' http://localhost:8000",
       "worker-src 'self' blob:"

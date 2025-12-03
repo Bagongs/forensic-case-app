@@ -186,7 +186,7 @@ export default function CaseDetailPage() {
   // fetch logs on caseId change
   useEffect(() => {
     if (!caseId) return
-    fetchCaseLogs(caseId, { skip: 0, limit: 50 }).catch(() => {})
+    fetchCaseLogs(caseId).catch(() => {})
   }, [caseId])
 
   // sync notes local if backend updates
@@ -268,8 +268,10 @@ export default function CaseDetailPage() {
 
       if (!item.notes) {
         await saveCaseNotesRemote(item.id, trimmed)
+        await fetchCaseLogs(item.id)
       } else {
         await editCaseNotesRemote(item.id, trimmed)
+        await fetchCaseLogs(item.id)
       }
     } finally {
       savingRef.current = false
@@ -503,7 +505,7 @@ export default function CaseDetailPage() {
           author={item.investigator || ''}
           onChanged={async () => {
             await fetchCaseDetail(item.id)
-            await fetchCaseLogs(item.id, { skip: 0, limit: 50 })
+            await fetchCaseLogs(item.id)
           }}
         />
       )}
@@ -516,7 +518,7 @@ export default function CaseDetailPage() {
           onSave={async (patch) => {
             await updateCaseRemote(item.id, patch)
             ;(setEditOpen(false), await fetchCaseDetail(item.id))
-            await fetchCaseLogs(item.id, { skip: 0, limit: 50 })
+            await fetchCaseLogs(item.id)
           }}
         />
       )}
@@ -548,7 +550,7 @@ export default function CaseDetailPage() {
             setEditPersonOpen(false)
             setSelectedPersonId(null)
 
-            await fetchCaseLogs(item.id, { skip: 0, limit: 50 })
+            await fetchCaseLogs(item.id)
           }}
           colorIcon="red"
         />
@@ -563,7 +565,7 @@ export default function CaseDetailPage() {
           }}
           onSave={async () => {
             await fetchCaseDetail(item.id)
-            await fetchCaseLogs(item.id, { skip: 0, limit: 50 })
+            await fetchCaseLogs(item.id)
 
             setOpenAddEv(false)
             setPersonForEvidence(null)

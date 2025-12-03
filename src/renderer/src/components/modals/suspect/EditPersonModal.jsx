@@ -18,6 +18,7 @@ export default function EditPersonModal({
   onSaved = () => {}
 }) {
   const fetchCaseDetail = useCases((s) => s.fetchCaseDetail)
+  const fetchCaseLogs = useCases((s) => s.fetchCaseLogs)
   // person core
   const [name, setName] = useState('')
   const [status, setStatus] = useState(null)
@@ -25,9 +26,7 @@ export default function EditPersonModal({
 
   // notes (suspect_notes di backend)
   const [notes, setNotes] = useState('')
-  const [hadExistingNotes, setHadExistingNotes] = useState(false)
-  const [loadingNotes, setLoadingNotes] = useState(false)
-
+  // const [hadExistingNotes, setHadExistingNotes] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState(null)
 
@@ -48,33 +47,33 @@ export default function EditPersonModal({
     const mode = person.name === 'Unknown' && person.status == null ? 'unknown' : 'known'
     setPoiMode(mode)
 
-    setNotes('')
-    setHadExistingNotes(false)
+    setNotes(person?.notes || '')
+    // setHadExistingNotes(false)
 
-    const loadNotes = async () => {
-      if (!suspectId) return
-      setLoadingNotes(true)
-      try {
-        const res = await window.api.invoke('suspects:detail', Number(suspectId))
+    // const loadNotes = async () => {
+    //   if (!suspectId) return
+    //   setLoadingNotes(true)
+    //   try {
+    //     const res = await window.api.invoke('suspects:detail', Number(suspectId))
 
-        const suspectNotes =
-          res?.data?.data?.suspect_notes ?? res?.data?.suspect_notes ?? res?.suspect_notes ?? null
+    //     const suspectNotes =
+    //       res?.data?.data?.suspect_notes ?? res?.data?.suspect_notes ?? res?.suspect_notes ?? null
 
-        if (typeof suspectNotes === 'string' && suspectNotes.trim()) {
-          setNotes(suspectNotes)
-          setHadExistingNotes(true)
-        } else {
-          setNotes('')
-          setHadExistingNotes(false)
-        }
-      } catch (err) {
-        console.error('Failed to load suspect detail', err)
-      } finally {
-        setLoadingNotes(false)
-      }
-    }
+    //     if (typeof suspectNotes === 'string' && suspectNotes.trim()) {
+    //       setNotes(suspectNotes)
+    //       setHadExistingNotes(true)
+    //     } else {
+    //       setNotes('')
+    //       setHadExistingNotes(false)
+    //     }
+    //   } catch (err) {
+    //     console.error('Failed to load suspect detail', err)
+    //   } finally {
+    //     setLoadingNotes(false)
+    //   }
+    // }
 
-    loadNotes()
+    // loadNotes()
   }, [open, person, suspectId])
 
   const isUnknown = poiMode === 'unknown'
@@ -144,6 +143,7 @@ export default function EditPersonModal({
       if (caseId) {
         try {
           await fetchCaseDetail(caseId)
+          await fetchCaseLogs(caseId)
         } catch (err) {
           console.error('Failed to refresh case detail', err)
         }
@@ -252,8 +252,8 @@ export default function EditPersonModal({
             style={{ borderColor: 'var(--border)' }}
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            placeholder={loadingNotes ? 'Loading notes…' : 'Write suspect notes (optional)'}
-            disabled={submitting || loadingNotes}
+            placeholder={'Write suspect notes (optional)'}
+            disabled={submitting}
             data-optional="true"
           />
         </div>

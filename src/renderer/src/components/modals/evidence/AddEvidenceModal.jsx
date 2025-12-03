@@ -277,9 +277,9 @@ export default function AddEvidenceModal({
             </button>
             <input
               ref={fileRef}
-              accept="image/*"
               type="file"
               className="hidden"
+              accept=".jpg, .jpeg, .png, .gif, .bmp, .webp"
               onChange={onPickFile}
             />
             {file && !previewDataUrl && (

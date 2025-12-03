@@ -277,7 +277,7 @@ export default function AddPersonInlineModal({ caseId, open, onClose }) {
           </button>
           <input
             ref={fileRef}
-            accept="image/*"
+            accept=".jpg, .jpeg, .png, .gif, .bmp, .webp"
             type="file"
             className="hidden"
             onChange={onPickFile}

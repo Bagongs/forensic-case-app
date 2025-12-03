@@ -302,7 +302,7 @@ export default function AddPersonModal({ open, onClose, onSave, caseOptions = []
           </button>
           <input
             ref={fileRef}
-            accept="image/*"
+            accept=".jpg, .jpeg, .png, .gif, .bmp, .webp"
             type="file"
             className="hidden"
             onChange={onPickFile}
