@@ -26,7 +26,6 @@ import NotesModal from '../components/modals/case/NotesModal'
 import ConfirmDeleteModal from '../components/modals/ConfirmDeleteModal'
 import toast from 'react-hot-toast'
 import AllLogsModal from '../components/modals/case/DetailCaseLogsModal'
-import { FaChevronDown, FaChevronUp } from 'react-icons/fa6'
 
 const fmtDate = (iso) => {
   if (!iso) return '-'
@@ -36,88 +35,6 @@ const fmtDate = (iso) => {
   const mm = String(d.getMonth() + 1).padStart(2, '0')
   const yyyy = d.getFullYear()
   return `${dd}/${mm}/${yyyy}`
-}
-function ClampText({ text, step = 5 }) {
-  const [visibleLines, setVisibleLines] = useState(step)
-  const [totalLines, setTotalLines] = useState(step)
-  const [expandedAll, setExpandedAll] = useState(false)
-  const hiddenRef = useRef(null)
-
-  // hitung jumlah line real
-  useLayoutEffect(() => {
-    if (!hiddenRef.current) return
-
-    const el = hiddenRef.current
-    const style = window.getComputedStyle(el)
-    const lineHeight = parseFloat(style.lineHeight)
-
-    const height = el.getBoundingClientRect().height
-    const lines = Math.round(height / lineHeight)
-
-    setTotalLines(lines)
-  }, [text])
-
-  const handleToggle = () => {
-    if (!expandedAll) {
-      // expand full
-      setVisibleLines(totalLines)
-      setExpandedAll(true)
-    } else {
-      // collapse back to step
-      setVisibleLines(step)
-      setExpandedAll(false)
-    }
-  }
-
-  return (
-    <div>
-      {/* Hidden measurement */}
-      <p
-        ref={hiddenRef}
-        className="text-base absolute opacity-0 pointer-events-none -z-50"
-        style={{ position: 'absolute', visibility: 'hidden' }}
-      >
-        {text}
-      </p>
-
-      {/* Visible text */}
-      <p
-        title={text}
-        className="text-base transition-all"
-        style={
-          expandedAll
-            ? { overflow: 'visible', wordBreak: 'break-word' }
-            : {
-                display: '-webkit-box',
-                WebkitLineClamp: visibleLines,
-                WebkitBoxOrient: 'vertical',
-                overflow: 'hidden',
-                wordBreak: 'break-word'
-              }
-        }
-      >
-        {text}
-      </p>
-
-      {/* Show more/less ONLY if needed */}
-      {totalLines > step && (
-        <button
-          onClick={handleToggle}
-          className="mt-2 text-sm font-semibold text-[#EDC702] hover:underline flex items-center gap-2"
-        >
-          {expandedAll ? (
-            <>
-              <FaChevronUp size={12} /> Show less
-            </>
-          ) : (
-            <>
-              <FaChevronDown size={12} /> Show more
-            </>
-          )}
-        </button>
-      )}
-    </div>
-  )
 }
 
 export default function CaseDetailPage() {
@@ -395,10 +312,8 @@ export default function CaseDetailPage() {
 
       <div className="my-5 border-t" style={{ borderColor: '#C3CFE0' }} />
 
-      {/* MAIN GRID */}
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6">
         <div className="space-y-6">
-          {/* DESCRIPTION */}
           <div className="relative">
             <img src={upperCard} className="absolute -z-10 right-24 w-3/4 top-5" />
 
@@ -410,8 +325,7 @@ export default function CaseDetailPage() {
             >
               <div className="flex flex-col gap-5">
                 <p className="text-xl font-bold capitalize">Case description</p>
-
-                <ClampText text={item.description || 'No description.'} lines={5} />
+                <p style={{ wordBreak: 'break-word' }}>{item.description}</p>
               </div>
             </BoxAllSideWithTopLeftSlanted>
           </div>
