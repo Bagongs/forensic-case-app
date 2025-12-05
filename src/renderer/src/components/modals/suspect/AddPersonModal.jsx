@@ -265,7 +265,12 @@ export default function AddPersonModal({ open, onClose, onSave, caseOptions = []
             <FormLabel>Evidence ID</FormLabel>
             <Input
               value={evidenceId}
-              onChange={(e) => setEvidenceId(e.target.value)}
+              onChange={(e) => {
+                const v = e.target.value
+                if (/^[A-Za-z0-9-]*$/.test(v)) {
+                  setEvidenceId(v)
+                }
+              }}
               placeholder="Enter Evidence ID"
               disabled={submitting}
             />

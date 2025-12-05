@@ -94,7 +94,12 @@ export default function AddCaseModal({ open, onClose, onSave }) {
           <div className="flex flex-col gap-1">
             <Input
               value={manualId}
-              onChange={(e) => setManualId(e.target.value)}
+              onChange={(e) => {
+                const v = e.target.value
+                if (/^[A-Za-z0-9-]*$/.test(v)) {
+                  setManualId(v)
+                }
+              }}
               placeholder="Input Case ID"
             />
             {manualIdTooShort && (
