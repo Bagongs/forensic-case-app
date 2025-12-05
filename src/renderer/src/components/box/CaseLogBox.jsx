@@ -1,4 +1,5 @@
 /* eslint-disable react/prop-types */
+import truncateText from '../../lib/truncateText'
 import { BoxAllSide } from './BaseBox'
 
 export default function CaseLogBox({
@@ -13,7 +14,7 @@ export default function CaseLogBox({
   onViewNotes,
   onSeeMore
 }) {
-  const visibleLogs = logs.slice(0, 6)
+  const visibleLogs = logs.slice(0, 5)
 
   return (
     <BoxAllSide className="w-full" cut={cut} borderColor={borderColor} borderW={borderW} bg={bg}>
@@ -54,7 +55,7 @@ export default function CaseLogBox({
               {log.date && <div>{log.date}</div>}
 
               {/* Notes Button */}
-              {log.hasNotes ? (
+              {/* {log.hasNotes ? (
                 <button
                   className="mt-1 text-[13px]"
                   style={{
@@ -66,10 +67,14 @@ export default function CaseLogBox({
                   onClick={() => onViewNotes && onViewNotes(log)}
                 >
                   See Note
-                </button>
-              ) : (
-                log.change && <div>{log.change}</div>
+                </button> */}
+              {/* ) : ( */}
+              {log.change && (
+                <div title={log.change} style={{ wordBreak: 'break-word' }}>
+                  {truncateText(log.change, 100)}
+                </div>
               )}
+              {/* )} */}
             </div>
           </div>
         ))}
@@ -79,7 +84,7 @@ export default function CaseLogBox({
       {logs.length === 0 && <div className="text-center text-[#E7E9EE] py-2">No Case Log</div>}
 
       {/* See More Button */}
-      {logs.length > 6 && (
+      {logs.length > 5 && (
         <div className="flex justify-center mt-3">
           <button
             onClick={() => onSeeMore && onSeeMore(logs)}

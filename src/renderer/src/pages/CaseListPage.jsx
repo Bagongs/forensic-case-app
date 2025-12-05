@@ -19,6 +19,7 @@ import iconSearch from '../assets/icons/icon-search.svg'
 import bgButton from '../assets/image/bg-button.svg'
 import dropdownIcon from '../assets/icons/dropdown-icon.svg'
 import Pagination from '../components/common/Pagination'
+import truncateText from '../lib/truncateText'
 
 /* ====== CONSTANTS ====== */
 const COLORS = {
@@ -301,16 +302,28 @@ export default function CaseListPage() {
                     {row.caseNumber || id}
                   </td>
 
-                  <td className="px-4 py-3 border-b" style={{ borderColor: COLORS.border }}>
-                    {name}
+                  <td
+                    title={name}
+                    className="px-4 py-3 border-b "
+                    style={{ borderColor: COLORS.border }}
+                  >
+                    {truncateText(name, 50)}
                   </td>
 
-                  <td className="px-4 py-3 border-b" style={{ borderColor: COLORS.border }}>
-                    {investigator}
+                  <td
+                    title={investigator}
+                    className="px-4 py-3 border-b"
+                    style={{ borderColor: COLORS.border }}
+                  >
+                    {truncateText(investigator, 50)}
                   </td>
 
-                  <td className="px-4 py-3 border-b" style={{ borderColor: COLORS.border }}>
-                    {agency}
+                  <td
+                    title={agency}
+                    className="px-4 py-3 border-b"
+                    style={{ borderColor: COLORS.border }}
+                  >
+                    {truncateText(agency, 50)}
                   </td>
 
                   <td className="px-4 py-3 border-b" style={{ borderColor: COLORS.border }}>

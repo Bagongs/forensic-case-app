@@ -35,9 +35,7 @@ const fmtDate = (iso) => {
   const dd = String(d.getDate()).padStart(2, '0')
   const mm = String(d.getMonth() + 1).padStart(2, '0')
   const yyyy = d.getFullYear()
-  const hh = String(d.getHours()).padStart(2, '0')
-  const min = String(d.getMinutes()).padStart(2, '0')
-  return `${dd}/${mm}/${yyyy} ${hh}:${min}`
+  return `${dd}/${mm}/${yyyy}`
 }
 function ClampText({ text, step = 5 }) {
   const [visibleLines, setVisibleLines] = useState(step)
@@ -87,12 +85,13 @@ function ClampText({ text, step = 5 }) {
         className="text-base transition-all"
         style={
           expandedAll
-            ? { overflow: 'visible' } // FULL TEXT
+            ? { overflow: 'visible', wordBreak: 'break-word' }
             : {
                 display: '-webkit-box',
                 WebkitLineClamp: visibleLines,
                 WebkitBoxOrient: 'vertical',
-                overflow: 'hidden'
+                overflow: 'hidden',
+                wordBreak: 'break-word'
               }
         }
       >
@@ -341,20 +340,29 @@ export default function CaseDetailPage() {
       {/* HEADER */}
       <div className="flex mt-8 items-start justify-between gap-10">
         <div className="flex flex-col gap-2">
-          <div className="text-xs opacity-70">{headerCaseNumber}</div>
+          <div className="text-sm opacity-70">{headerCaseNumber}</div>
 
-          <div>
-            <div className="text-3xl font-semibold flex items-center gap-3">
+          <div style={{ wordBreak: 'break-word' }}>
+            <div
+              className="text-3xl font-semibold flex items-center gap-3"
+              style={{ wordBreak: 'break-word' }}
+            >
               {item.name} {statChip}
             </div>
-            <div className="text-sm opacity-70 mt-1">
+
+            <div className="text-sm opacity-70 mt-1" style={{ wordBreak: 'break-word' }}>
               {item.investigator ? `${item.investigator} • ` : ''}
               {fmtDate(item.createdAt)}
             </div>
           </div>
 
-          <div className="text-sm opacity-70 mt-1">
-            Agency: {item.agency || '-'} &nbsp;&nbsp; Work Unit: {item.workUnit || '-'}
+          <div
+            className="text-sm opacity-70 mt-1 flex flex-row flex-wrap gap-4"
+            style={{ wordBreak: 'break-word' }}
+          >
+            <span style={{ wordBreak: 'break-word' }}>Agency: {item.agency || '-'}</span>
+
+            <span style={{ wordBreak: 'break-word' }}>Work Unit: {item.workUnit || '-'}</span>
           </div>
         </div>
 
