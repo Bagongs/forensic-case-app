@@ -586,14 +586,25 @@ export default function EvidenceDetailPage() {
         </div>
 
         <div className="text-sm flex flex-wrap gap-x-6 gap-y-2">
-          <div>
-            <span className="opacity-60">Person Related:</span> {personRef?.name || '-'}
+          <div className="flex flex-nowrap gap-1 min-w-0">
+            <span className="opacity-60 whitespace-nowrap">Person Related : </span>
+            <span style={{ wordBreak: 'break-word' }} className="min-w-0">
+              {personRef?.name || '-'}
+            </span>
           </div>
-          <div>
-            <span className="opacity-60">Case Related:</span> {caseRef?.name || '-'}
+
+          <div className="flex flex-nowrap gap-1 min-w-0">
+            <span className="opacity-60 whitespace-nowrap">Case Related : </span>
+            <span style={{ wordBreak: 'break-word' }} className="min-w-0">
+              {caseRef?.name || '-'}
+            </span>
           </div>
-          <div>
-            <span className="opacity-60">Source:</span> {evidence.source || '-'}
+
+          <div className="flex flex-nowrap gap-1 min-w-0">
+            <span className="opacity-60 whitespace-nowrap">Source : </span>
+            <span style={{ wordBreak: 'break-word' }} className="min-w-0">
+              {evidence.source || '-'}
+            </span>
           </div>
         </div>
 

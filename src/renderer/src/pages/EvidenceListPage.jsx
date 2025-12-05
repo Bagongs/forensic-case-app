@@ -14,6 +14,8 @@ import Pagination from '../components/common/Pagination'
 
 import { useEvidences } from '../store/evidences'
 import { useCases } from '../store/cases' // buat dropdown Case di modal
+import { useScreenMode } from '../hooks/useScreenMode'
+import truncateText from '../lib/truncateText'
 
 /* ====== CONSTANTS ====== */
 const COLORS = {
@@ -29,7 +31,8 @@ const PAGE_SIZES = [5, 10, 15]
 
 export default function EvidenceListPage() {
   const nav = useNavigate()
-
+  const mode = useScreenMode()
+  const truncateTextSize = mode === 'default' ? 20 : 50
   const evidences = useEvidences((s) => s.evidences)
   const summary = useEvidences((s) => s.summary)
   const pagination = useEvidences((s) => s.pagination)
@@ -213,15 +216,15 @@ export default function EvidenceListPage() {
 
                 {/* ✅ FIX: caseName sudah dari title */}
                 <td className="px-4 py-3 border-b" style={{ borderColor: COLORS.border }}>
-                  {row.caseName || '-'}
+                  {truncateText(row.caseName, truncateTextSize) || '-'}
                 </td>
 
                 <td className="px-4 py-3 border-b" style={{ borderColor: COLORS.border }}>
-                  {row.agency || '-'}
+                  {truncateText(row.agency, truncateTextSize) || '-'}
                 </td>
 
                 <td className="px-4 py-3 border-b" style={{ borderColor: COLORS.border }}>
-                  {row.investigator || '-'}
+                  {truncateText(row.investigator, truncateTextSize) || '-'}
                 </td>
 
                 <td className="px-4 py-3 border-b" style={{ borderColor: COLORS.border }}>

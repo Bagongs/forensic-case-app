@@ -82,6 +82,7 @@ function ClampText({ text, step = 5 }) {
 
       {/* Visible text */}
       <p
+        title={text}
         className="text-base transition-all"
         style={
           expandedAll
@@ -360,9 +361,19 @@ export default function CaseDetailPage() {
             className="text-sm opacity-70 mt-1 flex flex-row flex-wrap gap-4"
             style={{ wordBreak: 'break-word' }}
           >
-            <span style={{ wordBreak: 'break-word' }}>Agency: {item.agency || '-'}</span>
+            <div className="flex flex-nowrap gap-1 min-w-0">
+              <span className="opacity-60 whitespace-nowrap">Agency : </span>
+              <span style={{ wordBreak: 'break-word' }} className="min-w-0">
+                {item.agency || '-'}
+              </span>
+            </div>
 
-            <span style={{ wordBreak: 'break-word' }}>Work Unit: {item.workUnit || '-'}</span>
+            <div className="flex flex-nowrap gap-1 min-w-0">
+              <span className="opacity-60 whitespace-nowrap">Work Unit : </span>
+              <span style={{ wordBreak: 'break-word' }} className="min-w-0">
+                {item.workUnit || '-'}
+              </span>
+            </div>
           </div>
         </div>
 

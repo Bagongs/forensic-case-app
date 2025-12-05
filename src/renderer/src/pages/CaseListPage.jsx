@@ -20,6 +20,7 @@ import bgButton from '../assets/image/bg-button.svg'
 import dropdownIcon from '../assets/icons/dropdown-icon.svg'
 import Pagination from '../components/common/Pagination'
 import truncateText from '../lib/truncateText'
+import { useScreenMode } from '../hooks/useScreenMode'
 
 /* ====== CONSTANTS ====== */
 const COLORS = {
@@ -72,7 +73,8 @@ function StatusCell({ value = 'Open' }) {
 /* ====== MAIN COMPONENT ====== */
 export default function CaseListPage() {
   const nav = useNavigate()
-
+  const mode = useScreenMode()
+  const truncateTextSize = mode === 'default' ? 20 : 50
   // ✅ selector biar rerender lebih ringan
   const cases = useCases((s) => s.cases)
   const summary = useCases((s) => s.summary)
@@ -307,7 +309,7 @@ export default function CaseListPage() {
                     className="px-4 py-3 border-b "
                     style={{ borderColor: COLORS.border }}
                   >
-                    {truncateText(name, 50)}
+                    {truncateText(name, truncateTextSize)}
                   </td>
 
                   <td
@@ -315,7 +317,7 @@ export default function CaseListPage() {
                     className="px-4 py-3 border-b"
                     style={{ borderColor: COLORS.border }}
                   >
-                    {truncateText(investigator, 50)}
+                    {truncateText(investigator, truncateTextSize)}
                   </td>
 
                   <td
@@ -323,7 +325,7 @@ export default function CaseListPage() {
                     className="px-4 py-3 border-b"
                     style={{ borderColor: COLORS.border }}
                   >
-                    {truncateText(agency, 50)}
+                    {truncateText(agency, truncateTextSize)}
                   </td>
 
                   <td className="px-4 py-3 border-b" style={{ borderColor: COLORS.border }}>

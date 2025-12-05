@@ -281,9 +281,11 @@ export default function SuspectDetailPage() {
             <div className="mt-2 flex items-center gap-3">{badgeStatus(person.status)}</div>
           </div>
 
-          <div className="mt-3 text-[14px] text-[#C7D2E1]">
-            Case Related:{' '}
-            <span className="text-[#F4F6F8] font-medium">{caseData?.name || '-'}</span>
+          <div className="flex flex-nowrap gap-1 min-w-0 mt-3 text-[#C7D2E1] text-sm">
+            <span className="opacity-60 whitespace-nowrap">Case Related : </span>
+            <span style={{ wordBreak: 'break-word' }} className="min-w-0">
+              {caseData?.name || '-'}
+            </span>
           </div>
         </div>
 
@@ -357,7 +359,10 @@ export default function SuspectDetailPage() {
                 <div className="font-[Aldrich] text-[15px] mb-1 text-[#F4F6F8]">
                   {e.fileName || 'Evidence'}
                 </div>
-                <div className="text-[#D0D5DF] text-[13.5px] leading-relaxed">
+                <div
+                  style={{ wordBreak: 'break-word' }}
+                  className="text-[#D0D5DF] text-[13.5px] leading-relaxed"
+                >
                   {e.summary || '-'}
                 </div>
               </div>

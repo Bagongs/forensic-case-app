@@ -23,8 +23,6 @@ export const STAGES = {
   ANALYSIS: 'analysis'
 }
 
-const DEVICE_SOURCES = ['Handphone', 'Ssd', 'HardDisk', 'Pc', 'Laptop', 'DVR']
-
 /* =============== PRIMITIVES =============== */
 const Label = ({ children }) => (
   <div className="text-sm mb-2" style={{ color: TOKENS.dim, fontWeight: 500 }}>
@@ -152,7 +150,9 @@ export default function StageContentModal({
     <div className="flex flex-col p-5 justify-center items-center gap-2">
       <h1 className="text-xl font-semibold text-white">{title}</h1>
       <span className="text-xl font-bold text-yellow-400">{caseNumber}</span>
-      <span className="text-sm text-gray-200">{caseTitle}</span>
+      <span className="text-sm text-gray-200" style={{ wordBreak: 'break-word' }}>
+        {caseTitle}
+      </span>
     </div>
   )
 
