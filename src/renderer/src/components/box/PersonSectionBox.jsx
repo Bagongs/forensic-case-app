@@ -11,7 +11,7 @@ export function PersonSectionBox({
   children,
   cut = 18,
   borderColor = '#FFFFFF', // border putih
-  borderW = 0.5,
+  borderW = 1,
   panelBg = '#111720' // sesuai screenshot
 }) {
   return (

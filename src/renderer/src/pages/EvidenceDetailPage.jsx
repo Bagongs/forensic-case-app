@@ -461,6 +461,13 @@ export default function EvidenceDetailPage() {
         return
       }
 
+      const original = (latestReport.notes ?? '').trim()
+
+      if (text === original) {
+        setIsEditingNotes(false)
+        return
+      }
+
       await updateCustodyNotes(detail.id, latestReport.id, text)
 
       await fetchEvidenceDetail(detail.id)

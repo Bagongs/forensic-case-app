@@ -255,24 +255,31 @@ export default function CaseDetailPage() {
   const onNotesAction = async () => {
     if (!item) return
 
+    // jika baru klik "Edit"
     if (!isEditing) {
       setIsEditing(true)
       return
     }
+
     if (savingRef.current) return
     savingRef.current = true
 
     try {
       const trimmed = (notes ?? '').trim()
-      setIsEditing(false)
+      const original = (item.notes ?? '').trim()
+
+      if (trimmed === original) {
+        setIsEditing(false)
+        return
+      }
 
       if (!item.notes) {
         await saveCaseNotesRemote(item.id, trimmed)
-        await fetchCaseLogs(item.id)
       } else {
         await editCaseNotesRemote(item.id, trimmed)
-        await fetchCaseLogs(item.id)
       }
+
+      await fetchCaseLogs(item.id)
     } finally {
       savingRef.current = false
     }

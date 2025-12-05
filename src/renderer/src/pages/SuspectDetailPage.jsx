@@ -135,15 +135,26 @@ export default function SuspectDetailPage() {
       setIsEditing(true)
       return
     }
+
     if (savingRef.current) return
     savingRef.current = true
+
     try {
-      const payload = {
-        suspect_id: person.id,
-        notes
+      const newNotes = (notes ?? '').trim()
+
+      const oldNotes = (detail?.suspectNotes ?? detail?.suspect_notes ?? '').trim()
+
+      if (newNotes === oldNotes) {
+        setIsEditing(false)
+        return
       }
 
-      const hasNotesBefore = !!(detail?.suspectNotes || detail?.suspect_notes)
+      const payload = {
+        suspect_id: person.id,
+        notes: newNotes
+      }
+
+      const hasNotesBefore = !!oldNotes
       if (!hasNotesBefore) {
         await saveNotesRemote(payload)
       } else {
@@ -152,7 +163,6 @@ export default function SuspectDetailPage() {
 
       setIsEditing(false)
 
-      // 🔄 Refetch dan sync detail + notes
       const res = await fetchSuspectDetail(suspectNumId)
       setDetail(res)
       const apiNotes = extractNotesFromDetail(res)
