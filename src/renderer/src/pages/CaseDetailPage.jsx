@@ -447,6 +447,23 @@ export default function CaseDetailPage() {
               <div className="text-center text-sm opacity-70 py-8">No Person of Interest</div>
             )}
           </PersonSectionBox>
+          <div className="flex w-full mt-5">
+            <NotesBox
+              title="Notes"
+              value={notes}
+              onChange={setNotes}
+              placeholder="Click Add to write notes"
+              editable={isEditing}
+              actionLabel={actionLabel}
+              actionIcon={actionIcon}
+              actionBgImage={editBg}
+              actionSize={{ w: 70, h: 27 }}
+              actionOffset={{ top: 22, right: 24 }}
+              onAction={onNotesAction}
+              maxBodyHeight={240}
+              autoGrow={false}
+            />
+          </div>
         </div>
 
         {/* RIGHT SIDE */}
@@ -475,23 +492,6 @@ export default function CaseDetailPage() {
       </div>
 
       {/* NOTES */}
-      <div className="flex w-full mt-5">
-        <NotesBox
-          title="Notes"
-          value={notes}
-          onChange={setNotes}
-          placeholder="Click Add to write notes"
-          editable={isEditing}
-          actionLabel={actionLabel}
-          actionIcon={actionIcon}
-          actionBgImage={editBg}
-          actionSize={{ w: 70, h: 27 }}
-          actionOffset={{ top: 22, right: 24 }}
-          onAction={onNotesAction}
-          maxBodyHeight={240}
-          autoGrow={false}
-        />
-      </div>
 
       {/* ============= MODALS ============= */}
 
