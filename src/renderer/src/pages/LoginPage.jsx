@@ -1,34 +1,69 @@
 import { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import iconApp from '../assets/icons/icon_app.svg'
-import { useAuth } from '../store/auth'
+import iconApp from '@renderer/assets/icons/icon_app.svg'
+import { useAuth } from '@renderer/store/auth'
+
+function isValidEmail(value) {
+  if (!value) return false
+  // Regex simple untuk validasi UI (validasi kuat tetap di backend)
+  const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  return re.test(value)
+}
 
 export default function LoginPage() {
   const nav = useNavigate()
   const location = useLocation()
-  const { login, loading, error: storeError } = useAuth()
+  const { login, busy: storeBusy, error: storeError } = useAuth()
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+
+  // error global (misal login gagal dari backend)
   const [error, setError] = useState('')
+  // error per field (untuk border merah + teks di bawah input)
+  const [emailError, setEmailError] = useState('')
+  const [passwordError, setPasswordError] = useState('')
+
+  const busy = storeBusy
 
   async function handleSubmit(e) {
     e.preventDefault()
-    setError('')
 
-    const { ok, error: errMsg } = await login({ email, password })
+    // reset error
+    setError('')
+    setEmailError('')
+    setPasswordError('')
+
+    let hasError = false
+
+    // ===== VALIDASI EMAIL =====
+    if (!email.trim()) {
+      setEmailError('Email is required.')
+      hasError = true
+    } else if (!isValidEmail(email.trim())) {
+      setEmailError('Please enter a valid email address.')
+      hasError = true
+    }
+
+    // ===== VALIDASI PASSWORD =====
+    if (!password.trim()) {
+      setPasswordError('Password is required.')
+      hasError = true
+    }
+
+    if (hasError) return
+
+    // ===== CALL LOGIN STORE =====
+    const { ok, error: errMsg } = await login({ email: email.trim(), password })
     if (!ok) {
-      setError(errMsg || 'Login gagal')
+      setError(errMsg || 'Login gagal. Periksa kembali email dan password Anda.')
       return
     }
 
-    // kalau ada rute asal (ketika guard me-redirect), balikin ke sana; else → /cases
+    // default redirect ke /cases (sesuai app case-management)
     const to = location.state?.from?.pathname || '/cases'
     nav(to, { replace: true })
   }
-
-  const busy = loading
-  const finalError = error || storeError
 
   return (
     <div className="fixed inset-0 w-full h-full flex items-center justify-center overflow-hidden px-4">
@@ -71,38 +106,76 @@ export default function LoginPage() {
               STAFF LOG IN
             </h2>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
+            {/* noValidate: matikan popup default browser */}
+            <form onSubmit={handleSubmit} noValidate className="space-y-6">
+              {/* EMAIL */}
               <div>
                 <label className="block text-sm mb-2" style={{ color: 'var(--dim)' }}>
                   Email
                 </label>
                 <input
                   type="email"
-                  required
+                  name="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-transparent outline-none border-b pb-2"
-                  style={{ borderColor: '#394F6F', color: 'var(--text)' }}
+                  onChange={(e) => {
+                    const val = e.target.value
+                    setEmail(val)
+
+                    // live-recheck kalau sebelumnya sudah ada error
+                    if (emailError) {
+                      if (!val.trim()) setEmailError('Email is required.')
+                      else if (!isValidEmail(val.trim()))
+                        setEmailError('Please enter a valid email address.')
+                      else setEmailError('')
+                    }
+                  }}
+                  className="w-full bg-transparent outline-none border-b pb-2 transition-colors"
+                  style={{
+                    borderColor: emailError ? '#ff6b6b' : '#394F6F',
+                    color: 'var(--text)'
+                  }}
                 />
+                {emailError && (
+                  <p className="mt-1 text-xs" style={{ color: '#ff6b6b' }}>
+                    {emailError}
+                  </p>
+                )}
               </div>
 
+              {/* PASSWORD */}
               <div>
                 <label className="block text-sm mb-2" style={{ color: 'var(--dim)' }}>
                   Password
                 </label>
                 <input
                   type="password"
-                  required
+                  name="password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-transparent outline-none border-b pb-2"
-                  style={{ borderColor: '#394F6F', color: 'var(--text)' }}
+                  onChange={(e) => {
+                    const val = e.target.value
+                    setPassword(val)
+
+                    if (passwordError) {
+                      setPasswordError(val.trim() ? '' : 'Password is required.')
+                    }
+                  }}
+                  className="w-full bg-transparent outline-none border-b pb-2 transition-colors"
+                  style={{
+                    borderColor: passwordError ? '#ff6b6b' : '#394F6F',
+                    color: 'var(--text)'
+                  }}
                 />
+                {passwordError && (
+                  <p className="mt-1 text-xs" style={{ color: '#ff6b6b' }}>
+                    {passwordError}
+                  </p>
+                )}
               </div>
 
-              {finalError && (
+              {/* ERROR GLOBAL (login gagal dari backend / store) */}
+              {(error || storeError) && (
                 <p className="text-sm text-center" style={{ color: '#ff6b6b' }}>
-                  {finalError}
+                  {error || storeError}
                 </p>
               )}
 
