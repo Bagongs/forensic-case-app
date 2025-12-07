@@ -7,6 +7,7 @@ import Input from '../../atoms/Input'
 import Textarea from '../../atoms/Textarea'
 import Select from '../../atoms/Select'
 import { useAuth } from '../../../store/auth'
+import { validateSafeFileName } from '../../../utils/safeTextValidators'
 
 const DEVICE_SOURCES = ['Handphone', 'Ssd', 'HardDisk', 'Pc', 'Laptop', 'DVR']
 const STATUS_OPTIONS = ['Witness', 'Reported', 'Suspected', 'Suspect', 'Defendant']
@@ -53,6 +54,9 @@ export default function AddEvidenceModal({
   const [etype, setEtype] = useState('')
   const [file, setFile] = useState(null)
   const [previewDataUrl, setPreviewDataUrl] = useState(null)
+  const [evidenceIdError, setEvidenceIdError] = useState('')
+  const evidenceIdTooShort =
+    idMode === 'manual' && evidenceId.trim().length > 0 && evidenceId.trim().length < 3
 
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState(null)
@@ -119,6 +123,28 @@ export default function AddEvidenceModal({
 
     setSubmitting(true)
     setError(null)
+
+    // RESET ERROR
+    setEvidenceIdError(null)
+
+    if (idMode === 'manual') {
+      if (evidenceIdTooShort) {
+        setEvidenceIdError('Evidence ID must be at least 3 characters.')
+        setSubmitting(false)
+        return
+      } else if (!evidenceId.trim()) {
+        setEvidenceIdError('Evidence ID is required.')
+        setSubmitting(false)
+        return
+      } else {
+        const { ok, error } = validateSafeFileName(evidenceId, 'Evidence ID')
+        if (!ok) {
+          setEvidenceIdError(error)
+          setSubmitting(false)
+          return
+        }
+      }
+    }
 
     try {
       const is_unknown_person = isUnknown
@@ -245,10 +271,24 @@ export default function AddEvidenceModal({
                 const v = e.target.value
                 if (/^[A-Za-z0-9-]*$/.test(v)) {
                   setEvidenceId(v)
+                  if (evidenceIdError || evidenceIdTooShort) {
+                    if (v.trim().length > 0 && v.trim().length < 3) {
+                      setEvidenceIdError('Evidence ID must be at least 3 characters.')
+                    } else if (!v.trim()) {
+                      setEvidenceIdError('Evidence ID is required.')
+                    } else {
+                      const { ok, error } = validateSafeFileName(v, 'Evidence ID')
+                      setEvidenceIdError(ok ? '' : error)
+                    }
+                  }
                 }
               }}
               placeholder="Input Evidence ID"
               disabled={submitting}
+              error={
+                evidenceIdError ||
+                (evidenceIdTooShort && 'Evidence ID must be at least 3 characters.')
+              }
             />
           </>
         )}
