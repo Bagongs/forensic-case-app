@@ -74,7 +74,7 @@ function StatusCell({ value = 'Open' }) {
 export default function CaseListPage() {
   const nav = useNavigate()
   const mode = useScreenMode()
-  const truncateTextSize = mode === 'default' ? 20 : 40
+  const truncateTextSize = mode === 'default' ? 20 : 30
   // ✅ selector biar rerender lebih ringan
   const cases = useCases((s) => s.cases)
   const summary = useCases((s) => s.summary)
