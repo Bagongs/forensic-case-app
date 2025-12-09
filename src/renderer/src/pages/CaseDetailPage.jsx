@@ -407,7 +407,7 @@ export default function CaseDetailPage() {
             actionLabel="Change"
             onAction={() => setStatusOpen(true)}
             onViewNotes={(log) => {
-              setSelectedNote(log.note || log.change || 'No notes found')
+              setSelectedNote(log.notes || log.change || 'No Notes Found.')
               setNoteOpen(true)
             }}
             onSeeMore={(logs) => {

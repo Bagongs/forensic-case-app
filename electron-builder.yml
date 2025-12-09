@@ -11,11 +11,11 @@ files:
 asarUnpack:
   - resources/**
 win:
-  executableName: Case Analytics Platform
+  executableName: Case-Analytics-Platform
 nsis:
-  artifactName: ${name}-${version}-setup.${ext}
-  shortcutName: ${productName}
-  uninstallDisplayName: ${productName}
+  artifactName: Case-Analytics-Platform-${version}-setup.${ext}
+  shortcutName: Case Analytics Platform
+  uninstallDisplayName: Case Analytics Platform
   createDesktopShortcut: always
 mac:
   entitlementsInherit: build/entitlements.mac.plist
@@ -26,7 +26,7 @@ mac:
     - NSDownloadsFolderUsageDescription: Application requests access to the user's Downloads folder.
   notarize: false
 dmg:
-  artifactName: ${name}-${version}.${ext}
+  artifactName: Case-Analytics-Platform-${version}.${ext}
 linux:
   target:
     - AppImage
@@ -35,7 +35,7 @@ linux:
   maintainer: electronjs.org
   category: Utility
 appImage:
-  artifactName: ${name}-${version}.${ext}
+  artifactName: Case-Analytics-Platform-${version}.${ext}
 npmRebuild: false
 publish:
   provider: generic

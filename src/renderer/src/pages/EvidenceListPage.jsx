@@ -32,7 +32,7 @@ const PAGE_SIZES = [5, 10, 15]
 export default function EvidenceListPage() {
   const nav = useNavigate()
   const mode = useScreenMode()
-  const truncateTextSize = mode === 'default' ? 20 : 50
+  const truncateTextSize = mode === 'default' ? 20 : 30
   const evidences = useEvidences((s) => s.evidences)
   const summary = useEvidences((s) => s.summary)
   const pagination = useEvidences((s) => s.pagination)

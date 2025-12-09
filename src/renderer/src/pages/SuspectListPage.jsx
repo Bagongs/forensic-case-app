@@ -43,7 +43,7 @@ const PAGE_SIZES = [5, 10, 15]
 export default function SuspectListPage() {
   const nav = useNavigate()
   const mode = useScreenMode()
-  const truncateTextSize = mode === 'default' ? 20 : 50
+  const truncateTextSize = mode === 'default' ? 20 : 30
   const { suspects, summary, pagination, loading, error, fetchSuspects, fetchSuspectSummary } =
     useSuspects()
 
