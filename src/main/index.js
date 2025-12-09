@@ -24,11 +24,9 @@ if (!gotTheLock) app.quit()
 
 function createWindow() {
   const mainWindow = new BrowserWindow({
-    width: 900,
-    height: 670,
+    width: 1400,
+    height: 960,
     show: false,
-    autoHideMenuBar: true,
-    fullscreen: true,
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
@@ -53,7 +51,7 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
-  electronApp.setAppUserModelId('com.electron')
+  electronApp.setAppUserModelId('case-analytics-platform')
 
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
