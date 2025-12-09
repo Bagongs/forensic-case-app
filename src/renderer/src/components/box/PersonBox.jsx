@@ -2,6 +2,7 @@
 import { FaEdit } from 'react-icons/fa'
 import iconAddEvidance from '../../assets/icons/icon-add-evidance.svg'
 import { useScreenMode } from '../../hooks/useScreenMode'
+import truncateText from '../../lib/truncateText'
 // import iconExpand from '../assets/icons/icon-expand.svg' // kalau mau pakai di Add Evidence
 
 export function PersonBox({ name, roleLabel, children, onEdit, onAddEvidence, actionBgImage }) {
@@ -54,9 +55,15 @@ export function PersonBox({ name, roleLabel, children, onEdit, onAddEvidence, ac
   return (
     <div className="px-5 py-6 border" style={{ border: 'none', background: '#151D28' }}>
       {/* header row */}
-      <div className="flex items-center justify-between mb-5">
+      <div className="flex items-center justify-between mb-5 gap-10 w-full">
         <div className="flex items-center gap-3">
-          <div className="font-[Aldrich] text-[20px] text-[#F4F6F8]">{name}</div>
+          <div
+            className="font-[Aldrich] text-[20px] text-[#F4F6F8]"
+            style={{ wordBreak: 'break-all' }}
+            title={name}
+          >
+            {truncateText(name, 100)}
+          </div>
           {badgeStatus(roleLabel)}
         </div>
 
@@ -80,7 +87,7 @@ export function PersonBox({ name, roleLabel, children, onEdit, onAddEvidence, ac
           {onAddEvidence && (
             <button
               onClick={onAddEvidence}
-              className="flex items-center justify-center gap-2 px-5 py-1.5 text-[13px] font-[Aldrich] text-black transition-all active:scale-[0.98]"
+              className="flex items-center justify-center gap-2 px-5 py-1.5 text-[13px] font-[Aldrich] text-black transition-all active:scale-[0.98] text-nowrap"
               style={{
                 background:
                   'radial-gradient(circle at center, rgba(237,199,2,1) 0%, rgba(237,199,2,0.7) 100%)',
