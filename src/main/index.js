@@ -1,5 +1,5 @@
 // src/main/index.js
-import { app, shell, BrowserWindow, session } from 'electron'
+import { app, shell, BrowserWindow, session, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
@@ -96,6 +96,11 @@ app.whenReady().then(() => {
   registerReportsIpc()
   registerPersonsIpc()
   registerUserIpc()
+
+  ipcMain.on('quit-app', () => {
+    console.log('[IPC] quit-app → closing application')
+    app.quit()
+  })
 
   createWindow()
 

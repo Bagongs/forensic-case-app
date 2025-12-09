@@ -79,6 +79,10 @@ contextBridge.exposeInMainWorld('authApi', {
   getProfile: () => ipcRenderer.invoke('auth:getProfile')
 })
 
+contextBridge.exposeInMainWorld('system', {
+  quitApp: () => ipcRenderer.send('quit-app')
+})
+
 contextBridge.exposeInMainWorld('apiLegacy', {
   cases: {
     summary: () => ipcRenderer.invoke('cases:summary'),
