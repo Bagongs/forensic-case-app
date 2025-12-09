@@ -55,7 +55,7 @@ export default function CaseLogBox({
               {log.date && <div>{log.date}</div>}
 
               {/* Notes Button */}
-              {/* {log.hasNotes ? (
+              {log.hasNotes ? (
                 <button
                   className="mt-1 text-[13px]"
                   style={{
@@ -67,14 +67,14 @@ export default function CaseLogBox({
                   onClick={() => onViewNotes && onViewNotes(log)}
                 >
                   See Note
-                </button> */}
-              {/* ) : ( */}
-              {log.change && (
-                <div title={log.change} style={{ wordBreak: 'break-word' }}>
-                  {truncateText(log.change, 100)}
-                </div>
+                </button>
+              ) : (
+                log.change && (
+                  <div title={log.change} style={{ wordBreak: 'break-word' }}>
+                    {truncateText(log.change, 100)}
+                  </div>
+                )
               )}
-              {/* )} */}
             </div>
           </div>
         ))}
