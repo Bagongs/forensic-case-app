@@ -5,6 +5,12 @@ import Modal from '../Modal'
 import FormLabel from '../../atoms/FormLabel'
 import Input from '../../atoms/Input'
 
+// Karakter yang tidak boleh diinput (anti SQL Injection)
+const BLOCKED_SQL_CHARS = /['";#`<>/=]|(--)/g
+
+// Sanitizer (menghapus karakter terlarang)
+const sanitizeInput = (value) => value.replace(BLOCKED_SQL_CHARS, '')
+
 export default function AddUserModal({ open, onClose, onSave, errMessage }) {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -53,6 +59,7 @@ export default function AddUserModal({ open, onClose, onSave, errMessage }) {
     onClose()
   }
 
+  console.log('errMessage:', errMessage)
   return (
     <Modal
       open={open}
@@ -65,19 +72,20 @@ export default function AddUserModal({ open, onClose, onSave, errMessage }) {
       <div className="grid gap-3">
         {/* Name */}
         <FormLabel>Name</FormLabel>
-        <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Name" />
+        <Input
+          value={name}
+          onChange={(e) => setName(sanitizeInput(e.target.value))}
+          placeholder="Name"
+        />
 
         {/* Email */}
         <FormLabel>Email</FormLabel>
         <Input
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          onChange={(e) => setEmail(sanitizeInput(e.target.value))}
           placeholder="Email"
           type="email"
         />
-        {errMessage?.toLowerCase().includes('email') && (
-          <p className="text-red-400 text-xs">{errMessage}</p>
-        )}
 
         {/* Password */}
         <FormLabel>Password</FormLabel>
@@ -85,7 +93,7 @@ export default function AddUserModal({ open, onClose, onSave, errMessage }) {
           <Input
             type={showPass ? 'text' : 'password'}
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={(e) => setPassword(sanitizeInput(e.target.value))}
             placeholder="Password"
           />
           <button
@@ -107,7 +115,7 @@ export default function AddUserModal({ open, onClose, onSave, errMessage }) {
           <Input
             type={showConfirm ? 'text' : 'password'}
             value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
+            onChange={(e) => setConfirmPassword(sanitizeInput(e.target.value))}
             placeholder="Re-enter password"
           />
           <button
@@ -133,9 +141,14 @@ export default function AddUserModal({ open, onClose, onSave, errMessage }) {
 
         {/* Tag */}
         <FormLabel>Tag</FormLabel>
-        <Input value={tag} onChange={(e) => setTag(e.target.value)} placeholder="Input tag" />
+        <Input
+          value={tag}
+          onChange={(e) => setTag(sanitizeInput(e.target.value))}
+          placeholder="Input tag"
+        />
 
         {tagTooLong && <p className="text-red-400 text-xs">Tag must be at most 30 characters</p>}
+        {errMessage != null && <p className="text-red-400 text-xs">{errMessage}</p>}
       </div>
     </Modal>
   )

@@ -9,6 +9,7 @@ import Radio from '../../atoms/Radio'
 import Input from '../../atoms/Input'
 import Textarea from '../../atoms/Textarea'
 import Select from '../../atoms/Select'
+import { validateSafeID } from '../../../utils/safeTextValidators'
 
 const DEVICE_SOURCES = ['Handphone', 'Ssd', 'HardDisk', 'Pc', 'Laptop', 'DVR']
 const STATUS_OPTIONS = ['Witness', 'Reported', 'Suspected', 'Suspect', 'Defendant']
@@ -47,6 +48,7 @@ export default function AddPersonInlineModal({ caseId, open, onClose }) {
   const [summary, setSummary] = useState('')
   const [file, setFile] = useState(null)
   const [previewUrl, setPreviewUrl] = useState(null)
+  const [evIdError, setEvIdError] = useState('')
 
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState(null)
@@ -70,6 +72,7 @@ export default function AddPersonInlineModal({ caseId, open, onClose }) {
     setPreviewUrl(null)
     setSubmitting(false)
     setError(null)
+    setEvIdError('')
   }
 
   async function onPickFile(e) {
@@ -105,6 +108,14 @@ export default function AddPersonInlineModal({ caseId, open, onClose }) {
 
   const handleSubmit = async () => {
     if (!canSubmit || submitting || !caseId) return
+    // VALIDASI Evidence ID ketika manual
+    if (evIdMode === 'manual') {
+      const { ok, error } = validateSafeID(evId, 'Evidence ID')
+      if (!ok) {
+        setEvIdError(error)
+        return
+      }
+    }
 
     setSubmitting(true)
     setError(null)
@@ -241,16 +252,20 @@ export default function AddPersonInlineModal({ caseId, open, onClose }) {
           <>
             <FormLabel>Evidence ID</FormLabel>
             <Input
+              maxLength={50}
               value={evId}
               onChange={(e) => {
                 const v = e.target.value
                 if (/^[A-Za-z0-9-]*$/.test(v)) {
                   setEvId(v)
+                  const { ok, error } = validateSafeID(v, 'Evidence ID')
+                  setEvIdError(ok ? '' : error)
                 }
               }}
               placeholder="Enter Evidence ID"
               disabled={submitting}
             />
+            {evIdError && <p className="text-xs text-red-400 mt-1">{evIdError}</p>}
           </>
         )}
 

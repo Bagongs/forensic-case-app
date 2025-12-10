@@ -8,11 +8,11 @@ import CaseDetailPage from './pages/CaseDetailPage.jsx'
 import EvidenceDetailPage from './pages/EvidenceDetailPage.jsx'
 import SuspectDetailPage from './pages/SuspectDetailPage.jsx'
 import UserManagement from './pages/UserManagement.jsx'
-
 import RequireAuth from './RequireAuth.jsx'
 import RequireAdmin from './RequireAdmin.jsx'
 import { Toaster } from 'react-hot-toast'
 import AboutPage from './pages/AboutPage.jsx'
+import LicenseGate from './pages/LicensePage.jsx'
 
 export default function App() {
   return (
@@ -30,46 +30,48 @@ export default function App() {
           error: { iconTheme: { primary: '#E55353', secondary: '#172133' } }
         }}
       />
-      <Routes>
-        {/* Public route */}
-        <Route path="/login" element={<LoginPage />} />
+      {/* <LicenseGate> */}
+        <Routes>
+          {/* Public route */}
+          <Route path="/login" element={<LoginPage />} />
 
-        {/* Protected routes (must be authed) */}
-        <Route
-          element={
-            <RequireAuth>
-              <Outlet />
-            </RequireAuth>
-          }
-        >
-          {/* default after login */}
-          <Route path="/" element={<Navigate to="/cases" replace />} />
-
-          {/* main pages */}
-          <Route path="/cases" element={<CaseListPage />} />
-          <Route path="/cases/:id" element={<CaseDetailPage />} />
-
-          <Route path="/evidence" element={<EvidenceListPage />} />
-          <Route path="/evidence/:evidenceId" element={<EvidenceDetailPage />} />
-
-          <Route path="/suspects" element={<SuspectListPage />} />
-          <Route path="/suspects/:suspectId" element={<SuspectDetailPage />} />
-
-          {/* admin only */}
+          {/* Protected routes (must be authed) */}
           <Route
-            path="/user-management"
             element={
-              <RequireAdmin>
-                <UserManagement />
-              </RequireAdmin>
+              <RequireAuth>
+                <Outlet />
+              </RequireAuth>
             }
-          />
-          <Route path="/about" element={<AboutPage />} />
-        </Route>
+          >
+            {/* default after login */}
+            <Route path="/" element={<Navigate to="/cases" replace />} />
 
-        {/* catch all */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+            {/* main pages */}
+            <Route path="/cases" element={<CaseListPage />} />
+            <Route path="/cases/:id" element={<CaseDetailPage />} />
+
+            <Route path="/evidence" element={<EvidenceListPage />} />
+            <Route path="/evidence/:evidenceId" element={<EvidenceDetailPage />} />
+
+            <Route path="/suspects" element={<SuspectListPage />} />
+            <Route path="/suspects/:suspectId" element={<SuspectDetailPage />} />
+
+            {/* admin only */}
+            <Route
+              path="/user-management"
+              element={
+                <RequireAdmin>
+                  <UserManagement />
+                </RequireAdmin>
+              }
+            />
+            <Route path="/about" element={<AboutPage />} />
+          </Route>
+
+          {/* catch all */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      {/* </LicenseGate> */}
     </HashRouter>
   )
 }

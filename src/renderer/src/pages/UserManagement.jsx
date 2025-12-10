@@ -45,6 +45,7 @@ export default function UserManagement() {
   const pagination = useUsers((s) => s.pagination)
   const loading = useUsers((s) => s.loading)
   const error = useUsers((s) => s.error)
+  console.log('error user:', error)
 
   const fetchUsers = useUsers((s) => s.fetchUsers)
   const createUserRemote = useUsers((s) => s.createUserRemote)
@@ -208,7 +209,7 @@ export default function UserManagement() {
             setOpenAdd(false)
             setPage(1)
           }}
-          errMessage={String(error)}
+          errMessage={error}
         />
       )}
 

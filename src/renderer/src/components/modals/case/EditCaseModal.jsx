@@ -3,15 +3,23 @@ import { useEffect, useState } from 'react'
 import Modal from '../Modal'
 import HorizontalLine from '../../common/HorizontalLine'
 import { useAuth } from '../../../store/auth'
+import { validateSafeHumanName, validateSafeFileName } from '../../../utils/safeTextValidators'
 
 export default function EditCaseModal({ open, onClose, initial, onSave }) {
   const { user } = useAuth()
-  const [name, setName] = useState(initial?.name || '')
-  const [id, setId] = useState(initial?.id || '')
-  const [description, setDescription] = useState(initial?.description || '')
-  const [investigator, setInvestigator] = useState(user.fullname || '')
-  const [agency, setAgency] = useState(initial?.agency || '')
-  const [workUnit, setWorkUnit] = useState(initial?.workUnit || '')
+
+  const [name, setName] = useState('')
+  const [id, setId] = useState('')
+  const [description, setDescription] = useState('')
+  const [investigator, setInvestigator] = useState('')
+  const [agency, setAgency] = useState('')
+  const [workUnit, setWorkUnit] = useState('')
+
+  // Error states
+  const [nameError, setNameError] = useState('')
+  const [investigatorError, setInvestigatorError] = useState('')
+  const [agencyError, setAgencyError] = useState('')
+  const [workUnitError, setWorkUnitError] = useState('')
 
   useEffect(() => {
     if (open) {
@@ -21,10 +29,71 @@ export default function EditCaseModal({ open, onClose, initial, onSave }) {
       setId(initial?.id || '')
       setAgency(initial?.agency || '')
       setWorkUnit(initial?.workUnit || '')
+
+      setNameError('')
+      setInvestigatorError('')
+      setAgencyError('')
+      setWorkUnitError('')
     }
   }, [open, initial])
 
-  const canSubmit = name.trim().length > 0
+  const canSubmit = name.trim().length > 0 && !nameError && !agencyError && !workUnitError
+
+  const handleSave = () => {
+    // Reset errors
+    setNameError('')
+    setInvestigatorError('')
+    setAgencyError('')
+    setWorkUnitError('')
+
+    let hasError = false
+
+    // ========== CASE NAME (VALIDATED) ==========
+    {
+      const { ok, error } = validateSafeFileName(name, 'Case name')
+      if (!ok) {
+        setNameError(error)
+        hasError = true
+      }
+    }
+
+    // ========== INVESTIGATOR (OPTIONAL, SAFE) ==========
+    if (investigator.trim()) {
+      const { ok, error } = validateSafeHumanName(investigator, 'Main investigator')
+      if (!ok) {
+        setInvestigatorError(error)
+        hasError = true
+      }
+    }
+
+    // ========== AGENCY (OPTIONAL, SAFE) ==========
+    if (agency.trim()) {
+      const { ok, error } = validateSafeHumanName(agency, 'Agency')
+      if (!ok) {
+        setAgencyError(error)
+        hasError = true
+      }
+    }
+
+    // ========== WORK UNIT (OPTIONAL, SAFE) ==========
+    if (workUnit.trim()) {
+      const { ok, error } = validateSafeHumanName(workUnit, 'Work unit')
+      if (!ok) {
+        setWorkUnitError(error)
+        hasError = true
+      }
+    }
+
+    if (hasError) return
+
+    onSave?.({
+      title: name.trim(),
+      description: description.trim(), // bebas, tanpa validator
+      main_investigator: investigator.trim(),
+      agency_name: agency.trim(),
+      work_unit_name: workUnit.trim()
+    })
+  }
 
   return (
     <Modal
@@ -33,33 +102,34 @@ export default function EditCaseModal({ open, onClose, initial, onSave }) {
       onCancel={onClose}
       confirmText="Save changes"
       disableConfirm={!canSubmit}
-      onConfirm={() => {
-        onSave?.({
-          title: name.trim(),
-          description: description.trim(),
-          main_investigator: investigator.trim(),
-          agency_name: agency.trim(),
-          work_unit_name: workUnit.trim(),
-          // agency_id: initial.agency_id,
-          // work_unit_id: initial.work_unit_id
-        })
-      }}
+      onConfirm={handleSave}
       size="lg"
     >
       <div className="grid gap-4">
+        {/* Case Name */}
         <div>
           <div className="text-sm font-semibold mb-1" style={{ color: 'var(--dim)' }}>
             Case name
           </div>
           <input
             value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="name"
+            onChange={(e) => {
+              const v = e.target.value
+              setName(v)
+
+              if (nameError) {
+                const { ok, error } = validateSafeFileName(v, 'Case name')
+                setNameError(ok ? '' : error)
+              }
+            }}
+            placeholder="Name"
             className="w-full px-3 py-2 rounded-lg border bg-transparent"
-            style={{ borderColor: 'var(--border)' }}
+            style={{ borderColor: nameError ? 'red' : 'var(--border)' }}
           />
+          {nameError && <p className="text-red-400 text-xs mt-1">{nameError}</p>}
         </div>
 
+        {/* Description – bebas */}
         <div>
           <div className="text-sm font-semibold mb-1" style={{ color: 'var(--dim)' }}>
             Case description
@@ -74,6 +144,7 @@ export default function EditCaseModal({ open, onClose, initial, onSave }) {
           />
         </div>
 
+        {/* Case ID (read-only) */}
         <div>
           <div className="text-sm font-semibold mb-1" style={{ color: 'var(--dim)' }}>
             Case ID
@@ -82,13 +153,14 @@ export default function EditCaseModal({ open, onClose, initial, onSave }) {
             value={id}
             disabled
             placeholder="case id"
-            className="w-full px-3 py-2 rounded-lg border bg-transparent"
+            className="w-full px-3 py-2 rounded-lg border bg-transparent opacity-60"
             style={{ borderColor: 'var(--border)' }}
           />
         </div>
 
         <HorizontalLine color={'#394F6F'} />
 
+        {/* Main Investigator */}
         <div>
           <div className="text-sm font-semibold mb-1" style={{ color: 'var(--dim)' }}>
             Main Investigator
@@ -96,38 +168,55 @@ export default function EditCaseModal({ open, onClose, initial, onSave }) {
           <input
             readOnly
             value={investigator}
-            onChange={(e) => setInvestigator(e.target.value)}
-            placeholder="input name"
             className="w-full px-3 py-2 rounded-lg border bg-transparent"
             style={{ borderColor: 'var(--border)' }}
           />
+          {investigatorError && <p className="text-red-400 text-xs mt-1">{investigatorError}</p>}
         </div>
 
         <div className="flex flex-row gap-5">
+          {/* Agency */}
           <div className="w-full">
             <div className="text-sm font-semibold mb-1" style={{ color: 'var(--dim)' }}>
               Agency
             </div>
             <input
               value={agency}
-              onChange={(e) => setAgency(e.target.value)}
+              onChange={(e) => {
+                const v = e.target.value
+                setAgency(v)
+                if (agencyError) {
+                  const { ok, error } = validateSafeHumanName(v, 'Agency')
+                  setAgencyError(ok ? '' : error)
+                }
+              }}
               placeholder="Agency"
               className="w-full px-3 py-2 rounded-lg border bg-transparent"
-              style={{ borderColor: 'var(--border)' }}
+              style={{ borderColor: agencyError ? 'red' : 'var(--border)' }}
             />
+            {agencyError && <p className="text-red-400 text-xs mt-1">{agencyError}</p>}
           </div>
 
+          {/* Work Unit */}
           <div className="w-full">
             <div className="text-sm font-semibold mb-1" style={{ color: 'var(--dim)' }}>
               Work Unit
             </div>
             <input
               value={workUnit}
-              onChange={(e) => setWorkUnit(e.target.value)}
+              onChange={(e) => {
+                const v = e.target.value
+                setWorkUnit(v)
+                if (workUnitError) {
+                  const { ok, error } = validateSafeHumanName(v, 'Work unit')
+                  setWorkUnitError(ok ? '' : error)
+                }
+              }}
               placeholder="Work Unit"
               className="w-full px-3 py-2 rounded-lg border bg-transparent"
-              style={{ borderColor: 'var(--border)' }}
+              style={{ borderColor: workUnitError ? 'red' : 'var(--border)' }}
             />
+            {workUnitError && <p className="text-red-400 text-xs mt-1">{workUnitError}</p>}
           </div>
         </div>
       </div>

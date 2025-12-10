@@ -60,7 +60,9 @@ const VALID_CHANNELS = new Set([
   'users:list',
   'users:create',
   'users:update',
-  'users:delete'
+  'users:delete',
+
+  'license:getInfo'
 ])
 
 contextBridge.exposeInMainWorld('api', {
@@ -81,6 +83,10 @@ contextBridge.exposeInMainWorld('authApi', {
 
 contextBridge.exposeInMainWorld('system', {
   quitApp: () => ipcRenderer.send('quit-app')
+})
+
+contextBridge.exposeInMainWorld('license', {
+  getInfo: () => ipcRenderer.invoke('license:getInfo')
 })
 
 contextBridge.exposeInMainWorld('apiLegacy', {

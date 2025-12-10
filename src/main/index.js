@@ -13,6 +13,7 @@ import { registerSuspectsIpc } from './ipc/suspects.ipc.js'
 import { registerReportsIpc } from './ipc/reports.ipc.js'
 import { registerPersonsIpc } from './ipc/persons.ipc.js'
 import { registerUserIpc } from './ipc/user.ipc.js'
+import axios from 'axios'
 
 process.on('uncaughtException', (err) => console.error('[uncaughtException]', err))
 process.on('unhandledRejection', (reason) => console.error('[unhandledRejection]', reason))
@@ -96,6 +97,20 @@ app.whenReady().then(() => {
   registerReportsIpc()
   registerPersonsIpc()
   registerUserIpc()
+
+  ipcMain.handle('license:getInfo', async () => {
+    try {
+      const res = await axios.get(`${BACKEND_BASE}/license`)
+      return res.data
+    } catch (error) {
+      console.error('[IPC license:getInfo] Error:', error)
+      return {
+        status: 500,
+        message: 'Failed to get license',
+        error: error.message
+      }
+    }
+  })
 
   ipcMain.on('quit-app', () => {
     console.log('[IPC] quit-app → closing application')

@@ -7,7 +7,8 @@ import Input from '../../atoms/Input'
 import Textarea from '../../atoms/Textarea'
 import Select from '../../atoms/Select'
 import { useAuth } from '../../../store/auth'
-import { validateSafeFileName } from '../../../utils/safeTextValidators'
+import { validateSafeFileName, validateSafeID } from '../../../utils/safeTextValidators'
+import truncateText from '../../../lib/truncateText'
 
 const DEVICE_SOURCES = ['Handphone', 'Ssd', 'HardDisk', 'Pc', 'Laptop', 'DVR']
 const STATUS_OPTIONS = ['Witness', 'Reported', 'Suspected', 'Suspect', 'Defendant']
@@ -137,7 +138,7 @@ export default function AddEvidenceModal({
         setSubmitting(false)
         return
       } else {
-        const { ok, error } = validateSafeFileName(evidenceId, 'Evidence ID')
+        const { ok, error } = validateSafeID(evidenceId, 'Evidence ID')
         if (!ok) {
           setEvidenceIdError(error)
           setSubmitting(false)
@@ -241,8 +242,8 @@ export default function AddEvidenceModal({
               Select case
             </option>
             {caseOptions.map((c) => (
-              <option key={c.value} value={c.value}>
-                {c.label}
+              <option title={c.label} key={c.value} value={c.value}>
+                {truncateText(c.label, 65)}
               </option>
             ))}
           </Select>
@@ -266,6 +267,7 @@ export default function AddEvidenceModal({
           <>
             <FormLabel>Evidence ID</FormLabel>
             <Input
+              maxLength={50}
               value={evidenceId}
               onChange={(e) => {
                 const v = e.target.value
@@ -277,7 +279,7 @@ export default function AddEvidenceModal({
                     } else if (!v.trim()) {
                       setEvidenceIdError('Evidence ID is required.')
                     } else {
-                      const { ok, error } = validateSafeFileName(v, 'Evidence ID')
+                      const { ok, error } = validateSafeID(v, 'Evidence ID')
                       setEvidenceIdError(ok ? '' : error)
                     }
                   }
@@ -411,7 +413,7 @@ export default function AddEvidenceModal({
                 className="w-full px-3 py-2 rounded-lg border bg-[#151d28]"
                 style={{ borderColor: 'var(--border)' }}
                 value={status || ''}
-                disabled={defaultPerson || submitting}
+                disabled={defaultPerson?.status || submitting}
                 onChange={(e) => setStatus(e.target.value)}
               >
                 <option value="" disabled>

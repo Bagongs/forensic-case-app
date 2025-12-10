@@ -267,6 +267,7 @@ export const useCases = create((set, get) => ({
     try {
       const apiPayload = normalizeCasePayload(payload)
       const res = await window.api.invoke('cases:create', apiPayload)
+      console.log('createCaseRemote response:', res)
       const apiCase = unwrap(res)
       const mapped = mapApiCaseListItem(apiCase)
 

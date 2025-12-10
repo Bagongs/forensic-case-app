@@ -1,3 +1,5 @@
+import truncateText from '../lib/truncateText'
+
 /* eslint-disable react/prop-types */
 export function EvidenceCard({ image, code, summary, onClick, expandIcon }) {
   // image sudah berisi URL final dari store (previewUrl/image/previewDataUrl)
@@ -33,7 +35,9 @@ export function EvidenceCard({ image, code, summary, onClick, expandIcon }) {
 
       {/* text */}
       <div className="p-4 text-[#E7E9EE] font-[Noto Sans] leading-relaxed">
-        <div className="text-[#F1CC49] font-semibold text-[15px]">{code || '-'}</div>
+        <div title={code} className="text-[#F1CC49] font-semibold text-[15px]">
+          {truncateText(code, 40) || '-'}
+        </div>
         <div className="text-[13px] opacity-80">Evidence Summary</div>
         <p title={summary} className="text-[13.5px] leading-snug mt-1 break-all">
           {(summary?.length > 100 ? summary.slice(0, 100) + '...' : summary) || '-'}

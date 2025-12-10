@@ -7,6 +7,7 @@ import Radio from '../../atoms/Radio'
 import Input from '../../atoms/Input'
 import Textarea from '../../atoms/Textarea'
 import Select from '../../atoms/Select'
+import truncateText from '../../../lib/truncateText'
 
 const DEVICE_SOURCES = ['Handphone', 'Ssd', 'HardDisk', 'Pc', 'Laptop', 'DVR']
 const STATUS_OPTIONS = ['Witness', 'Reported', 'Suspected', 'Suspect', 'Defendant']
@@ -191,8 +192,8 @@ export default function AddPersonModal({ open, onClose, onSave, caseOptions = []
             Select case
           </option>
           {caseOptions.map((c) => (
-            <option key={c.value} value={c.value}>
-              {c.label}
+            <option title={c.label} key={c.value} value={c.value}>
+              {truncateText(c.label, 65)}
             </option>
           ))}
         </Select>

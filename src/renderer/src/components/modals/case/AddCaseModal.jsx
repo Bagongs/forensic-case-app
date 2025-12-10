@@ -7,7 +7,7 @@ import Radio from '../../atoms/Radio'
 import Input from '../../atoms/Input'
 import Textarea from '../../atoms/Textarea'
 
-import { validateSafeHumanName, validateSafeFileName } from '../../../utils/safeTextValidators'
+import { validateSafeHumanName, validateSafeFileName, validateSafeID } from '../../../utils/safeTextValidators'
 
 export default function AddCaseModal({ open, onClose, onSave }) {
   const [name, setName] = useState('')
@@ -105,7 +105,7 @@ export default function AddCaseModal({ open, onClose, onSave }) {
         setManualIdError('Case ID is required.')
         hasError = true
       } else {
-        const { ok, error } = validateSafeFileName(manualId, 'Case ID')
+        const { ok, error } = validateSafeID(manualId, 'Case ID')
         if (!ok) {
           setManualIdError(error)
           hasError = true
@@ -181,6 +181,7 @@ export default function AddCaseModal({ open, onClose, onSave }) {
 
         {idMode === 'manual' && (
           <Input
+            maxLength={50}
             value={manualId}
             onChange={(e) => {
               const v = e.target.value
@@ -192,7 +193,7 @@ export default function AddCaseModal({ open, onClose, onSave }) {
                   } else if (!v.trim()) {
                     setManualIdError('Case ID is required.')
                   } else {
-                    const { ok, error } = validateSafeFileName(v, 'Case ID')
+                    const { ok, error } = validateSafeID(v, 'Case ID')
                     setManualIdError(ok ? '' : error)
                   }
                 }

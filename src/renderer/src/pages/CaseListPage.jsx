@@ -84,6 +84,7 @@ export default function CaseListPage() {
   const fetchSummary = useCases((s) => s.fetchSummary)
   const fetchCases = useCases((s) => s.fetchCases)
   const createCaseRemote = useCases((s) => s.createCaseRemote)
+  console.log('error', error)
 
   const [q, setQ] = useState('')
   const [modal, setModal] = useState(false)
@@ -149,14 +150,18 @@ export default function CaseListPage() {
   const handleSaveCase = async (payload) => {
     try {
       const created = await createCaseRemote(payload)
-      setModal(false)
-      if (created?.id) {
-        nav(`/cases/${created.id}`)
+
+      // Jika backend return error (formatmu: {error: true, message: "..."} )
+      if (created?.error) {
+        return { ok: false, message: created.message }
       }
+
+      return { ok: true, data: created }
     } catch (err) {
-      console.error('Failed to create case', err)
+      return { ok: false, message: err?.message || "Failed to create case" }
     }
   }
+
 
   // ✅ reset page di handler, bukan effect
   const onSearchChange = (e) => {

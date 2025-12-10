@@ -70,6 +70,13 @@ export function validateSafeFileName(value, label = 'File name') {
   })
 }
 
+export function validateSafeID(value, label = 'File name') {
+  return baseValidate(value, {
+    label,
+    required: true,
+    maxLength: 50
+  })
+}
 // =============================
 // KHUSUS Case Management
 // =============================
