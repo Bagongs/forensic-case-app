@@ -150,18 +150,17 @@ export default function CaseListPage() {
   const handleSaveCase = async (payload) => {
     try {
       const created = await createCaseRemote(payload)
-
-      // Jika backend return error (formatmu: {error: true, message: "..."} )
-      if (created?.error) {
-        return { ok: false, message: created.message }
+      console.log('Created case:', created)
+      if (created?.id) {
+        nav(`/cases/${created.id}`)
       }
-
-      return { ok: true, data: created }
     } catch (err) {
-      return { ok: false, message: err?.message || "Failed to create case" }
+      console.error('Failed to create case', err)
+      return
+    } finally {
+      setModal(false)
     }
   }
-
 
   // ✅ reset page di handler, bukan effect
   const onSearchChange = (e) => {
@@ -305,8 +304,12 @@ export default function CaseListPage() {
 
               return (
                 <tr key={safeKey} className="hover:bg-white/5">
-                  <td className="px-4 py-3 border-b" style={{ borderColor: COLORS.border }}>
-                    {row.caseNumber || id}
+                  <td
+                    title={row.caseNumber || id}
+                    className="px-4 py-3 border-b"
+                    style={{ borderColor: COLORS.border }}
+                  >
+                    {truncateText(row.caseNumber || id, truncateTextSize)}
                   </td>
 
                   <td
