@@ -30,7 +30,7 @@ export default function App() {
           error: { iconTheme: { primary: '#E55353', secondary: '#172133' } }
         }}
       />
-      {/* <LicenseGate> */}
+      <LicenseGate>
         <Routes>
           {/* Public route */}
           <Route path="/login" element={<LoginPage />} />
@@ -71,7 +71,7 @@ export default function App() {
           {/* catch all */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-      {/* </LicenseGate> */}
+      </LicenseGate>
     </HashRouter>
   )
 }
