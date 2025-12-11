@@ -7,7 +7,11 @@ import Radio from '../../atoms/Radio'
 import Input from '../../atoms/Input'
 import Textarea from '../../atoms/Textarea'
 
-import { validateSafeHumanName, validateSafeFileName, validateSafeID } from '../../../utils/safeTextValidators'
+import {
+  validateSafeHumanName,
+  validateSafeFileName,
+  validateSafeID
+} from '../../../utils/safeTextValidators'
 
 export default function AddCaseModal({ open, onClose, onSave }) {
   const [name, setName] = useState('')
@@ -24,6 +28,7 @@ export default function AddCaseModal({ open, onClose, onSave }) {
   const [investigatorError, setInvestigatorError] = useState('')
   const [agencyError, setAgencyError] = useState('')
   const [workUnitError, setWorkUnitError] = useState('')
+  const [backendError, setBackendError] = useState('')
 
   useEffect(() => {
     if (!open) {
@@ -40,11 +45,14 @@ export default function AddCaseModal({ open, onClose, onSave }) {
       setInvestigatorError('')
       setAgencyError('')
       setWorkUnitError('')
+      setBackendError('')
     }
   }, [open])
 
   const manualIdTooShort =
     idMode === 'manual' && manualId.trim().length > 0 && manualId.trim().length < 3
+
+  const isCaseNumberError = backendError && backendError.toLowerCase().includes('case number')
 
   const canSubmitBasic = name.trim().length > 0
 
@@ -128,7 +136,9 @@ export default function AddCaseModal({ open, onClose, onSave }) {
       payload.case_number = manualId.trim()
     }
 
-    onSave(payload)
+    onSave(payload).catch((err) => {
+      setBackendError(err?.message || 'Failed to create case.')
+    })
   }
 
   return (
@@ -200,8 +210,15 @@ export default function AddCaseModal({ open, onClose, onSave }) {
               }
             }}
             placeholder="Input Case ID"
-            error={manualIdError || (manualIdTooShort && 'Case ID must be at least 3 characters')}
+            error={
+              manualIdError ||
+              (manualIdTooShort && 'Case ID must be at least 3 characters') ||
+              isCaseNumberError
+            }
           />
+        )}
+        {idMode === 'manual' && isCaseNumberError && (
+          <div className="text-xs text-red-400">{backendError}</div>
         )}
 
         <HorizontalLine color={'var(--border)'} />
@@ -270,6 +287,9 @@ export default function AddCaseModal({ open, onClose, onSave }) {
             />
           </div>
         </div>
+        {!isCaseNumberError && backendError && (
+          <div className="text-xs text-red-400 mt-1">{backendError}</div>
+        )}
       </div>
     </Modal>
   )

@@ -263,12 +263,16 @@ export const useCases = create((set, get) => ({
      CREATE CASE
   ============================================================ */
   async createCaseRemote(payload) {
-    set({ loading: true, error: null })
+    set({ error: null })
     try {
       const apiPayload = normalizeCasePayload(payload)
       const res = await window.api.invoke('cases:create', apiPayload)
-      console.log('createCaseRemote response:', res)
       const apiCase = unwrap(res)
+
+      if (!apiCase || !apiCase.id) {
+        throw new Error(apiCase?.message || 'Failed to create case')
+      }
+
       const mapped = mapApiCaseListItem(apiCase)
 
       set({ cases: [mapped, ...get().cases], loading: false })

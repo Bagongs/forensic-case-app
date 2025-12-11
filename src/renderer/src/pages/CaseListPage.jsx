@@ -150,15 +150,14 @@ export default function CaseListPage() {
   const handleSaveCase = async (payload) => {
     try {
       const created = await createCaseRemote(payload)
-      console.log('Created case:', created)
+
       if (created?.id) {
+        setModal(false)
         nav(`/cases/${created.id}`)
       }
     } catch (err) {
       console.error('Failed to create case', err)
-      return
-    } finally {
-      setModal(false)
+      throw err // biar dikirim ke modal dan tidak menutup modal
     }
   }
 
@@ -248,15 +247,6 @@ export default function CaseListPage() {
         {loading && (
           <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-10 text-sm">
             Loading cases…
-          </div>
-        )}
-
-        {error && (
-          <div
-            className="px-4 py-2 text-xs text-red-400 border-b"
-            style={{ borderColor: COLORS.border }}
-          >
-            {String(error)}
           </div>
         )}
 
