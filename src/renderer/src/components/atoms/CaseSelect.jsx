@@ -34,7 +34,7 @@ export default function CaseSelect({
         style={{ borderColor: 'var(--border)' }}
       >
         <span className={selected ? '' : 'text-gray-400'}>
-          {selected ? selected.label : placeholder}
+          {selected ? truncateText(selected.label, 65) : placeholder}
         </span>
       </button>
 
