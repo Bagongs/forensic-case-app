@@ -30,11 +30,12 @@ export default function App() {
           error: { iconTheme: { primary: '#E55353', secondary: '#172133' } }
         }}
       />
-      <LicenseGate>
-        <Routes>
-          {/* Public route */}
-          <Route path="/login" element={<LoginPage />} />
+      {/* <LicenseGate> */}
+      <Routes>
+        {/* Public route */}
+        <Route path="/login" element={<LoginPage />} />
 
+        <Route element={<LicenseGate />}>
           {/* Protected routes (must be authed) */}
           <Route
             element={
@@ -69,9 +70,10 @@ export default function App() {
           </Route>
 
           {/* catch all */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </LicenseGate>
+        </Route>
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+      {/* </LicenseGate> */}
     </HashRouter>
   )
 }

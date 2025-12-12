@@ -7,9 +7,6 @@ const api = axios.create({
   baseURL: import.meta.env?.VITE_BACKEND_URL + '/api/v1'
 })
 
-// ============================
-// LOGGER HELPERS
-// ============================
 function logRequest(config) {
   const fullUrl = config.baseURL + config.url
   const method = (config.method || 'GET').toUpperCase()
@@ -25,19 +22,21 @@ function logResponse(response) {
 }
 
 function logError(error) {
-  if (error.response) {
-    console.log(`[API ERROR] ${error.response.status} ${error.response.config.url}`)
-  } else {
-    console.log(`[API ERROR] ${error.message}`)
+  if (!error.response) {
+    console.log('[API ERROR] Cannot reach backend server')
+    return
   }
+
+  console.log(`[API ERROR] ${error.response.status} ${error.response.config.url}`)
 }
 
-// === REQUEST INTERCEPTOR ===
+/* ============================
+   REQUEST INTERCEPTOR
+============================ */
 api.interceptors.request.use(
   (config) => {
     const { accessToken } = getTokens()
 
-    // ⛔ JANGAN kirim Authorization untuk refresh endpoint
     const isRefreshEndpoint = typeof config.url === 'string' && config.url.includes('/auth/refresh')
 
     if (!isRefreshEndpoint && accessToken) {
@@ -54,9 +53,9 @@ api.interceptors.request.use(
   }
 )
 
-// ============================
-// REFRESH QUEUE (ANTI DOBEL)
-// ============================
+/* ============================
+   REFRESH QUEUE (PREVENT DUPLICATE CALLS)
+============================ */
 let isRefreshing = false
 let failedQueue = []
 
@@ -68,29 +67,37 @@ function processQueue(error, token = null) {
   failedQueue = []
 }
 
-// === RESPONSE INTERCEPTOR ===
+/* ============================
+   RESPONSE INTERCEPTOR
+============================ */
 api.interceptors.response.use(
   (response) => {
     logResponse(response)
     return response
   },
   async (error) => {
+    if (!error.response) {
+      console.warn('⚠ Backend connection failed')
+
+      return Promise.reject({
+        isNetworkError: true,
+        message: 'Unable to connect to the server. Please check your network or try again.'
+      })
+    }
+
     logError(error)
 
     const original = error.config || {}
 
-    // kalau bukan 401 atau sudah retry → stop
     if (error.response?.status !== 401 || original._retry) {
       return Promise.reject(error)
     }
 
-    // jangan refresh kalau 401 dari refresh endpoint sendiri
     if (typeof original.url === 'string' && original.url.includes('/auth/refresh')) {
       clearSession()
       return Promise.reject(error)
     }
 
-    // kalau lagi refresh, antri
     if (isRefreshing) {
       return new Promise((resolve, reject) => {
         failedQueue.push({ resolve, reject })
@@ -114,7 +121,6 @@ api.interceptors.response.use(
     }
 
     try {
-      // refreshTokenRequest SUDAH updateTokens() di service
       const newTokens = await refreshTokenRequest(refreshToken)
 
       processQueue(null, newTokens.access_token)
