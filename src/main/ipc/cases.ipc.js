@@ -8,7 +8,7 @@ import {
   updateCaseApi,
   saveCaseNotes,
   editCaseNotes,
-  exportCaseDetailPdf
+  getSelectCases
 } from '../services/cases.service.js'
 import { saveCasePdf } from '../services/export.service.js'
 
@@ -24,6 +24,14 @@ export function registerCasesIpc() {
   ipcMain.handle('cases:list', async (_event, params) => {
     try {
       return await getAllCases(params)
+    } catch (err) {
+      return { error: true, message: err?.response?.data?.message || err.message }
+    }
+  })
+
+  ipcMain.handle('cases:list:select', async (_event, params) => {
+    try {
+      return await getSelectCases(params)
     } catch (err) {
       return { error: true, message: err?.response?.data?.message || err.message }
     }

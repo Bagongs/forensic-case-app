@@ -103,10 +103,10 @@ export default function SuspectListPage() {
 
   // case options
   const cases = useCases((s) => s.cases)
-  const fetchCases = useCases((s) => s.fetchCases)
+  const fetchSelectCases = useCases((s) => s.fetchSelectCases)
   useEffect(() => {
-    fetchCases().catch(() => {})
-  }, [fetchCases])
+    fetchSelectCases().catch(() => {})
+  }, [fetchSelectCases])
 
   const caseOptions = useMemo(
     () => (cases ?? []).map((c) => ({ value: c.id, label: c.name })),

@@ -9,6 +9,8 @@ export function useCasesApi() {
 
     listCases: (params) => invoke('cases:list', params),
 
+    selectCases: () => invoke('cases:list:select'),
+
     getDetail: (caseId) => invoke('cases:detail', caseId),
 
     createCase: (payload) => invoke('cases:create', payload),

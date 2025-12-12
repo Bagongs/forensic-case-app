@@ -21,6 +21,11 @@ export async function getAllCases(params = {}) {
   return data
 }
 
+export async function getSelectCases() {
+  const { data } = await api.get('/cases/list-for-select')
+  return data
+}
+
 /* ============================================================
    3. Case Detail Comprehensive
    GET /cases/get-case-detail-comprehensive/{case_id}

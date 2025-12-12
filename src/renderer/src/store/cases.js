@@ -232,6 +232,24 @@ export const useCases = create((set, get) => ({
     }
   },
 
+  async fetchSelectCases() {
+    set({ loading: true, error: null })
+    try {
+      const res = await window.api.invoke('cases:list:select')
+
+      const raw = unwrap(res)
+      const list = extractList(raw)
+      const mapped = list.map(mapApiCaseListItem)
+      set({
+        cases: mapped,
+        loading: false
+      })
+    } catch (err) {
+      console.error(err)
+      set({ error: err?.message || 'Failed to fetch cases', loading: false })
+    }
+  },
+
   /* ============================================================
      CASE DETAIL
   ============================================================ */

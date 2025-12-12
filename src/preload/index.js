@@ -11,6 +11,7 @@ const VALID_CHANNELS = new Set([
   // cases
   'cases:summary',
   'cases:list',
+  'cases:list:select',
   'cases:detail',
   'cases:create',
   'cases:update',
@@ -93,6 +94,7 @@ contextBridge.exposeInMainWorld('apiLegacy', {
   cases: {
     summary: () => ipcRenderer.invoke('cases:summary'),
     list: (params) => ipcRenderer.invoke('cases:list', params),
+    select: () => ipcRenderer.invoke('cases:list:select'),
     detail: (caseId) => ipcRenderer.invoke('cases:detail', caseId),
     create: (payload) => ipcRenderer.invoke('cases:create', payload),
     update: (caseId, payload) => ipcRenderer.invoke('cases:update', { caseId, payload }),

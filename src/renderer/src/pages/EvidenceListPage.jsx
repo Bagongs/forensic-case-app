@@ -42,7 +42,7 @@ export default function EvidenceListPage() {
   const fetchEvidenceSummary = useEvidences((s) => s.fetchEvidenceSummary)
 
   const cases = useCases((s) => s.cases)
-  const fetchCases = useCases((s) => s.fetchCases)
+  const fetchSelectCases = useCases((s) => s.fetchSelectCases)
 
   const [q, setQ] = useState('')
   const [modal, setModal] = useState(false)
@@ -57,8 +57,8 @@ export default function EvidenceListPage() {
 
   // ensure cases loaded for modal
   useEffect(() => {
-    fetchCases().catch(() => {})
-  }, [fetchCases])
+    fetchSelectCases().catch(() => {})
+  }, [fetchSelectCases])
 
   // reset page ketika search/pageSize berubah
   useEffect(() => setPage(1), [q, pageSize])
