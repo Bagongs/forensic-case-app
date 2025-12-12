@@ -9,6 +9,7 @@ import Select from '../../atoms/Select'
 import { useAuth } from '../../../store/auth'
 import { validateSafeFileName, validateSafeID } from '../../../utils/safeTextValidators'
 import truncateText from '../../../lib/truncateText'
+import CaseSelect from '../../atoms/CaseSelect'
 
 const DEVICE_SOURCES = ['Handphone', 'Ssd', 'HardDisk', 'Pc', 'Laptop', 'DVR']
 const STATUS_OPTIONS = ['Witness', 'Reported', 'Suspected', 'Suspect', 'Defendant']
@@ -31,7 +32,6 @@ function mapDeviceSourceToApi(value) {
       return ''
   }
 }
-
 export default function AddEvidenceModal({
   open,
   onClose,
@@ -237,16 +237,13 @@ export default function AddEvidenceModal({
         {defaultCaseId ? (
           <Input value={defaultCaseName} disabled readOnly />
         ) : (
-          <Select value={caseId} onChange={(e) => setCaseId(e.target.value)} disabled={submitting}>
-            <option value="" disabled>
-              Select case
-            </option>
-            {caseOptions.map((c) => (
-              <option title={c.label} key={c.value} value={c.value}>
-                {truncateText(c.label, 65)}
-              </option>
-            ))}
-          </Select>
+          <CaseSelect
+            value={caseId}
+            options={caseOptions}
+            disabled={submitting}
+            maxHeight={240}
+            onChange={(val) => setCaseId(val)}
+          />
         )}
 
         <FormLabel>Evidence ID Mode</FormLabel>
