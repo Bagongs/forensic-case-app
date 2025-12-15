@@ -41,7 +41,7 @@ export default function CaseSelect({
       {/* Dropdown */}
       {open && !disabled && (
         <div
-          className="absolute z-50 mt-1 w-full rounded-lg border bg-[#151d28] shadow-lg overflow-y-auto"
+          className="absolute z-50 mt-1 w-full rounded-lg border bg-[#151d28] shadow-lg overflow-y-auto custom-scroll"
           style={{ maxHeight, borderColor: 'var(--border)' }}
         >
           {options.map((opt) => (
