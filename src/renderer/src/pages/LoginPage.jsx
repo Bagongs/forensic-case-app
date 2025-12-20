@@ -207,7 +207,7 @@ export default function LoginPage() {
                   }}
                 >
                   <span className="tracking-wide" style={{ color: 'var(--gold)' }}>
-                    {busy ? 'SIGNING IN…' : 'LOGIN'}
+                    {busy ? 'SIGNING IN…' : 'SIGN IN'}
                   </span>
                 </button>
               </div>
